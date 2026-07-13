@@ -1,0 +1,45 @@
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { AuthProvider, useAuth } from '@/lib/auth'
+import { Layout } from '@/components/Layout'
+import { Login } from '@/pages/Login'
+import { Overview } from '@/pages/Overview'
+import { Estoque } from '@/pages/Estoque'
+import { Vendas } from '@/pages/Vendas'
+import { Financeiro } from '@/pages/Financeiro'
+import { Containers } from '@/pages/Containers'
+
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { session, loading, demo } = useAuth()
+  if (demo) return <>{children}</>
+  if (loading) return <div style={{ padding: 32 }}>Carregando...</div>
+  if (!session) return <Navigate to="/login" replace />
+  return <>{children}</>
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            element={
+              <RequireAuth>
+                <Layout />
+              </RequireAuth>
+            }
+          >
+            <Route path="/" element={<Overview />} />
+            <Route path="/estoque" element={<Estoque />} />
+            <Route path="/vendas" element={<Vendas />} />
+            <Route path="/financeiro" element={<Financeiro />} />
+            <Route path="/containers" element={<Containers />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  )
+}
+
+export default App
