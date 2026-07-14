@@ -1,9 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Hero3D } from '@/components/Hero3D'
 import { ProductCard } from '@/components/ProductCard'
 import { getCatalog } from '@/lib/api'
 import type { CatalogProduct } from '@/types/catalog'
+
+const categoryLabels: Record<string, string> = { carro: 'Carro', moto: 'Moto', motor: 'Motor' }
+
+type SortKey = 'nome' | 'preco-asc' | 'preco-desc' | 'pecas-asc' | 'pecas-desc'
+
+const sortOptions: { value: SortKey; label: string }[] = [
+  { value: 'nome', label: 'Nome (A–Z)' },
+  { value: 'preco-asc', label: 'Investimento (menor primeiro)' },
+  { value: 'preco-desc', label: 'Investimento (maior primeiro)' },
+  { value: 'pecas-asc', label: 'Peças (menos primeiro)' },
+  { value: 'pecas-desc', label: 'Peças (mais primeiro)' },
+]
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -40,6 +52,9 @@ const manifestoParagraphs = [
 export function Home() {
   const [products, setProducts] = useState<CatalogProduct[]>([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState<string>('todos')
+  const [sortBy, setSortBy] = useState<SortKey>('nome')
 
   useEffect(() => {
     getCatalog().then((p) => {
@@ -48,6 +63,38 @@ export function Home() {
     })
   }, [])
 
+  const categories = useMemo(() => {
+    const present = new Set(products.map((p) => p.category))
+    return ['todos', ...Array.from(present)]
+  }, [products])
+
+  const filteredProducts = useMemo(() => {
+    let list = products
+    if (category !== 'todos') list = list.filter((p) => p.category === category)
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      list = list.filter((p) => p.name.toLowerCase().includes(q) || p.manufacturer?.toLowerCase().includes(q))
+    }
+    const sorted = [...list]
+    switch (sortBy) {
+      case 'preco-asc':
+        sorted.sort((a, b) => a.sale_price_brl - b.sale_price_brl)
+        break
+      case 'preco-desc':
+        sorted.sort((a, b) => b.sale_price_brl - a.sale_price_brl)
+        break
+      case 'pecas-asc':
+        sorted.sort((a, b) => (a.piece_count ?? 0) - (b.piece_count ?? 0))
+        break
+      case 'pecas-desc':
+        sorted.sort((a, b) => (b.piece_count ?? 0) - (a.piece_count ?? 0))
+        break
+      default:
+        sorted.sort((a, b) => a.name.localeCompare(b.name))
+    }
+    return sorted
+  }, [products, category, search, sortBy])
+
   return (
     <div>
       {/* HERO */}
@@ -55,7 +102,7 @@ export function Home() {
         <Hero3D />
         <div
           className="pointer-events-none absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 55%, transparent, var(--carbon-0) 85%)' }}
+          style={{ background: 'radial-gradient(ellipse 95% 80% at 50% 48%, transparent, var(--carbon-0) 92%)' }}
         />
         <div className="relative z-10 mx-auto max-w-3xl px-6 text-center">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
@@ -175,11 +222,60 @@ export function Home() {
             Carregando coleção...
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((p, i) => (
-              <ProductCard key={p.id} product={p} index={i} />
-            ))}
-          </div>
+          <>
+            <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+              <div className="flex flex-1 flex-wrap gap-2">
+                {categories.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setCategory(c)}
+                    className="rounded-full border px-4 py-1.5 text-xs font-medium tracking-wide transition"
+                    style={{
+                      borderColor: category === c ? 'var(--gold)' : 'var(--hairline)',
+                      background: category === c ? 'var(--gold-wash)' : 'transparent',
+                      color: category === c ? 'var(--gold-bright)' : 'var(--ink-secondary)',
+                    }}
+                  >
+                    {c === 'todos' ? 'Todos' : (categoryLabels[c] ?? c)}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:justify-end">
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por nome ou fabricante..."
+                  className="w-full rounded-lg border bg-transparent px-4 py-2 text-sm outline-none sm:w-64"
+                  style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+                />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortKey)}
+                  className="rounded-lg border px-4 py-2 text-sm outline-none"
+                  style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)', color: 'var(--ink)' }}
+                >
+                  {sortOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {filteredProducts.length === 0 ? (
+              <p className="text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
+                Nenhum modelo encontrado com esses filtros.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredProducts.map((p, i) => (
+                  <ProductCard key={p.id} product={p} index={i} />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </section>
     </div>
