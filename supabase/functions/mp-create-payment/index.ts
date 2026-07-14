@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
     let mpBody: Record<string, unknown>
     if (paymentMethod === 'pix') {
       mpBody = {
-        transaction_amount: product.sale_price_brl,
+        transaction_amount: Number(product.sale_price_brl),
         description: product.name,
         payment_method_id: 'pix',
         payer: payerBase,
@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
       }
     } else if (paymentMethod === 'boleto') {
       mpBody = {
-        transaction_amount: product.sale_price_brl,
+        transaction_amount: Number(product.sale_price_brl),
         description: product.name,
         payment_method_id: 'bolbradesco',
         payer: {
@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
         return json({ error: 'Token de cartão ausente.' }, 400)
       }
       mpBody = {
-        transaction_amount: product.sale_price_brl,
+        transaction_amount: Number(product.sale_price_brl),
         token: cardToken,
         description: product.name,
         installments: installments ?? 1,

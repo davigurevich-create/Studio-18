@@ -305,7 +305,7 @@ export function Checkout() {
           )}
           {isMercadoPagoConfigured ? (
             <CardPayment
-              initialization={{ amount: product.sale_price_brl }}
+              initialization={{ amount: Number(product.sale_price_brl) }}
               customization={{ visual: { style: { theme: 'dark' } } }}
               onSubmit={handleCardSubmit}
               onError={() => setError('Não foi possível validar os dados do cartão.')}
