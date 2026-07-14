@@ -12,8 +12,12 @@ alter table products add column if not exists image_urls text[] not null default
 
 -- ---------------------------------------------------------------------------
 -- Atualiza a view publica do catalogo com os novos campos
+-- (drop + create, e nao "create or replace": o Postgres so permite REPLACE
+-- quando as colunas existentes mantem nome/posicao — aqui a ordem muda)
 -- ---------------------------------------------------------------------------
-create or replace view public_catalog as
+drop view if exists public_catalog;
+
+create view public_catalog as
 select
   p.id,
   p.sku,

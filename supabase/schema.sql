@@ -159,7 +159,9 @@ create policy "authenticated full access" on expenses
 -- VIEW publica para o site do Lovable consumir (catalogo + disponibilidade),
 -- sem expor custo de importacao nem dados internos de vendas/financeiro.
 -- ---------------------------------------------------------------------------
-create or replace view public_catalog as
+drop view if exists public_catalog;
+
+create view public_catalog as
 select
   p.id,
   p.sku,
