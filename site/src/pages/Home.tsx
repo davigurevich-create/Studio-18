@@ -5,8 +5,6 @@ import { ProductCard } from '@/components/ProductCard'
 import { getCatalog } from '@/lib/api'
 import type { CatalogProduct } from '@/types/catalog'
 
-const categoryLabels: Record<string, string> = { carro: 'Carro', moto: 'Moto', motor: 'Motor' }
-
 type SortKey = 'nome' | 'preco-asc' | 'preco-desc' | 'pecas-asc' | 'pecas-desc'
 
 const sortOptions: { value: SortKey; label: string }[] = [
@@ -53,7 +51,7 @@ export function Home() {
   const [products, setProducts] = useState<CatalogProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [category, setCategory] = useState<string>('todos')
+  const [tag, setTag] = useState<string>('todos')
   const [sortBy, setSortBy] = useState<SortKey>('nome')
 
   useEffect(() => {
@@ -63,14 +61,14 @@ export function Home() {
     })
   }, [])
 
-  const categories = useMemo(() => {
-    const present = new Set(products.map((p) => p.category))
-    return ['todos', ...Array.from(present)]
+  const tags = useMemo(() => {
+    const present = new Set(products.map((p) => p.collection_tag).filter((t): t is string => Boolean(t)))
+    return ['todos', ...Array.from(present).sort()]
   }, [products])
 
   const filteredProducts = useMemo(() => {
     let list = products
-    if (category !== 'todos') list = list.filter((p) => p.category === category)
+    if (tag !== 'todos') list = list.filter((p) => p.collection_tag === tag)
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       list = list.filter((p) => p.name.toLowerCase().includes(q) || p.manufacturer?.toLowerCase().includes(q))
@@ -93,7 +91,7 @@ export function Home() {
         sorted.sort((a, b) => a.name.localeCompare(b.name))
     }
     return sorted
-  }, [products, category, search, sortBy])
+  }, [products, tag, search, sortBy])
 
   return (
     <div>
@@ -210,7 +208,7 @@ export function Home() {
           viewport={{ once: true }}
           className="mb-4 text-center text-3xl sm:text-4xl"
         >
-          17 modelos, direto da China para você
+          Uma curadoria inicial de 17 modelos para você
         </motion.h2>
         <p className="mx-auto mb-14 max-w-xl text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
           Reserve o seu — cada set é uma peça de coleção em escala 1:8, com pronta entrega assim que o
@@ -225,18 +223,18 @@ export function Home() {
           <>
             <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
               <div className="flex flex-1 flex-wrap gap-2">
-                {categories.map((c) => (
+                {tags.map((t) => (
                   <button
-                    key={c}
-                    onClick={() => setCategory(c)}
+                    key={t}
+                    onClick={() => setTag(t)}
                     className="rounded-full border px-4 py-1.5 text-xs font-medium tracking-wide transition"
                     style={{
-                      borderColor: category === c ? 'var(--gold)' : 'var(--hairline)',
-                      background: category === c ? 'var(--gold-wash)' : 'transparent',
-                      color: category === c ? 'var(--gold-bright)' : 'var(--ink-secondary)',
+                      borderColor: tag === t ? 'var(--gold)' : 'var(--hairline)',
+                      background: tag === t ? 'var(--gold-wash)' : 'transparent',
+                      color: tag === t ? 'var(--gold-bright)' : 'var(--ink-secondary)',
                     }}
                   >
-                    {c === 'todos' ? 'Todos' : (categoryLabels[c] ?? c)}
+                    {t === 'todos' ? 'Todos' : t.toUpperCase()}
                   </button>
                 ))}
               </div>
