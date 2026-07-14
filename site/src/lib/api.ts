@@ -18,43 +18,28 @@ export async function getProduct(id: string): Promise<CatalogProduct | undefined
   return catalog.find((p) => p.id === id)
 }
 
+export interface CreatePaymentResult {
+  orderId: string
+  status: string
+  pix?: { qrCode?: string; qrCodeBase64?: string }
+  boleto?: { barcode?: string; ticketUrl?: string }
+  error?: string
+}
+
 /**
- * Cria um pedido pendente que aparece direto no painel de gestao (Vendas),
- * sem exigir login — a policy no Supabase so permite inserir vendas com
- * status "pendente" e canal "site".
+ * Cria a cobranca real no Mercado Pago via Supabase Edge Function (o Access
+ * Token do gateway fica so no servidor) e registra o pedido em Vendas com
+ * status "pendente" ate a confirmacao do pagamento chegar pelo webhook.
  */
-export async function submitOrder(product: CatalogProduct, input: CheckoutInput): Promise<{ orderId: string }> {
+export async function createPayment(input: CheckoutInput): Promise<CreatePaymentResult> {
   if (supabase) {
-    const { data: sale, error: saleError } = await supabase
-      .from('sales')
-      .insert({
-        sale_date: new Date().toISOString(),
-        channel: 'site',
-        customer_name: input.customerName,
-        customer_contact: input.customerContact,
-        payment_method: input.paymentMethod,
-        status: 'pendente',
-        shipping_cost_brl: 0,
-        discount_brl: 0,
-        notes: `Pedido feito pelo site — ${product.name}`,
-      })
-      .select()
-      .single()
-    if (saleError) throw saleError
-
-    const { error: itemError } = await supabase.from('sale_items').insert({
-      sale_id: sale.id,
-      product_id: product.id,
-      quantity: 1,
-      unit_price_brl: product.sale_price_brl,
-      unit_cost_brl: 0,
-    })
-    if (itemError) throw itemError
-
-    return { orderId: sale.id as string }
+    const { data, error } = await supabase.functions.invoke('mp-create-payment', { body: input })
+    if (error) throw error
+    if (data?.error) throw new Error(data.error)
+    return data as CreatePaymentResult
   }
 
-  // Modo demonstracao: nao ha backend para persistir o pedido.
+  // Modo demonstracao: nao ha backend para processar o pagamento.
   await new Promise((resolve) => setTimeout(resolve, 600))
-  return { orderId: `demo-${Date.now()}` }
+  return { orderId: `demo-${Date.now()}`, status: 'pendente' }
 }

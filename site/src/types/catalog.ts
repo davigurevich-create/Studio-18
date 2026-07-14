@@ -21,6 +21,10 @@ export type PaymentMethod = 'pix' | 'cartao' | 'boleto'
 export interface CheckoutInput {
   productId: string
   customerName: string
-  customerContact: string
+  customerEmail: string
+  customerCpf: string
   paymentMethod: PaymentMethod
+  cardToken?: string
+  cardPaymentMethodId?: string
+  installments?: number
 }

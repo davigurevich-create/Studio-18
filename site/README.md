@@ -37,24 +37,49 @@ gestão (`/` na raiz do repositório):
   já traz nome, fabricante, escala, peças, preço e estoque disponível. Qualquer
   produto que você cadastrar no painel (**Estoque → + Produto**) aparece aqui
   automaticamente (desde que esteja marcado como `active`).
-- **Pedidos**: quando alguém finaliza um pedido no checkout, criamos uma venda
-  com `status = "pendente"` e `channel = "site"` diretamente nas tabelas
-  `sales`/`sale_items` — a mesma venda aparece na hora em **Vendas** no painel
-  de gestão. Nenhum pagamento é processado de fato (veja abaixo).
+- **Pedidos**: quando alguém finaliza um pedido no checkout, uma Supabase Edge
+  Function cria a venda com `status = "pendente"` e `channel = "site"` nas
+  tabelas `sales`/`sale_items` e gera a cobrança real no Mercado Pago — a
+  mesma venda aparece na hora em **Vendas** no painel de gestão, e o status
+  muda para `"pago"` automaticamente assim que o pagamento é confirmado (veja
+  abaixo).
 - **Fotos**: até você enviar as fotos reais dos 17 sets, os cards mostram um
   selo dourado "Foto em breve" com um ícone estilizado. Assim que tiver os
   arquivos, me envie que eu subo e conecto em `image_url`/`image_urls` de cada
   produto.
 
-## Sobre o checkout
+## Sobre o checkout (Mercado Pago)
 
-O checkout tem PIX, Cartão e Boleto **só na interface** — não processa
-pagamento de verdade ainda. Ele grava o pedido como "pendente" no banco (para
-sua equipe acompanhar e contatar o cliente), mas não cobra ninguém. Para
-processar pagamento de verdade, o próximo passo é integrar um gateway (ex:
-Mercado Pago, que cobre PIX + boleto + cartão em uma única API e é o mais
-usado no Brasil) — isso exige conta no gateway, chaves de API e uma função de
-backend para confirmar o pagamento via webhook.
+O checkout processa pagamento de verdade via **Mercado Pago** (PIX, cartão e
+boleto). A cobrança é criada por uma Supabase Edge Function — o Access Token
+do Mercado Pago fica só lá, nunca no código do site.
+
+### Como configurar
+
+1. Crie uma aplicação em https://www.mercadopago.com.br/developers/panel e
+   pegue as **credenciais de teste** (Public Key + Access Token) — depois,
+   quando for para produção, repita com as credenciais de produção.
+2. Rode `supabase/005_payment_gateway.sql` (raiz do repo) no SQL Editor do
+   Supabase — adiciona as colunas de rastreamento do pagamento em `sales`.
+3. Instale a Supabase CLI e faça login (`npx supabase login`), depois linke
+   o projeto: `npx supabase link --project-ref SEU_PROJECT_REF`.
+4. Configure o segredo do Access Token (nunca vai para o `.env` do site):
+   ```bash
+   npx supabase secrets set MP_ACCESS_TOKEN=SEU_ACCESS_TOKEN
+   ```
+5. Publique as duas functions:
+   ```bash
+   npx supabase functions deploy mp-create-payment
+   npx supabase functions deploy mp-webhook
+   ```
+6. No painel do Mercado Pago (Suas integrações → sua aplicação → Webhooks),
+   cadastre a URL `https://SEU-PROJETO.supabase.co/functions/v1/mp-webhook`
+   e assine o evento `payment`.
+7. No `.env` do site, adicione `VITE_MP_PUBLIC_KEY` (a Public Key — essa é
+   segura para expor no navegador, só o Access Token é secreto).
+
+Sem `VITE_MP_PUBLIC_KEY` configurada, o checkout continua funcionando em modo
+demonstração (registra o pedido como pendente, mas não cobra ninguém).
 
 ## Deploy
 
