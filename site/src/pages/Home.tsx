@@ -161,8 +161,24 @@ export function Home() {
       </div>
 
       {/* DIFERENCIAIS */}
-      <section id="diferenciais" className="border-y px-6 py-24" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)' }}>
-        <div className="mx-auto max-w-6xl">
+      <section
+        id="diferenciais"
+        className="relative overflow-hidden border-y px-6 py-24"
+        style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)' }}
+      >
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: 'url(/hero-workshop.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center 30%',
+          }}
+        />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: 'rgba(6,6,6,0.72)' }}
+        />
+        <div className="relative z-10 mx-auto max-w-6xl">
           <motion.p variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="eyebrow mb-3 text-center">
             Por que Studio 18
           </motion.p>
