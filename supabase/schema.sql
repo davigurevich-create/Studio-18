@@ -19,6 +19,11 @@ create table if not exists products (
   sale_price_brl numeric(12, 2) not null default 0,
   min_stock_alert integer not null default 3,
   image_url text,
+  image_urls text[] not null default '{}',
+  manufacturer text,
+  collection_tag text,
+  automotive_history text,
+  dimensions text,
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
@@ -161,10 +166,15 @@ select
   p.name,
   p.category,
   p.brand_model,
+  p.manufacturer,
+  p.collection_tag,
   p.scale,
   p.piece_count,
   p.sale_price_brl,
   p.image_url,
+  p.image_urls,
+  p.automotive_history,
+  p.dimensions,
   greatest(coalesce(s.quantity_in_stock, 0), 0) as quantity_available
 from products p
 left join product_stock s on s.product_id = p.id
@@ -174,3 +184,22 @@ grant select on public_catalog to anon, authenticated;
 
 create policy "public read active products for catalog view" on products
   for select using (active = true);
+
+-- ---------------------------------------------------------------------------
+-- Permite que o site publico crie pedidos (vendas pendentes) sem login.
+-- O checkout do site so consegue INSERIR uma venda com status "pendente" e
+-- canal "site" — nao consegue ler, alterar nem cancelar vendas existentes
+-- (isso continua exigindo login no painel de gestao).
+-- ---------------------------------------------------------------------------
+create policy "public can create pending site orders" on sales
+  for insert
+  with check (channel = 'site' and status = 'pendente');
+
+create policy "public can add items to a site order" on sale_items
+  for insert
+  with check (
+    exists (
+      select 1 from sales s
+      where s.id = sale_id and s.channel = 'site' and s.status = 'pendente'
+    )
+  );

@@ -1,0 +1,71 @@
+@import 'tailwindcss';
+
+:root {
+  --carbon-0: #060606;
+  --carbon-1: #0c0c0c;
+  --carbon-2: #131313;
+  --carbon-3: #1d1d1d;
+  --hairline: rgba(255, 255, 255, 0.08);
+  --hairline-strong: rgba(255, 255, 255, 0.14);
+
+  --gold: #cda44d;
+  --gold-bright: #e6c778;
+  --gold-dim: rgba(205, 164, 77, 0.35);
+  --gold-wash: rgba(205, 164, 77, 0.08);
+
+  --ink: #f3f1ec;
+  --ink-secondary: #b7b3a9;
+  --ink-muted: #7a766d;
+
+  --sans: 'Inter', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
+
+  color-scheme: dark;
+  font: 16px/1.55 var(--sans);
+  color: var(--ink);
+  background: var(--carbon-0);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--carbon-0);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(205, 164, 77, 0.08), transparent),
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.012) 0px, rgba(255, 255, 255, 0.012) 1px, transparent 1px, transparent 3px);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--sans);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0;
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.gold-text {
+  color: var(--gold);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: var(--gold-dim);
+  color: var(--ink);
+}

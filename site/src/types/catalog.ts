@@ -1,0 +1,26 @@
+export interface CatalogProduct {
+  id: string
+  sku: string
+  name: string
+  category: 'carro' | 'moto' | 'motor'
+  brand_model: string | null
+  manufacturer: string | null
+  collection_tag: string | null
+  scale: string
+  piece_count: number | null
+  sale_price_brl: number
+  image_url: string | null
+  image_urls: string[]
+  automotive_history: string | null
+  dimensions: string | null
+  quantity_available: number
+}
+
+export type PaymentMethod = 'pix' | 'cartao' | 'boleto'
+
+export interface CheckoutInput {
+  productId: string
+  customerName: string
+  customerContact: string
+  paymentMethod: PaymentMethod
+}

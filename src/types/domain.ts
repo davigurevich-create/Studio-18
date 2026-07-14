@@ -12,6 +12,11 @@ export interface Product {
   sale_price_brl: number
   min_stock_alert: number
   image_url: string | null
+  image_urls?: string[]
+  manufacturer?: string | null
+  collection_tag?: string | null
+  automotive_history?: string | null
+  dimensions?: string | null
   active: boolean
   created_at: string
 }

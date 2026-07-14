@@ -1,4 +1,13 @@
-# Studio 18 — Painel de Gestão
+# Studio 18
+
+Este repositório tem dois projetos independentes que compartilham o mesmo
+banco Supabase:
+
+- **`/` (este diretório)** — Painel de Gestão: estoque, vendas e financeiro.
+- **`/site`** — site institucional/vitrine 3D (manifesto, diferenciais, galeria
+  dos 17 modelos, página de produto e checkout). Veja `site/README.md`.
+
+## Painel de Gestão
 
 Dashboard interno para controlar **estoque**, **vendas** e **financeiro** da Studio 18
 (sets premium de blocos de montar 1:8 — carros, motos e motores).
@@ -100,14 +109,26 @@ Como o Lovable também usa Supabase, o caminho mais simples é os dois projetos
 Assim, um pedido feito no site aparece no seu controle de vendas do painel, e o
 estoque mostrado no site reflete o que você tem de fato disponível.
 
-## Estrutura do banco (`supabase/schema.sql`)
+## Estrutura do banco
+
+Rode nesta ordem no SQL Editor do Supabase:
+
+1. `supabase/schema.sql` — tabelas base (produtos, containers, movimentações,
+   vendas, despesas) + a view `public_catalog` que o site consome.
+2. `supabase/migrations/002_site_catalog_fields.sql` — **só necessário se você
+   já rodou o `schema.sql` antes desta atualização**: adiciona os campos que o
+   site usa (fabricante, tag de coleção, história automotiva, dimensões,
+   fotos) e as policies que permitem o checkout público criar vendas
+   pendentes. Instalações novas já recebem tudo isso direto do `schema.sql`.
+3. `supabase/seed_17_products.sql` — cadastra os 17 modelos do primeiro
+   container.
 
 | Tabela | Para quê |
 |---|---|
-| `products` | Catálogo de SKUs (carro/moto/motor), custo e preço de venda |
+| `products` | Catálogo de SKUs, custo/preço de venda, dados para o site (fabricante, história, dimensões) |
 | `containers` | Remessas vindas da China (status, frete, alfândega) |
 | `inventory_movements` | Entradas/saídas de estoque, ligadas a container ou venda |
-| `sales` / `sale_items` | Vendas e itens vendidos |
+| `sales` / `sale_items` | Vendas e itens vendidos (inclui pedidos criados pelo site) |
 | `expenses` | Despesas (importação, marketing, operacional, frete, taxas) |
 | `product_stock` (view) | Estoque atual calculado por produto |
 | `public_catalog` (view) | Catálogo público, seguro para o site consumir |
@@ -115,6 +136,9 @@ estoque mostrado no site reflete o que você tem de fato disponível.
 ## Próximos passos sugeridos
 
 - Convidar os demais sócios/equipe como usuários no Supabase Auth.
-- Cadastrar os SKUs reais do primeiro container assim que a lista final de
-  produtos estiver fechada.
+- Enviar as fotos reais dos 17 modelos para substituir os placeholders no site.
+- Atualizar `cost_price_brl` de cada produto quando souber o custo real de
+  importação rateado por unidade (hoje está zerado).
 - Ajustar `min_stock_alert` por produto conforme a demanda inicial.
+- Quando quiser processar pagamento de verdade no site, integrar um gateway
+  (ex: Mercado Pago) — ver `site/README.md`.
