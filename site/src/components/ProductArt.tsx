@@ -32,6 +32,19 @@ const MotoGlyph = () => (
 )
 
 export function ProductArt({ product, className = '' }: { product: CatalogProduct; className?: string }) {
+  if (product.image_url) {
+    return (
+      <div className={`relative overflow-hidden ${className}`}>
+        <img
+          src={product.image_url}
+          alt={product.name}
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+      </div>
+    )
+  }
+
   return (
     <div
       className={`relative flex items-center justify-center overflow-hidden ${className}`}
