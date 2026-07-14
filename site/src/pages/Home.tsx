@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Hero3D } from '@/components/Hero3D'
+import { HeroCar } from '@/components/HeroCar'
 import { ProductCard } from '@/components/ProductCard'
 import { getCatalog } from '@/lib/api'
 import type { CatalogProduct } from '@/types/catalog'
@@ -97,11 +97,7 @@ export function Home() {
     <div>
       {/* HERO */}
       <section className="relative flex h-[100svh] min-h-[640px] items-center justify-center overflow-hidden">
-        <Hero3D />
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse 95% 80% at 50% 48%, transparent, var(--carbon-0) 92%)' }}
-        />
+        <HeroCar />
         <div className="relative z-10 mx-auto max-w-3xl px-6 text-center">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
             <p className="eyebrow mb-5">Boutique de sets técnicos importados · escala 1:8</p>
