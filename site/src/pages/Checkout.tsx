@@ -13,11 +13,6 @@ const methods: { id: PaymentMethod; label: string; hint: string }[] = [
   { id: 'boleto', label: 'Boleto', hint: 'Compensação em até 3 dias úteis' },
 ]
 
-// Referência estável fora do componente — o Card Payment Brick reinicializa
-// (e falha) toda vez que o objeto de customização muda de identidade entre
-// renderizações, então não pode ser recriado a cada render.
-const cardCustomization = { visual: { style: { theme: 'dark' as const } } }
-
 export function Checkout() {
   const { id } = useParams<{ id: string }>()
   const [product, setProduct] = useState<CatalogProduct | null | undefined>(undefined)
@@ -319,7 +314,6 @@ export function Checkout() {
           {isMercadoPagoConfigured ? (
             <CardPayment
               initialization={cardInitialization}
-              customization={cardCustomization}
               onSubmit={handleCardSubmit}
               onError={handleCardError}
             />
