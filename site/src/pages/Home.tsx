@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { motion, useScroll } from 'framer-motion'
 import { HeroCar } from '@/components/HeroCar'
 import { ProductCard } from '@/components/ProductCard'
 import { getCatalog } from '@/lib/api'
@@ -54,6 +54,12 @@ export function Home() {
   const [tag, setTag] = useState<string>('todos')
   const [sortBy, setSortBy] = useState<SortKey>('nome')
 
+  const heroWrapRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress: heroDarken } = useScroll({
+    target: heroWrapRef,
+    offset: ['start start', 'end end'],
+  })
+
   useEffect(() => {
     getCatalog().then((p) => {
       setProducts(p)
@@ -95,62 +101,70 @@ export function Home() {
 
   return (
     <div>
-      {/* HERO */}
-      <section className="relative flex h-[100svh] min-h-[640px] items-center justify-center overflow-hidden">
-        <HeroCar />
-        <div className="relative z-10 mx-auto max-w-3xl px-6 text-center">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-            <p className="eyebrow mb-5">Boutique de sets técnicos importados · escala 1:8</p>
-            <h1 className="text-5xl leading-[1.05] sm:text-7xl">
-              Construir é mais
-              <br />
-              do que montar.
-            </h1>
-            <p className="mx-auto mt-6 max-w-xl text-base sm:text-lg" style={{ color: 'var(--ink-secondary)' }}>
-              Do nosso Studio para o seu: carros, motos e motores que se tornam esculturas de engenharia,
-              construídas pelas suas próprias mãos.
-            </p>
-            <a
-              href="#colecao"
-              className="mt-10 inline-block rounded-full px-8 py-3 text-sm font-medium tracking-wide transition"
-              style={{ background: 'var(--gold)', color: '#0a0a0a' }}
-            >
-              Ver a coleção
-            </a>
-          </motion.div>
+      {/* HERO + MANIFESTO — o carro fica fixo como fundo dos dois, escurecendo
+          progressivamente até ficar 100% preto ao final do manifesto */}
+      <div ref={heroWrapRef} className="relative">
+        <div className="sticky top-0 h-[100svh] overflow-hidden">
+          <HeroCar darken={heroDarken} />
         </div>
-        <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 text-xs tracking-[0.3em]"
-          style={{ color: 'var(--ink-muted)' }}
-          animate={{ opacity: [0.3, 1, 0.3] }}
-          transition={{ duration: 2.4, repeat: Infinity }}
-        >
-          ROLE PARA EXPLORAR
-        </motion.div>
-      </section>
 
-      {/* MANIFESTO */}
-      <section id="manifesto" className="mx-auto max-w-3xl px-6 py-28 sm:py-36">
-        <motion.p variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="eyebrow mb-8 text-center">
-          Manifesto
-        </motion.p>
-        <div className="flex flex-col gap-8">
-          {manifestoParagraphs.map((p, i) => (
-            <motion.p
-              key={i}
-              variants={fadeUp}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, margin: '-80px' }}
-              transition={{ duration: 0.6, delay: i * 0.05 }}
-              className={i === 0 ? 'text-center text-2xl font-medium sm:text-3xl' : 'text-center text-lg sm:text-xl'}
-              style={{ color: i === 0 ? 'var(--gold-bright)' : 'var(--ink-secondary)', lineHeight: 1.6 }}
+        <div className="-mt-[100svh]">
+          <section className="relative z-10 flex h-[100svh] min-h-[640px] items-center justify-center">
+            <div className="mx-auto max-w-3xl px-6 text-center">
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+                <p className="eyebrow mb-5">Boutique de sets técnicos importados · escala 1:8</p>
+                <h1 className="text-5xl leading-[1.05] sm:text-7xl">
+                  Construir é mais
+                  <br />
+                  do que montar.
+                </h1>
+                <p className="mx-auto mt-6 max-w-xl text-base sm:text-lg" style={{ color: 'var(--ink-secondary)' }}>
+                  Do nosso Studio para o seu: carros, motos e motores que se tornam esculturas de engenharia,
+                  construídas pelas suas próprias mãos.
+                </p>
+                <a
+                  href="#colecao"
+                  className="mt-10 inline-block rounded-full px-8 py-3 text-sm font-medium tracking-wide transition"
+                  style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+                >
+                  Ver a coleção
+                </a>
+              </motion.div>
+            </div>
+            <motion.div
+              className="absolute bottom-8 left-1/2 -translate-x-1/2 text-xs tracking-[0.3em]"
+              style={{ color: 'var(--ink-muted)' }}
+              animate={{ opacity: [0.3, 1, 0.3] }}
+              transition={{ duration: 2.4, repeat: Infinity }}
             >
-              {p}
+              ROLE PARA EXPLORAR
+            </motion.div>
+          </section>
+
+          {/* MANIFESTO */}
+          <section id="manifesto" className="relative z-10 mx-auto max-w-3xl px-6 py-28 sm:py-36">
+            <motion.p variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="eyebrow mb-8 text-center">
+              Manifesto
             </motion.p>
-          ))}
+            <div className="flex flex-col gap-8">
+              {manifestoParagraphs.map((p, i) => (
+                <motion.p
+                  key={i}
+                  variants={fadeUp}
+                  initial="hidden"
+                  whileInView="show"
+                  viewport={{ once: true, margin: '-80px' }}
+                  transition={{ duration: 0.6, delay: i * 0.05 }}
+                  className={i === 0 ? 'text-center text-2xl font-medium sm:text-3xl' : 'text-center text-lg sm:text-xl'}
+                  style={{ color: i === 0 ? 'var(--gold-bright)' : 'var(--ink-secondary)', lineHeight: 1.6 }}
+                >
+                  {p}
+                </motion.p>
+              ))}
+            </div>
+          </section>
         </div>
-      </section>
+      </div>
 
       {/* DIFERENCIAIS */}
       <section id="diferenciais" className="border-y px-6 py-24" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)' }}>

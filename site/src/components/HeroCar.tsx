@@ -1,7 +1,7 @@
 import { useRef, type MouseEvent } from 'react'
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { motion, useMotionValue, useSpring, useTransform, type MotionValue } from 'framer-motion'
 
-export function HeroCar() {
+export function HeroCar({ darken }: { darken?: MotionValue<number> }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mx = useMotionValue(0)
   const my = useMotionValue(0)
@@ -29,7 +29,7 @@ export function HeroCar() {
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="absolute inset-0"
+      className="absolute inset-0 overflow-hidden"
       style={{ perspective: 1400 }}
     >
       <motion.img
@@ -42,12 +42,13 @@ export function HeroCar() {
         transition={{ duration: 1.8, ease: 'easeOut' }}
       />
 
-      {/* Faixa escura no topo/rodapé para legibilidade do texto, mantendo o carro visível no meio */}
+      {/* Escurecimento de base — mais forte no topo/rodapé (texto) e presente também no meio,
+          para garantir contraste contra o dourado/reflexos da foto */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'linear-gradient(180deg, rgba(6,6,6,0.8) 0%, rgba(6,6,6,0.2) 34%, rgba(6,6,6,0.32) 58%, rgba(6,6,6,0.94) 100%)',
+            'linear-gradient(180deg, rgba(6,6,6,0.88) 0%, rgba(6,6,6,0.48) 30%, rgba(6,6,6,0.55) 60%, rgba(6,6,6,0.96) 100%)',
         }}
       />
       {/* Vinheta lateral para fundir as bordas da foto com o carbono do site */}
@@ -55,6 +56,10 @@ export function HeroCar() {
         className="pointer-events-none absolute inset-0"
         style={{ background: 'radial-gradient(ellipse 78% 65% at 50% 46%, transparent, var(--carbon-0) 100%)' }}
       />
+      {/* Escurecimento progressivo conforme o scroll — chega a 100% preto ao fim do manifesto */}
+      {darken && (
+        <motion.div className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: darken }} />
+      )}
     </div>
   )
 }
