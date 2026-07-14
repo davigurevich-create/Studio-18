@@ -114,13 +114,12 @@ export function Home() {
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
                 <p className="eyebrow mb-5">Boutique de sets técnicos importados · escala 1:8</p>
                 <h1 className="text-5xl leading-[1.05] sm:text-7xl">
-                  Construir é mais
+                  Do nosso Studio
                   <br />
-                  do que montar.
+                  ao seu.
                 </h1>
                 <p className="mx-auto mt-6 max-w-xl text-base sm:text-lg" style={{ color: 'var(--ink-secondary)' }}>
-                  Do nosso Studio para o seu: carros, motos e motores que se tornam esculturas de engenharia,
-                  construídas pelas suas próprias mãos.
+                  Carros, motos e motores que se tornam esculturas de engenharia, pelas suas próprias mãos.
                 </p>
                 <a
                   href="#colecao"
