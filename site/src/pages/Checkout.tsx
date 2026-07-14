@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CardPayment } from '@mercadopago/sdk-react'
@@ -12,6 +12,11 @@ const methods: { id: PaymentMethod; label: string; hint: string }[] = [
   { id: 'cartao', label: 'Cartão', hint: 'Crédito, em até 12x' },
   { id: 'boleto', label: 'Boleto', hint: 'Compensação em até 3 dias úteis' },
 ]
+
+// Referência estável fora do componente — o Card Payment Brick reinicializa
+// (e falha) toda vez que o objeto de customização muda de identidade entre
+// renderizações, então não pode ser recriado a cada render.
+const cardCustomization = { visual: { style: { theme: 'dark' as const } } }
 
 export function Checkout() {
   const { id } = useParams<{ id: string }>()
@@ -66,30 +71,38 @@ export function Checkout() {
     }
   }
 
-  const handleCardSubmit = async (formData: {
-    token: string
-    installments: number
-    payment_method_id: string
-  }) => {
-    if (!product) return
-    try {
-      const res = await createPayment({
-        productId: product.id,
-        customerName: name,
-        customerEmail: email,
-        customerCpf: cpf,
-        paymentMethod: 'cartao',
-        cardToken: formData.token,
-        cardPaymentMethodId: formData.payment_method_id,
-        installments: formData.installments,
-      })
-      setResult(res)
-      setStep('done')
-    } catch {
-      setError('Não foi possível processar o pagamento agora. Tente novamente.')
-      throw new Error('payment_failed')
-    }
-  }
+  const handleCardSubmit = useCallback(
+    async (formData: { token: string; installments: number; payment_method_id: string }) => {
+      if (!product) return
+      try {
+        const res = await createPayment({
+          productId: product.id,
+          customerName: name,
+          customerEmail: email,
+          customerCpf: cpf,
+          paymentMethod: 'cartao',
+          cardToken: formData.token,
+          cardPaymentMethodId: formData.payment_method_id,
+          installments: formData.installments,
+        })
+        setResult(res)
+        setStep('done')
+      } catch {
+        setError('Não foi possível processar o pagamento agora. Tente novamente.')
+        throw new Error('payment_failed')
+      }
+    },
+    [product, name, email, cpf],
+  )
+
+  const handleCardError = useCallback(() => {
+    setError('Não foi possível validar os dados do cartão.')
+  }, [])
+
+  const cardInitialization = useMemo(
+    () => ({ amount: product ? Number(product.sale_price_brl) : 0 }),
+    [product],
+  )
 
   if (product === undefined) {
     return <div className="px-6 py-40 text-center" style={{ color: 'var(--ink-muted)' }}>Carregando...</div>
@@ -305,10 +318,10 @@ export function Checkout() {
           )}
           {isMercadoPagoConfigured ? (
             <CardPayment
-              initialization={{ amount: Number(product.sale_price_brl) }}
-              customization={{ visual: { style: { theme: 'dark' } } }}
+              initialization={cardInitialization}
+              customization={cardCustomization}
               onSubmit={handleCardSubmit}
-              onError={() => setError('Não foi possível validar os dados do cartão.')}
+              onError={handleCardError}
             />
           ) : (
             <PaymentNote text="Mercado Pago ainda não configurado (VITE_MP_PUBLIC_KEY ausente)." />
