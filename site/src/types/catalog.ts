@@ -18,6 +18,15 @@ export interface CatalogProduct {
 
 export type PaymentMethod = 'pix' | 'cartao' | 'boleto'
 
+export interface CheckoutAddress {
+  zipCode: string
+  streetName: string
+  streetNumber: string
+  neighborhood: string
+  city: string
+  federalUnit: string
+}
+
 export interface CheckoutInput {
   productId: string
   customerName: string
@@ -27,4 +36,5 @@ export interface CheckoutInput {
   cardToken?: string
   cardPaymentMethodId?: string
   installments?: number
+  address?: CheckoutAddress
 }

@@ -20,6 +20,12 @@ export function Checkout() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [cpf, setCpf] = useState('')
+  const [zipCode, setZipCode] = useState('')
+  const [streetName, setStreetName] = useState('')
+  const [streetNumber, setStreetNumber] = useState('')
+  const [neighborhood, setNeighborhood] = useState('')
+  const [city, setCity] = useState('')
+  const [federalUnit, setFederalUnit] = useState('')
   const [step, setStep] = useState<'form' | 'card' | 'done'>('form')
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<CreatePaymentResult | null>(null)
@@ -41,6 +47,10 @@ export function Checkout() {
       setError('Informe um CPF válido (11 dígitos).')
       return
     }
+    if (method === 'boleto' && (!zipCode || !streetName || !streetNumber || !neighborhood || !city || !federalUnit)) {
+      setError('Preencha o endereço completo para gerar o boleto.')
+      return
+    }
     setError(null)
 
     if (method === 'cartao') {
@@ -56,6 +66,10 @@ export function Checkout() {
         customerEmail: email,
         customerCpf: cpf,
         paymentMethod: method,
+        address:
+          method === 'boleto'
+            ? { zipCode, streetName, streetNumber, neighborhood, city, federalUnit }
+            : undefined,
       })
       setResult(res)
       setStep('done')
@@ -272,6 +286,19 @@ export function Checkout() {
           <Field label="Nome completo" value={name} onChange={setName} required />
           <Field label="E-mail" value={email} onChange={setEmail} type="email" required />
           <Field label="CPF" value={cpf} onChange={setCpf} required placeholder="000.000.000-00" />
+
+          {method === 'boleto' && (
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="CEP" value={zipCode} onChange={setZipCode} required placeholder="00000-000" />
+              <Field label="Número" value={streetNumber} onChange={setStreetNumber} required />
+              <div className="col-span-2">
+                <Field label="Rua" value={streetName} onChange={setStreetName} required />
+              </div>
+              <Field label="Bairro" value={neighborhood} onChange={setNeighborhood} required />
+              <Field label="Cidade" value={city} onChange={setCity} required />
+              <Field label="Estado (UF)" value={federalUnit} onChange={setFederalUnit} required placeholder="SP" />
+            </div>
+          )}
 
           {method === 'pix' && (
             <PaymentNote text="Após confirmar, geramos o QR Code / código PIX copia-e-cola para pagamento." />

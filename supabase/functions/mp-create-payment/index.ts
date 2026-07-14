@@ -15,6 +15,15 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 type PaymentMethod = 'pix' | 'cartao' | 'boleto'
 
+interface Address {
+  zipCode: string
+  streetName: string
+  streetNumber: string
+  neighborhood: string
+  city: string
+  federalUnit: string
+}
+
 interface RequestBody {
   productId: string
   customerName: string
@@ -26,6 +35,9 @@ interface RequestBody {
   cardToken?: string
   cardPaymentMethodId?: string
   installments?: number
+  // obrigatório para boleto — o Mercado Pago exige endereço completo do
+  // pagador para gerar um boleto registrado
+  address?: Address
 }
 
 function mapStatus(mpStatus: string): string {
@@ -50,7 +62,12 @@ Deno.serve(async (req) => {
       cardToken,
       cardPaymentMethodId,
       installments,
+      address,
     } = body
+
+    if (paymentMethod === 'boleto' && !address) {
+      return json({ error: 'Endereço obrigatório para gerar boleto.' }, 400)
+    }
 
     if (!productId || !customerName || !customerEmail || !customerCpf || !paymentMethod) {
       return json({ error: 'Dados obrigatórios ausentes.' }, 400)
@@ -123,9 +140,12 @@ Deno.serve(async (req) => {
         payer: {
           ...payerBase,
           address: {
-            zip_code: '01310930',
-            street_name: 'Avenida Paulista',
-            street_number: '1000',
+            zip_code: address!.zipCode.replace(/\D/g, ''),
+            street_name: address!.streetName,
+            street_number: address!.streetNumber,
+            neighborhood: address!.neighborhood,
+            city: address!.city,
+            federal_unit: address!.federalUnit,
           },
         },
         external_reference: sale.id,
