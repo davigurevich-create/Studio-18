@@ -1,4 +1,4 @@
-import { useRef, type MouseEvent } from 'react'
+import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { motion, useMotionValue, useSpring, useTransform, type MotionValue } from 'framer-motion'
 
 // Sequência que dá a impressão do carro girando lentamente enquanto o
@@ -21,6 +21,30 @@ export function HeroCar({ darken }: { darken: MotionValue<number> }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mx = useMotionValue(0)
   const my = useMotionValue(0)
+  const [ready, setReady] = useState(false)
+
+  // Pré-carrega os 5 ângulos antes de revelar a cena — evita o "pipocar"
+  // de imagem chegando atrasada durante a animação de scroll.
+  useEffect(() => {
+    let cancelled = false
+    Promise.all(
+      SEQUENCE.map(
+        (src) =>
+          new Promise<void>((resolve) => {
+            const img = new Image()
+            img.decoding = 'sync'
+            img.onload = () => resolve()
+            img.onerror = () => resolve()
+            img.src = src
+          }),
+      ),
+    ).then(() => {
+      if (!cancelled) setReady(true)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const spring = { stiffness: 60, damping: 20, mass: 0.6 }
   const rotateX = useSpring(useTransform(my, [-0.5, 0.5], [3, -3]), spring)
@@ -60,8 +84,8 @@ export function HeroCar({ darken }: { darken: MotionValue<number> }) {
         className="absolute inset-0"
         style={{ rotateX, rotateY, x: translateX, y: translateY, scale: 1.12 }}
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.6, ease: 'easeOut' }}
+        animate={{ opacity: ready ? 1 : 0 }}
+        transition={{ duration: 1, ease: 'easeOut' }}
       >
         {SEQUENCE.map((src, i) => (
           <motion.img
