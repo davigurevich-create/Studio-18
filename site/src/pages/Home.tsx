@@ -104,12 +104,12 @@ export function Home() {
       {/* HERO + MANIFESTO — o carro fica fixo como fundo dos dois, escurecendo
           progressivamente até ficar 100% preto ao final do manifesto */}
       <div ref={heroWrapRef} className="relative">
-        <div className="sticky top-0 h-[100svh] overflow-hidden">
+        <div className="sticky top-0 h-[82svh] overflow-hidden sm:h-[100svh]">
           <HeroCar darken={heroDarken} />
         </div>
 
-        <div className="-mt-[100svh]">
-          <section className="relative z-10 flex h-[100svh] min-h-[640px] flex-col items-center justify-end pb-24 sm:pb-28">
+        <div className="-mt-[82svh] sm:-mt-[100svh]">
+          <section className="relative z-10 flex h-[82svh] min-h-[560px] flex-col items-center justify-end pb-24 sm:h-[100svh] sm:pb-28">
             <div className="mx-auto max-w-3xl px-6 text-center">
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }}>
                 <p className="eyebrow mb-4">Boutique de sets técnicos importados · escala 1:8</p>
