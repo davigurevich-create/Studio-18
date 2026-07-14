@@ -109,21 +109,16 @@ export function Home() {
         </div>
 
         <div className="-mt-[100svh]">
-          <section className="relative z-10 flex h-[100svh] min-h-[640px] items-center justify-center">
+          <section className="relative z-10 flex h-[100svh] min-h-[640px] flex-col items-center justify-end pb-24 sm:pb-28">
             <div className="mx-auto max-w-3xl px-6 text-center">
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-                <p className="eyebrow mb-5">Boutique de sets técnicos importados · escala 1:8</p>
-                <h1 className="text-5xl leading-[1.05] sm:text-7xl">
-                  Do nosso Studio
-                  <br />
-                  ao seu.
-                </h1>
-                <p className="mx-auto mt-6 max-w-xl text-base sm:text-lg" style={{ color: 'var(--ink-secondary)' }}>
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }}>
+                <p className="eyebrow mb-4">Boutique de sets técnicos importados · escala 1:8</p>
+                <p className="mx-auto max-w-xl text-base sm:text-lg" style={{ color: 'var(--ink-secondary)' }}>
                   Carros, motos e motores que se tornam esculturas de engenharia, pelas suas próprias mãos.
                 </p>
                 <a
                   href="#colecao"
-                  className="mt-10 inline-block rounded-full px-8 py-3 text-sm font-medium tracking-wide transition"
+                  className="mt-8 inline-block rounded-full px-8 py-3 text-sm font-medium tracking-wide transition"
                   style={{ background: 'var(--gold)', color: '#0a0a0a' }}
                 >
                   Ver a coleção

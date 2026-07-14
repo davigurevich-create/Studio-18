@@ -8,7 +8,7 @@ import {
   type MotionValue,
 } from 'framer-motion'
 
-const IMAGE_URL = '/hero-workshop.jpg'
+const IMAGE_URL = '/hero-car.jpg'
 
 export function HeroCar({ darken }: { darken: MotionValue<number> }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -19,11 +19,11 @@ export function HeroCar({ darken }: { darken: MotionValue<number> }) {
   const tiltSpring = { stiffness: 55, damping: 18, mass: 0.6 }
   const glowSpring = { stiffness: 120, damping: 24, mass: 0.4 }
 
-  const rotateX = useSpring(useTransform(my, [-0.5, 0.5], [5, -5]), tiltSpring)
-  const rotateY = useSpring(useTransform(mx, [-0.5, 0.5], [-8, 8]), tiltSpring)
-  const translateX = useSpring(useTransform(mx, [-0.5, 0.5], [-28, 28]), tiltSpring)
-  const translateY = useSpring(useTransform(my, [-0.5, 0.5], [-16, 16]), tiltSpring)
-  const scale = useSpring(hovering ? 1.16 : 1.12, tiltSpring)
+  const rotateX = useSpring(useTransform(my, [-0.5, 0.5], [4, -4]), tiltSpring)
+  const rotateY = useSpring(useTransform(mx, [-0.5, 0.5], [-6, 6]), tiltSpring)
+  const translateX = useSpring(useTransform(mx, [-0.5, 0.5], [-16, 16]), tiltSpring)
+  const translateY = useSpring(useTransform(my, [-0.5, 0.5], [-10, 10]), tiltSpring)
+  const scale = useSpring(hovering ? 1.035 : 1.0, tiltSpring)
 
   // Brilho dourado que segue o cursor, como se fosse a luz do abajur reagindo ao mouse.
   const glowX = useSpring(useTransform(mx, [-0.5, 0.5], ['12%', '88%']), glowSpring)
@@ -52,12 +52,12 @@ export function HeroCar({ darken }: { darken: MotionValue<number> }) {
     <div ref={containerRef} className="absolute inset-0 overflow-hidden" style={{ perspective: 1400 }}>
       <motion.img
         src={IMAGE_URL}
-        alt="Fundador da Studio 18 montando o supercarro dourado em blocos de montar, em seu escritório"
-        className="absolute inset-0 h-full w-full object-cover"
+        alt="Supercarro dourado em blocos de montar da Studio 18 — Do nosso Studio ao seu"
+        className="absolute inset-0 h-full w-full object-contain"
         style={{ rotateX, rotateY, x: translateX, y: translateY, scale }}
-        initial={{ opacity: 0, scale: 1.2 }}
+        initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ opacity: { duration: 1.4, ease: 'easeOut' } }}
+        transition={{ duration: 1.4, ease: 'easeOut' }}
       />
 
       {/* Brilho dourado que acompanha o cursor */}
@@ -66,13 +66,13 @@ export function HeroCar({ darken }: { darken: MotionValue<number> }) {
         style={{ background: glowBackground, opacity: glowOpacity, mixBlendMode: 'screen' }}
       />
 
-      {/* Escurecimento de base — mais forte no topo/rodapé (texto) e presente também no meio,
-          para garantir contraste contra a foto */}
+      {/* Escurecimento de base — leve no topo (o título já vem com contraste embutido na
+          imagem) e mais forte perto do rodapé, onde ficam o subtítulo e o botão */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'linear-gradient(180deg, rgba(6,6,6,0.88) 0%, rgba(6,6,6,0.5) 30%, rgba(6,6,6,0.55) 60%, rgba(6,6,6,0.96) 100%)',
+            'linear-gradient(180deg, rgba(6,6,6,0.32) 0%, rgba(6,6,6,0.22) 38%, rgba(6,6,6,0.58) 68%, rgba(6,6,6,0.94) 100%)',
         }}
       />
       {/* Vinheta lateral para fundir as bordas da foto com o carbono do site */}
