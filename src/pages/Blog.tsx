@@ -53,6 +53,8 @@ export function Blog() {
 
   if (loading) return <div style={{ color: 'var(--text-secondary)' }}>Carregando...</div>
 
+  const pendingAiDrafts = posts.filter((p) => p.ai_generated && !p.published)
+
   return (
     <div>
       <PageHeader
@@ -60,6 +62,17 @@ export function Blog() {
         description="Artigos publicados na seção de blog do site"
         action={<Button onClick={startCreate}>+ Novo artigo</Button>}
       />
+
+      {pendingAiDrafts.length > 0 && (
+        <div
+          className="mb-4 rounded-lg px-4 py-3 text-sm"
+          style={{ background: 'rgba(250,178,25,0.16)', color: '#8a5b00' }}
+        >
+          {pendingAiDrafts.length === 1
+            ? '1 artigo gerado automaticamente está aguardando sua revisão e aprovação.'
+            : `${pendingAiDrafts.length} artigos gerados automaticamente estão aguardando sua revisão e aprovação.`}
+        </div>
+      )}
 
       {showForm && (
         <BlogPostForm
@@ -105,9 +118,12 @@ export function Blog() {
                     {post.author}
                   </td>
                   <td className="py-2.5">
-                    <Badge tone={post.published ? 'good' : 'muted'}>
-                      {post.published ? 'Publicado' : 'Rascunho'}
-                    </Badge>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge tone={post.published ? 'good' : post.ai_generated ? 'warning' : 'muted'}>
+                        {post.published ? 'Publicado' : 'Rascunho'}
+                      </Badge>
+                      {post.ai_generated && <Badge tone="info">Gerado por IA</Badge>}
+                    </div>
                   </td>
                   <td className="py-2.5" style={{ color: 'var(--text-secondary)' }}>
                     {new Date(post.updated_at).toLocaleDateString('pt-BR')}
@@ -172,6 +188,7 @@ function BlogPostForm({
         author,
         published,
         published_at: published ? (post?.published_at ?? new Date().toISOString()) : post?.published_at ?? null,
+        ai_generated: post?.ai_generated ?? false,
       }
       if (post) {
         await updateBlogPost(post.id, payload)

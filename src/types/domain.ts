@@ -131,6 +131,7 @@ export interface BlogPost {
   author: string
   published: boolean
   published_at: string | null
+  ai_generated: boolean
   created_at: string
   updated_at: string
 }
