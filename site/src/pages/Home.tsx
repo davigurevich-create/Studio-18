@@ -119,27 +119,22 @@ export function Home() {
               ROLE PARA EXPLORAR
             </motion.div>
           </section>
-          {/* espaçador — dá distância de rolagem para o escurecimento terminar
-              em preto total antes do bloco dourado aparecer */}
-          <div className="h-[40svh]" />
+          {/* espaçador — dá distância mínima de rolagem para o escurecimento
+              terminar em preto total antes do bloco seguinte aparecer */}
+          <div className="h-[15svh]" />
         </div>
       </div>
 
-      {/* BLOCO DE ABERTURA — gradiente dourado + fibra de carbono, texto em preto */}
+      {/* BLOCO DE ABERTURA — textura de fibra de carbono e dourado */}
       <section
-        className="relative overflow-hidden px-6 py-24 text-center sm:py-28"
+        className="relative overflow-hidden px-6 py-28 text-center sm:py-36"
         style={{
-          background:
-            'linear-gradient(135deg, #1a1712 0%, #2a2318 22%, var(--gold-dim) 46%, var(--gold) 58%, #2a2318 82%, #14120d 100%)',
+          backgroundImage: 'url(/Section2-background.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       >
-        <div
-          className="pointer-events-none absolute inset-0 opacity-40 mix-blend-multiply"
-          style={{
-            backgroundImage:
-              'repeating-linear-gradient(45deg, rgba(0,0,0,0.35) 0px, rgba(0,0,0,0.35) 2px, transparent 2px, transparent 6px), repeating-linear-gradient(-45deg, rgba(0,0,0,0.25) 0px, rgba(0,0,0,0.25) 2px, transparent 2px, transparent 6px)',
-          }}
-        />
+        <div className="pointer-events-none absolute inset-0" style={{ background: 'rgba(6,6,6,0.35)' }} />
         <motion.div
           className="relative z-10 mx-auto max-w-3xl"
           initial={{ opacity: 0, y: 12 }}
@@ -147,16 +142,14 @@ export function Home() {
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
-          <p className="eyebrow mb-4" style={{ color: '#0a0a0a' }}>
-            Boutique de sets técnicos importados · escala 1:8
-          </p>
-          <p className="mx-auto max-w-xl text-base font-medium sm:text-lg" style={{ color: '#141210' }}>
+          <p className="eyebrow mb-4">Boutique de sets técnicos importados · escala 1:8</p>
+          <p className="mx-auto max-w-xl text-base sm:text-lg" style={{ color: 'var(--ink-secondary)' }}>
             Carros, motos e motores que se tornam esculturas de engenharia, pelas suas próprias mãos.
           </p>
           <a
             href="#colecao"
             className="mt-8 inline-block rounded-full px-8 py-3 text-sm font-medium tracking-wide transition"
-            style={{ background: '#0a0a0a', color: 'var(--gold-bright)' }}
+            style={{ background: 'var(--gold)', color: '#0a0a0a' }}
           >
             Ver a coleção
           </a>
