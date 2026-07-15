@@ -134,7 +134,7 @@ export function Home() {
           backgroundPosition: 'center',
         }}
       >
-        <div className="pointer-events-none absolute inset-0" style={{ background: 'rgba(6,6,6,0.25)' }} />
+        <div className="pointer-events-none absolute inset-0" style={{ background: 'rgba(6,6,6,0.6)' }} />
         <motion.div
           className="relative z-10 mx-auto max-w-3xl"
           initial={{ opacity: 0, y: 12 }}
