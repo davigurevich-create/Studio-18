@@ -66,15 +66,6 @@ export function HeroCar({ darken }: { darken: MotionValue<number> }) {
         style={{ background: glowBackground, opacity: glowOpacity, mixBlendMode: 'screen' }}
       />
 
-      {/* Escurecimento de base — leve no topo (o título já vem com contraste embutido na
-          imagem) e mais forte perto do rodapé, onde ficam o subtítulo e o botão */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(6,6,6,0.32) 0%, rgba(6,6,6,0.22) 38%, rgba(6,6,6,0.58) 68%, rgba(6,6,6,0.94) 100%)',
-        }}
-      />
       {/* Vinheta lateral para fundir as bordas da foto com o carbono do site */}
       <div
         className="pointer-events-none absolute inset-0"
