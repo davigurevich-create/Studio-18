@@ -116,7 +116,7 @@ export function Product() {
               <button
                 type="button"
                 onClick={() => {
-                  addItem(product.id, quantity)
+                  addItem(product.id, quantity, product.name)
                   setAdded(true)
                   setTimeout(() => setAdded(false), 2000)
                 }}

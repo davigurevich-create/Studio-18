@@ -62,7 +62,7 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                addItem(product.id)
+                addItem(product.id, 1, product.name)
               }}
               className="shrink-0 rounded-full px-3 py-2 text-xs font-medium"
               style={{ background: 'var(--gold)', color: '#0a0a0a' }}
