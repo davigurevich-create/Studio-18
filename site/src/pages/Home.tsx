@@ -104,12 +104,12 @@ export function Home() {
       {/* HERO — o carro fica fixo como fundo, escurecendo progressivamente
           até ficar 100% preto ao final desta seção */}
       <div ref={heroWrapRef} className="relative">
-        <div className="sticky top-0 h-[82svh] overflow-hidden sm:h-[100svh]">
+        <div className="sticky top-0 h-[100svh] min-h-[560px] overflow-hidden">
           <HeroCar darken={heroDarken} />
         </div>
 
-        <div className="-mt-[82svh] sm:-mt-[100svh]">
-          <section className="relative z-10 flex h-[82svh] min-h-[560px] flex-col items-center justify-end pb-8 sm:h-[100svh] sm:pb-10">
+        <div className="mt-[calc(-1*max(100svh,560px))]">
+          <section className="relative z-10 flex h-[100svh] min-h-[560px] flex-col items-center justify-end pb-8 sm:pb-10">
             <motion.div
               className="text-xs tracking-[0.3em]"
               style={{ color: 'var(--ink-muted)' }}
@@ -119,9 +119,10 @@ export function Home() {
               ROLE PARA EXPLORAR
             </motion.div>
           </section>
-          {/* espaçador — dá distância mínima de rolagem para o escurecimento
-              terminar em preto total antes do bloco seguinte aparecer */}
-          <div className="h-[15svh]" />
+          {/* espaçador — distância fixa de rolagem (imune a variações de svh
+              mobile) para o escurecimento terminar em preto total antes do
+              bloco seguinte aparecer */}
+          <div className="h-[220px]" />
         </div>
       </div>
 
