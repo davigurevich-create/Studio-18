@@ -67,3 +67,18 @@ export async function getOrderStatus(orderId: string, email: string): Promise<Or
   if (error || !data || data.length === 0) return null
   return data[0] as OrderStatus
 }
+
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export async function sendChatMessage(messages: ChatMessage[]): Promise<string> {
+  if (!supabase) {
+    return 'Modo demonstração: conecte o Supabase e a API da Anthropic para conversar com o assistente de verdade.'
+  }
+  const { data, error } = await supabase.functions.invoke('site-chat', { body: { messages } })
+  if (error) throw error
+  if (data?.error) throw new Error(data.error)
+  return data.reply as string
+}

@@ -1,6 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { ChatWidget } from '@/components/ChatWidget'
 
 const navLinks = [
   { href: '/#manifesto', label: 'Manifesto' },
@@ -117,6 +118,8 @@ export function Layout() {
           </div>
         </div>
       </footer>
+
+      <ChatWidget />
     </div>
   )
 }
