@@ -76,7 +76,16 @@ export function Vendas() {
               return (
                 <tr key={s.id} className="border-t align-top" style={{ borderColor: 'var(--gridline)' }}>
                   <td className="py-2.5" style={{ color: 'var(--text-secondary)' }}>
-                    {new Date(s.sale_date).toLocaleDateString('pt-BR')}
+                    <div>{new Date(s.sale_date).toLocaleDateString('pt-BR')}</div>
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(s.id)}
+                      title={s.id}
+                      className="mt-0.5 font-mono text-[11px]"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      #{s.id.slice(0, 8)}
+                    </button>
                   </td>
                   <td className="py-2.5" style={{ color: 'var(--text-primary)' }}>
                     <div className="font-medium">{s.customer_name ?? '—'}</div>
