@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { getBlogPost } from '@/lib/api'
+import { renderBlogContent } from '@/lib/richText'
 import type { BlogPost as BlogPostType } from '@/types/catalog'
 
 function formatDate(iso: string | null): string {
@@ -33,8 +34,6 @@ export function BlogPost() {
     )
   }
 
-  const paragraphs = post.content.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
-
   return (
     <div className="mx-auto max-w-2xl px-6 pb-24 pt-32">
       <Link to="/blog" className="mb-8 inline-block text-sm" style={{ color: 'var(--ink-muted)' }}>
@@ -55,13 +54,7 @@ export function BlogPost() {
           />
         )}
 
-        <div className="flex flex-col gap-5">
-          {paragraphs.map((p, i) => (
-            <p key={i} className="text-base leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
-              {p}
-            </p>
-          ))}
-        </div>
+        <div className="flex flex-col gap-5">{renderBlogContent(post.content)}</div>
       </motion.div>
 
       <div className="mt-14 border-t pt-8 text-center" style={{ borderColor: 'var(--hairline)' }}>
