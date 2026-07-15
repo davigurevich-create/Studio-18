@@ -261,18 +261,18 @@ export function Home() {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
-            className="mt-20 flex flex-col items-center gap-8 sm:flex-row sm:items-center sm:justify-between"
+            className="mt-20 flex flex-col items-center gap-8 sm:flex-row sm:items-center"
           >
-            <p className="max-w-md text-left text-lg sm:text-xl" style={{ color: 'var(--ink)' }}>
+            <p className="max-w-xs shrink-0 text-left text-lg sm:text-xl" style={{ color: 'var(--ink)' }}>
               Representamos oficialmente as marcas mais respeitadas do segmento
             </p>
-            <div className="flex flex-wrap items-center gap-x-10 gap-y-6">
+            <div className="flex flex-wrap items-center gap-x-10 gap-y-6 sm:ml-12">
               {officialBrands.map((brand) => (
                 <img
                   key={brand.name}
                   src={brand.logo}
                   alt={`${brand.name} — logo`}
-                  className="h-10 opacity-70 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0 sm:h-[50px]"
+                  className="h-14 opacity-70 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0 sm:h-20"
                 />
               ))}
             </div>
