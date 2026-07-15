@@ -170,10 +170,26 @@ export function Checkout() {
               <h1 className="mb-3 text-2xl">
                 {result.status === 'pago' ? 'Pagamento aprovado' : 'Pedido registrado'}
               </h1>
-              <p className="mb-6 text-sm" style={{ color: 'var(--ink-secondary)' }}>
+              <p className="mb-3 text-sm" style={{ color: 'var(--ink-secondary)' }}>
                 Recebemos seu pedido via{' '}
                 <strong style={{ color: 'var(--ink)' }}>{methods.find((m) => m.id === method)?.label}</strong>.
               </p>
+
+              <div
+                className="mb-6 flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-xs"
+                style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)', color: 'var(--ink-muted)' }}
+              >
+                <span>Número do pedido:</span>
+                <code style={{ color: 'var(--gold-bright)' }}>{result.orderId}</code>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(result.orderId)}
+                  className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium"
+                  style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+                >
+                  Copiar
+                </button>
+              </div>
 
               {method === 'pix' && result.pix?.qrCodeBase64 && (
                 <div className="mb-6 rounded-xl border p-5" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}>
@@ -216,7 +232,12 @@ export function Checkout() {
               )}
 
               <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>
-                Assim que o pagamento for confirmado, nossa equipe já recebe o aviso automaticamente.
+                Assim que o pagamento for confirmado, nossa equipe já recebe o aviso automaticamente. Guarde o
+                número do pedido acima e o e-mail usado na compra para acompanhar o status a qualquer momento em{' '}
+                <Link to="/rastreio" style={{ color: 'var(--gold)' }}>
+                  /rastreio
+                </Link>
+                .
               </p>
               <Link
                 to="/"
