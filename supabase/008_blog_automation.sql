@@ -13,7 +13,7 @@ alter table blog_posts add column if not exists ai_generated boolean not null de
 -- ---------------------------------------------------------------------------
 create table if not exists blog_topics (
   id uuid primary key default gen_random_uuid(),
-  position int not null,
+  position int not null unique,
   topic text not null,
   used boolean not null default false,
   created_at timestamptz not null default now()
@@ -21,6 +21,7 @@ create table if not exists blog_topics (
 
 alter table blog_topics enable row level security;
 
+drop policy if exists "authenticated full access" on blog_topics;
 create policy "authenticated full access" on blog_topics
   for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 
