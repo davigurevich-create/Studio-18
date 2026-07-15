@@ -67,6 +67,16 @@ export interface Sale {
   discount_brl: number
   notes: string | null
   created_at: string
+  payment_provider?: string | null
+  provider_payment_id?: string | null
+  provider_status?: string | null
+  shipping_zip_code?: string | null
+  shipping_street_name?: string | null
+  shipping_street_number?: string | null
+  shipping_neighborhood?: string | null
+  shipping_city?: string | null
+  shipping_federal_unit?: string | null
+  shipping_complement?: string | null
 }
 
 export interface SaleItem {

@@ -61,8 +61,9 @@ export function Vendas() {
             <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
               <th className="pb-2 font-medium">Data</th>
               <th className="pb-2 font-medium">Cliente</th>
-              <th className="pb-2 font-medium">Canal</th>
-              <th className="pb-2 font-medium">Itens</th>
+              <th className="pb-2 font-medium">Modelo</th>
+              <th className="pb-2 font-medium">Entregar para</th>
+              <th className="pb-2 font-medium">Pagamento</th>
               <th className="pb-2 font-medium">Total</th>
               <th className="pb-2 font-medium">Status</th>
             </tr>
@@ -71,26 +72,52 @@ export function Vendas() {
             {sales.map((s) => {
               const items = saleItems.filter((i) => i.sale_id === s.id)
               const total = items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0) - s.discount_brl + s.shipping_cost_brl
+              const hasAddress = Boolean(s.shipping_street_name)
               return (
                 <tr key={s.id} className="border-t align-top" style={{ borderColor: 'var(--gridline)' }}>
                   <td className="py-2.5" style={{ color: 'var(--text-secondary)' }}>
                     {new Date(s.sale_date).toLocaleDateString('pt-BR')}
                   </td>
-                  <td className="py-2.5 font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {s.customer_name ?? '—'}
-                  </td>
-                  <td className="py-2.5 capitalize" style={{ color: 'var(--text-secondary)' }}>
-                    {s.channel}
+                  <td className="py-2.5" style={{ color: 'var(--text-primary)' }}>
+                    <div className="font-medium">{s.customer_name ?? '—'}</div>
+                    <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {s.customer_contact ?? '—'}
+                    </div>
+                    <div className="mt-0.5 text-xs capitalize" style={{ color: 'var(--text-muted)' }}>
+                      {s.channel}
+                    </div>
                   </td>
                   <td className="py-2.5" style={{ color: 'var(--text-secondary)' }}>
                     {items.map((i) => {
                       const p = products.find((pr) => pr.id === i.product_id)
                       return (
-                        <div key={i.id}>
-                          {i.quantity}x {p?.sku ?? i.product_id}
+                        <div key={i.id} className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                          {i.quantity}x {p?.name ?? p?.sku ?? i.product_id}
                         </div>
                       )
                     })}
+                  </td>
+                  <td className="py-2.5 text-xs" style={{ color: hasAddress ? 'var(--text-secondary)' : 'var(--text-muted)' }}>
+                    {hasAddress ? (
+                      <>
+                        <div>
+                          {s.shipping_street_name}, {s.shipping_street_number}
+                          {s.shipping_complement ? ` — ${s.shipping_complement}` : ''}
+                        </div>
+                        <div>{s.shipping_neighborhood}</div>
+                        <div>
+                          {s.shipping_city} / {s.shipping_federal_unit} · CEP {s.shipping_zip_code}
+                        </div>
+                      </>
+                    ) : (
+                      'Sem endereço registrado'
+                    )}
+                  </td>
+                  <td className="py-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="capitalize">{s.payment_method ?? '—'}</div>
+                    {s.payment_provider && (
+                      <div style={{ color: 'var(--text-muted)' }}>via {s.payment_provider}</div>
+                    )}
                   </td>
                   <td className="tabular py-2.5 font-medium" style={{ color: 'var(--text-primary)' }}>
                     {formatBRL(total)}
