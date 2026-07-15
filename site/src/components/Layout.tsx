@@ -9,6 +9,7 @@ const navLinks = [
   { href: '/#manifesto', label: 'Manifesto' },
   { href: '/#diferenciais', label: 'Diferenciais' },
   { href: '/#colecao', label: 'Coleção' },
+  { href: '/blog', label: 'Blog' },
   { href: '/rastreio', label: 'Rastreio' },
   { href: '/faq', label: 'FAQ' },
 ]
@@ -147,6 +148,9 @@ export function Layout() {
             Do nosso Studio para o seu.
           </p>
           <div className="flex gap-4 text-xs" style={{ color: 'var(--ink-muted)' }}>
+            <Link to="/blog" className="hover:text-[var(--gold)]">
+              Blog
+            </Link>
             <Link to="/faq" className="hover:text-[var(--gold)]">
               FAQ
             </Link>

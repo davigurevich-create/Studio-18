@@ -7,6 +7,8 @@ import { Checkout } from '@/pages/Checkout'
 import { Rastreio } from '@/pages/Rastreio'
 import { Faq } from '@/pages/Faq'
 import { PoliticaDevolucao } from '@/pages/PoliticaDevolucao'
+import { Blog } from '@/pages/Blog'
+import { BlogPost } from '@/pages/BlogPost'
 
 function App() {
   return (
@@ -20,6 +22,8 @@ function App() {
             <Route path="/rastreio" element={<Rastreio />} />
             <Route path="/faq" element={<Faq />} />
             <Route path="/politica-de-devolucao" element={<PoliticaDevolucao />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
           </Route>
         </Routes>
       </BrowserRouter>

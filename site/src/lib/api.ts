@@ -1,6 +1,7 @@
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import { mockCatalog } from '@/lib/mockCatalog'
-import type { CatalogProduct, CheckoutInput } from '@/types/catalog'
+import { mockBlogPosts } from '@/lib/mockBlog'
+import type { BlogPost, CatalogProduct, CheckoutInput } from '@/types/catalog'
 
 export const isDemoMode = !isSupabaseConfigured
 
@@ -81,4 +82,21 @@ export async function sendChatMessage(messages: ChatMessage[]): Promise<string> 
   if (error) throw error
   if (data?.error) throw new Error(data.error)
   return data.reply as string
+}
+
+// ---------------------------------------------------------------------------
+// Blog
+// ---------------------------------------------------------------------------
+export async function getBlogPosts(): Promise<BlogPost[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('public_blog_posts').select('*')
+    if (error) throw error
+    return data as BlogPost[]
+  }
+  return mockBlogPosts
+}
+
+export async function getBlogPost(slug: string): Promise<BlogPost | undefined> {
+  const posts = await getBlogPosts()
+  return posts.find((p) => p.slug === slug)
 }

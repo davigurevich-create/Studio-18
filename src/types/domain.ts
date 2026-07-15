@@ -120,3 +120,17 @@ export interface ProductStock {
 export interface SaleWithItems extends Sale {
   items: (SaleItem & { product?: Product })[]
 }
+
+export interface BlogPost {
+  id: string
+  slug: string
+  title: string
+  excerpt: string | null
+  cover_image_url: string | null
+  content: string
+  author: string
+  published: boolean
+  published_at: string | null
+  created_at: string
+  updated_at: string
+}

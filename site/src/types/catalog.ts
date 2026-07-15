@@ -43,3 +43,14 @@ export interface CheckoutInput {
   installments?: number
   address: CheckoutAddress
 }
+
+export interface BlogPost {
+  id: string
+  slug: string
+  title: string
+  excerpt: string | null
+  cover_image_url: string | null
+  content: string
+  author: string
+  published_at: string | null
+}

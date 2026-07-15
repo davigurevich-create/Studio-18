@@ -1,4 +1,5 @@
 import type {
+  BlogPost,
   Container,
   Expense,
   InventoryMovement,
@@ -32,6 +33,8 @@ export const seedMovements: InventoryMovement[] = []
 export const seedSales: Sale[] = []
 
 export const seedSaleItems: SaleItem[] = []
+
+export const seedBlogPosts: BlogPost[] = []
 
 export const seedExpenses: Expense[] = [
   { id: 'e1', expense_date: daysAgo(15), category: 'importacao', description: 'Compra do primeiro lote (fornecedor China)', amount_brl: 48000, container_id: 'c1', created_at: daysAgo(15) },

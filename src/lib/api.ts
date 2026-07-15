@@ -1,6 +1,7 @@
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import { makeTable, newId } from '@/lib/localStore'
 import {
+  seedBlogPosts,
   seedContainers,
   seedExpenses,
   seedMovements,
@@ -9,6 +10,7 @@ import {
   seedSales,
 } from '@/lib/mockData'
 import type {
+  BlogPost,
   Container,
   Expense,
   InventoryMovement,
@@ -24,6 +26,7 @@ const movementsTable = makeTable<InventoryMovement>('movements', seedMovements)
 const salesTable = makeTable<Sale>('sales', seedSales)
 const saleItemsTable = makeTable<SaleItem>('sale_items', seedSaleItems)
 const expensesTable = makeTable<Expense>('expenses', seedExpenses)
+const blogPostsTable = makeTable<BlogPost>('blog_posts', seedBlogPosts)
 
 /** True when reading from the local demo store instead of Supabase. */
 export const isDemoMode = !isSupabaseConfigured
@@ -238,4 +241,47 @@ export async function addExpense(input: Omit<Expense, 'id' | 'created_at'>): Pro
     return data as Expense
   }
   return expensesTable.insert({ ...input, id: newId(), created_at: new Date().toISOString() })
+}
+
+// ---------------------------------------------------------------------------
+// Blog
+// ---------------------------------------------------------------------------
+export async function getBlogPosts(): Promise<BlogPost[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('blog_posts').select('*').order('created_at', { ascending: false })
+    if (error) throw error
+    return data as BlogPost[]
+  }
+  return [...blogPostsTable.all()].sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+export type NewBlogPostInput = Omit<BlogPost, 'id' | 'created_at' | 'updated_at'>
+
+export async function createBlogPost(input: NewBlogPostInput): Promise<BlogPost> {
+  const now = new Date().toISOString()
+  if (supabase) {
+    const { data, error } = await supabase.from('blog_posts').insert(input).select().single()
+    if (error) throw error
+    return data as BlogPost
+  }
+  return blogPostsTable.insert({ ...input, id: newId(), created_at: now, updated_at: now })
+}
+
+export async function updateBlogPost(id: string, patch: Partial<NewBlogPostInput>): Promise<void> {
+  const payload = { ...patch, updated_at: new Date().toISOString() }
+  if (supabase) {
+    const { error } = await supabase.from('blog_posts').update(payload).eq('id', id)
+    if (error) throw error
+    return
+  }
+  blogPostsTable.update(id, payload)
+}
+
+export async function deleteBlogPost(id: string): Promise<void> {
+  if (supabase) {
+    const { error } = await supabase.from('blog_posts').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  blogPostsTable.remove(id)
 }
