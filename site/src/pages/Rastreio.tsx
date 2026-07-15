@@ -23,7 +23,7 @@ export function Rastreio() {
     setLoading(true)
     setError(null)
     try {
-      const result = await getOrderStatus(orderId.trim(), email.trim())
+      const result = await getOrderStatus(orderId.trim().replace(/^#/, ''), email.trim())
       setOrder(result)
       setSearched(true)
       if (!result) setError('Não encontramos nenhum pedido com esses dados. Confira o número do pedido e o e-mail usados na compra.')

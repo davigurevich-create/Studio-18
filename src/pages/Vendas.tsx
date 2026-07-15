@@ -18,6 +18,13 @@ export function Vendas() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  const copyId = (id: string) => {
+    navigator.clipboard.writeText(id)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId((current) => (current === id ? null : current)), 1800)
+  }
 
   const reload = () => {
     Promise.all([getSales(), getSaleItems(), getProducts()]).then(([s, si, p]) => {
@@ -79,12 +86,12 @@ export function Vendas() {
                     <div>{new Date(s.sale_date).toLocaleDateString('pt-BR')}</div>
                     <button
                       type="button"
-                      onClick={() => navigator.clipboard.writeText(s.id)}
-                      title={s.id}
-                      className="mt-0.5 font-mono text-[11px]"
-                      style={{ color: 'var(--text-muted)' }}
+                      onClick={() => copyId(s.id)}
+                      title={`Copiar ID completo: ${s.id}`}
+                      className="mt-0.5 flex items-center gap-1 font-mono text-[11px]"
+                      style={{ color: copiedId === s.id ? 'var(--status-good)' : 'var(--text-muted)' }}
                     >
-                      #{s.id.slice(0, 8)}
+                      {copiedId === s.id ? '✓ ID copiado!' : `ID ${s.id.slice(0, 8)}… (copiar)`}
                     </button>
                   </td>
                   <td className="py-2.5" style={{ color: 'var(--text-primary)' }}>
