@@ -43,7 +43,7 @@ const officialBrands = [
   { name: 'CaDA', logo: '/brands/cada.png' },
   { name: 'GULY', logo: '/brands/guly.png' },
   { name: 'REOBRIX', logo: '/brands/reobrix.png' },
-  { name: 'CBOX', logo: '/brands/cbox.png' },
+  // CBOX entra assim que o logo for enviado para site/public/brands/cbox.png
   { name: 'KBOX', logo: '/brands/kbox.png' },
 ]
 
