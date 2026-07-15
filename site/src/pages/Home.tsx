@@ -134,7 +134,7 @@ export function Home() {
           backgroundPosition: 'center',
         }}
       >
-        <div className="pointer-events-none absolute inset-0" style={{ background: 'rgba(6,6,6,0.35)' }} />
+        <div className="pointer-events-none absolute inset-0" style={{ background: 'rgba(6,6,6,0.25)' }} />
         <motion.div
           className="relative z-10 mx-auto max-w-3xl"
           initial={{ opacity: 0, y: 12 }}
@@ -142,7 +142,10 @@ export function Home() {
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
-          <p className="eyebrow mb-4">Boutique de sets técnicos importados · escala 1:8</p>
+          <p className="eyebrow mb-4" style={{ fontSize: '15px', fontWeight: 700 }}>
+            Importamos os mais sofisticados sets técnicos de blocos de montar em escala 1:8, e entregamos a pronta
+            entrega no Brasil.
+          </p>
           <p className="mx-auto max-w-xl text-base sm:text-lg" style={{ color: 'var(--ink-secondary)' }}>
             Carros, motos e motores que se tornam esculturas de engenharia, pelas suas próprias mãos.
           </p>
