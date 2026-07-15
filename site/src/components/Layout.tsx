@@ -7,6 +7,7 @@ const navLinks = [
   { href: '/#diferenciais', label: 'Diferenciais' },
   { href: '/#colecao', label: 'Coleção' },
   { href: '/rastreio', label: 'Rastreio' },
+  { href: '/faq', label: 'FAQ' },
 ]
 
 export function Layout() {
@@ -103,6 +104,17 @@ export function Layout() {
           <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>
             Do nosso Studio para o seu.
           </p>
+          <div className="flex gap-4 text-xs" style={{ color: 'var(--ink-muted)' }}>
+            <Link to="/faq" className="hover:text-[var(--gold)]">
+              FAQ
+            </Link>
+            <Link to="/politica-de-devolucao" className="hover:text-[var(--gold)]">
+              Política de devolução
+            </Link>
+            <Link to="/rastreio" className="hover:text-[var(--gold)]">
+              Rastrear pedido
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

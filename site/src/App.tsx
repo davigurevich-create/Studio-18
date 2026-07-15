@@ -4,6 +4,8 @@ import { Home } from '@/pages/Home'
 import { Product } from '@/pages/Product'
 import { Checkout } from '@/pages/Checkout'
 import { Rastreio } from '@/pages/Rastreio'
+import { Faq } from '@/pages/Faq'
+import { PoliticaDevolucao } from '@/pages/PoliticaDevolucao'
 
 function App() {
   return (
@@ -14,6 +16,8 @@ function App() {
           <Route path="/produto/:id" element={<Product />} />
           <Route path="/checkout/:id" element={<Checkout />} />
           <Route path="/rastreio" element={<Rastreio />} />
+          <Route path="/faq" element={<Faq />} />
+          <Route path="/politica-de-devolucao" element={<PoliticaDevolucao />} />
         </Route>
       </Routes>
     </BrowserRouter>
