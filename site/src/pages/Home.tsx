@@ -156,6 +156,15 @@ export function Home() {
           >
             Ver a coleção
           </a>
+
+          <motion.div
+            className="mt-6 text-xs tracking-[0.3em]"
+            style={{ color: 'var(--ink-muted)' }}
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ duration: 2.4, repeat: Infinity }}
+          >
+            CONTINUE ROLANDO PARA EXPLORAR
+          </motion.div>
         </motion.div>
       </section>
 
