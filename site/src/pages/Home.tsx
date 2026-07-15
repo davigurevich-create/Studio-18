@@ -255,50 +255,27 @@ export function Home() {
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* IMPORTADORES OFICIAIS */}
-      <section className="px-6 py-20">
-        <div className="mx-auto max-w-4xl text-center">
-          <motion.p variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="eyebrow mb-3">
-            Importadores oficiais
-          </motion.p>
-          <motion.h2
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            className="mb-4 text-2xl sm:text-3xl"
-          >
-            Representamos oficialmente as marcas mais respeitadas do segmento
-          </motion.h2>
-          <motion.p
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            className="mx-auto mb-12 max-w-xl text-sm"
-            style={{ color: 'var(--ink-muted)' }}
-          >
-            Autenticidade garantida — cada set chega ao Brasil com a chancela oficial do fabricante.
-          </motion.p>
 
           <motion.div
             variants={fadeUp}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
-            className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8"
+            className="mt-20 flex flex-col items-center gap-8 sm:flex-row sm:items-center sm:justify-between"
           >
-            {officialBrands.map((brand) => (
-              <img
-                key={brand.name}
-                src={brand.logo}
-                alt={`${brand.name} — logo`}
-                className="h-8 opacity-70 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0 sm:h-10"
-              />
-            ))}
+            <p className="max-w-md text-left text-lg sm:text-xl" style={{ color: 'var(--ink)' }}>
+              Representamos oficialmente as marcas mais respeitadas do segmento
+            </p>
+            <div className="flex flex-wrap items-center gap-x-10 gap-y-6">
+              {officialBrands.map((brand) => (
+                <img
+                  key={brand.name}
+                  src={brand.logo}
+                  alt={`${brand.name} — logo`}
+                  className="h-10 opacity-70 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0 sm:h-[50px]"
+                />
+              ))}
+            </div>
           </motion.div>
         </div>
       </section>
