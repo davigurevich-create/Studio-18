@@ -36,5 +36,5 @@ export interface CheckoutInput {
   cardToken?: string
   cardPaymentMethodId?: string
   installments?: number
-  address?: CheckoutAddress
+  address: CheckoutAddress
 }

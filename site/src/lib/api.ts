@@ -43,3 +43,27 @@ export async function createPayment(input: CheckoutInput): Promise<CreatePayment
   await new Promise((resolve) => setTimeout(resolve, 600))
   return { orderId: `demo-${Date.now()}`, status: 'pendente' }
 }
+
+export interface OrderStatus {
+  id: string
+  sale_date: string
+  status: string
+  shipping_city: string | null
+  shipping_federal_unit: string | null
+  product_names: string[]
+}
+
+/**
+ * Consulta publica de status de pedido — o cliente precisa saber o numero
+ * do pedido E o e-mail usado na compra, senao a function get_order_status
+ * (Postgres, security definer) nao retorna nada.
+ */
+export async function getOrderStatus(orderId: string, email: string): Promise<OrderStatus | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('get_order_status', {
+    order_id: orderId,
+    buyer_email: email,
+  })
+  if (error || !data || data.length === 0) return null
+  return data[0] as OrderStatus
+}

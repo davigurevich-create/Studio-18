@@ -35,9 +35,9 @@ interface RequestBody {
   cardToken?: string
   cardPaymentMethodId?: string
   installments?: number
-  // obrigatório para boleto — o Mercado Pago exige endereço completo do
-  // pagador para gerar um boleto registrado
-  address?: Address
+  // sempre obrigatório — usado como endereço de entrega em toda venda, e
+  // também exigido pelo Mercado Pago para gerar boleto registrado
+  address: Address
 }
 
 function mapStatus(mpStatus: string): string {
@@ -65,11 +65,7 @@ Deno.serve(async (req) => {
       address,
     } = body
 
-    if (paymentMethod === 'boleto' && !address) {
-      return json({ error: 'Endereço obrigatório para gerar boleto.' }, 400)
-    }
-
-    if (!productId || !customerName || !customerEmail || !customerCpf || !paymentMethod) {
+    if (!productId || !customerName || !customerEmail || !customerCpf || !paymentMethod || !address) {
       return json({ error: 'Dados obrigatórios ausentes.' }, 400)
     }
 
@@ -97,6 +93,12 @@ Deno.serve(async (req) => {
         shipping_cost_brl: 0,
         discount_brl: 0,
         notes: `Pedido feito pelo site — ${product.name}`,
+        shipping_zip_code: address.zipCode.replace(/\D/g, ''),
+        shipping_street_name: address.streetName,
+        shipping_street_number: address.streetNumber,
+        shipping_neighborhood: address.neighborhood,
+        shipping_city: address.city,
+        shipping_federal_unit: address.federalUnit,
       })
       .select()
       .single()
@@ -140,12 +142,12 @@ Deno.serve(async (req) => {
         payer: {
           ...payerBase,
           address: {
-            zip_code: address!.zipCode.replace(/\D/g, ''),
-            street_name: address!.streetName,
-            street_number: address!.streetNumber,
-            neighborhood: address!.neighborhood,
-            city: address!.city,
-            federal_unit: address!.federalUnit,
+            zip_code: address.zipCode.replace(/\D/g, ''),
+            street_name: address.streetName,
+            street_number: address.streetNumber,
+            neighborhood: address.neighborhood,
+            city: address.city,
+            federal_unit: address.federalUnit,
           },
         },
         external_reference: sale.id,

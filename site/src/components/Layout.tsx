@@ -6,6 +6,7 @@ const navLinks = [
   { href: '/#manifesto', label: 'Manifesto' },
   { href: '/#diferenciais', label: 'Diferenciais' },
   { href: '/#colecao', label: 'Coleção' },
+  { href: '/rastreio', label: 'Rastreio' },
 ]
 
 export function Layout() {

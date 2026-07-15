@@ -47,8 +47,8 @@ export function Checkout() {
       setError('Informe um CPF válido (11 dígitos).')
       return
     }
-    if (method === 'boleto' && (!zipCode || !streetName || !streetNumber || !neighborhood || !city || !federalUnit)) {
-      setError('Preencha o endereço completo para gerar o boleto.')
+    if (!zipCode || !streetName || !streetNumber || !neighborhood || !city || !federalUnit) {
+      setError('Preencha o endereço de entrega completo.')
       return
     }
     setError(null)
@@ -66,10 +66,7 @@ export function Checkout() {
         customerEmail: email,
         customerCpf: cpf,
         paymentMethod: method,
-        address:
-          method === 'boleto'
-            ? { zipCode, streetName, streetNumber, neighborhood, city, federalUnit }
-            : undefined,
+        address: { zipCode, streetName, streetNumber, neighborhood, city, federalUnit },
       })
       setResult(res)
       setStep('done')
@@ -93,6 +90,7 @@ export function Checkout() {
           cardToken: formData.token,
           cardPaymentMethodId: formData.payment_method_id,
           installments: formData.installments,
+          address: { zipCode, streetName, streetNumber, neighborhood, city, federalUnit },
         })
         setResult(res)
         setStep('done')
@@ -101,7 +99,7 @@ export function Checkout() {
         throw new Error('payment_failed')
       }
     },
-    [product, name, email, cpf],
+    [product, name, email, cpf, zipCode, streetName, streetNumber, neighborhood, city, federalUnit],
   )
 
   const handleCardError = useCallback(() => {
@@ -287,7 +285,10 @@ export function Checkout() {
           <Field label="E-mail" value={email} onChange={setEmail} type="email" required />
           <Field label="CPF" value={cpf} onChange={setCpf} required placeholder="000.000.000-00" />
 
-          {method === 'boleto' && (
+          <div>
+            <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+              ENDEREÇO DE ENTREGA
+            </label>
             <div className="grid grid-cols-2 gap-4">
               <Field label="CEP" value={zipCode} onChange={setZipCode} required placeholder="00000-000" />
               <Field label="Número" value={streetNumber} onChange={setStreetNumber} required />
@@ -298,7 +299,7 @@ export function Checkout() {
               <Field label="Cidade" value={city} onChange={setCity} required />
               <Field label="Estado (UF)" value={federalUnit} onChange={setFederalUnit} required placeholder="SP" />
             </div>
-          )}
+          </div>
 
           {method === 'pix' && (
             <PaymentNote text="Após confirmar, geramos o QR Code / código PIX copia-e-cola para pagamento." />

@@ -3,6 +3,7 @@ import { Layout } from '@/components/Layout'
 import { Home } from '@/pages/Home'
 import { Product } from '@/pages/Product'
 import { Checkout } from '@/pages/Checkout'
+import { Rastreio } from '@/pages/Rastreio'
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/produto/:id" element={<Product />} />
           <Route path="/checkout/:id" element={<Checkout />} />
+          <Route path="/rastreio" element={<Rastreio />} />
         </Route>
       </Routes>
     </BrowserRouter>
