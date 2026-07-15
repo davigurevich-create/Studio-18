@@ -42,11 +42,17 @@ export function Layout() {
             STUDIO <span style={{ color: 'var(--gold)' }}>18</span>
           </Link>
           <nav className="hidden gap-8 text-sm tracking-wide sm:flex" style={{ color: 'var(--ink-secondary)' }}>
-            {navLinks.map((l) => (
-              <a key={l.href} href={l.href} className="hover:text-[var(--gold)]">
-                {l.label}
-              </a>
-            ))}
+            {navLinks.map((l) =>
+              l.href.startsWith('/#') ? (
+                <a key={l.href} href={l.href} className="hover:text-[var(--gold)]">
+                  {l.label}
+                </a>
+              ) : (
+                <Link key={l.href} to={l.href} className="hover:text-[var(--gold)]">
+                  {l.label}
+                </Link>
+              ),
+            )}
           </nav>
           <button
             type="button"
@@ -82,11 +88,17 @@ export function Layout() {
               style={{ borderTop: '1px solid var(--hairline)' }}
             >
               <div className="flex flex-col px-6 py-2 text-base" style={{ color: 'var(--ink-secondary)' }}>
-                {navLinks.map((l) => (
-                  <a key={l.href} href={l.href} className="border-b py-3" style={{ borderColor: 'var(--hairline)' }}>
-                    {l.label}
-                  </a>
-                ))}
+                {navLinks.map((l) =>
+                  l.href.startsWith('/#') ? (
+                    <a key={l.href} href={l.href} className="border-b py-3" style={{ borderColor: 'var(--hairline)' }}>
+                      {l.label}
+                    </a>
+                  ) : (
+                    <Link key={l.href} to={l.href} className="border-b py-3" style={{ borderColor: 'var(--hairline)' }}>
+                      {l.label}
+                    </Link>
+                  ),
+                )}
               </div>
             </motion.nav>
           )}
