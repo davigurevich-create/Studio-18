@@ -12,9 +12,10 @@ function renderInline(text: string): ReactNode[] {
 
 /**
  * Conversor minimo de texto do blog: paragrafos separados por linha em
- * branco, "## " vira subtitulo, "**texto**" vira negrito. Sem dependencia
- * de parser de markdown completo — so o suficiente para estruturar artigos
- * com boa hierarquia (H2) para SEO.
+ * branco, "## " vira subtitulo, "- " no inicio de todas as linhas de um
+ * bloco vira lista, "**texto**" vira negrito. Sem dependencia de parser de
+ * markdown completo — so o suficiente para estruturar artigos com boa
+ * hierarquia (H2) e listas para SEO.
  */
 export function renderBlogContent(content: string): ReactNode[] {
   const blocks = content
@@ -30,9 +31,23 @@ export function renderBlogContent(content: string): ReactNode[] {
         </h2>
       )
     }
+
+    const lines = block.split('\n').map((l) => l.trim()).filter(Boolean)
+    if (lines.length > 0 && lines.every((l) => l.startsWith('- '))) {
+      return (
+        <ul key={i} className="list-disc pl-5" style={{ color: 'var(--ink-secondary)' }}>
+          {lines.map((l, j) => (
+            <li key={j} className="text-base leading-relaxed">
+              {renderInline(l.slice(2))}
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
     return (
       <p key={i} className="text-base leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
-        {renderInline(block)}
+        {lines.flatMap((l, j) => (j === 0 ? renderInline(l) : [<br key={`br-${j}`} />, ...renderInline(l)]))}
       </p>
     )
   })

@@ -220,7 +220,7 @@ function BlogPostForm({
           textarea
           rows={10}
           required
-          hint="Separe os parágrafos com uma linha em branco. Para um subtítulo, comece a linha com '## '. Para negrito, use **assim**."
+          hint="Separe os parágrafos com uma linha em branco. Subtítulo: comece a linha com '## '. Lista: comece cada linha com '- '. Negrito: **assim**."
         />
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <Field label="Autor" value={author} onChange={setAuthor} />
