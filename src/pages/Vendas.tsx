@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { createSale, getProducts, getSaleItems, getSales, updateSaleStatus } from '@/lib/api'
 import { Badge, Button, Card, PageHeader, formatBRL } from '@/components/ui'
 import type { NewSaleItemInput } from '@/lib/api'
@@ -19,6 +19,9 @@ export function Vendas() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'todos' | SaleStatus>('todos')
+  const [channelFilter, setChannelFilter] = useState<'todos' | Sale['channel']>('todos')
 
   const copyId = (id: string) => {
     navigator.clipboard.writeText(id)
@@ -42,6 +45,29 @@ export function Vendas() {
     reload()
   }
 
+  const channels = useMemo(() => {
+    const present = new Set(sales.map((s) => s.channel))
+    return Array.from(present).sort()
+  }, [sales])
+
+  const filteredSales = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return sales.filter((s) => {
+      if (statusFilter !== 'todos' && s.status !== statusFilter) return false
+      if (channelFilter !== 'todos' && s.channel !== channelFilter) return false
+      if (q) {
+        const items = saleItems.filter((i) => i.sale_id === s.id)
+        const productNames = items
+          .map((i) => products.find((p) => p.id === i.product_id)?.name ?? '')
+          .join(' ')
+          .toLowerCase()
+        const haystack = `${s.customer_name ?? ''} ${s.customer_contact ?? ''} ${s.id} ${productNames}`.toLowerCase()
+        if (!haystack.includes(q)) return false
+      }
+      return true
+    })
+  }, [sales, saleItems, products, search, statusFilter, channelFilter])
+
   if (loading) return <div style={{ color: 'var(--text-secondary)' }}>Carregando...</div>
 
   return (
@@ -62,6 +88,47 @@ export function Vendas() {
         />
       )}
 
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por cliente, contato, modelo ou ID do pedido..."
+          className="w-full rounded-lg border px-3 py-2 text-sm sm:w-80"
+          style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+          className="rounded-lg border px-3 py-2 text-sm"
+          style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
+        >
+          <option value="todos">Todos os status</option>
+          {(['pendente', 'pago', 'enviado', 'entregue', 'cancelado'] as SaleStatus[]).map((st) => (
+            <option key={st} value={st}>
+              {st}
+            </option>
+          ))}
+        </select>
+        <select
+          value={channelFilter}
+          onChange={(e) => setChannelFilter(e.target.value as typeof channelFilter)}
+          className="rounded-lg border px-3 py-2 text-sm"
+          style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
+        >
+          <option value="todos">Todos os canais</option>
+          {channels.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        {(search || statusFilter !== 'todos' || channelFilter !== 'todos') && (
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            {filteredSales.length} de {sales.length} vendas
+          </span>
+        )}
+      </div>
+
       <Card className="mt-4 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -76,7 +143,14 @@ export function Vendas() {
             </tr>
           </thead>
           <tbody>
-            {sales.map((s) => {
+            {filteredSales.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                  Nenhuma venda encontrada com esses filtros.
+                </td>
+              </tr>
+            ) : (
+            filteredSales.map((s) => {
               const items = saleItems.filter((i) => i.sale_id === s.id)
               const total = items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0) - s.discount_brl + s.shipping_cost_brl
               const hasAddress = Boolean(s.shipping_street_name)
@@ -157,7 +231,8 @@ export function Vendas() {
                   </td>
                 </tr>
               )
-            })}
+            })
+            )}
           </tbody>
         </table>
       </Card>

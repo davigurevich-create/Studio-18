@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { addMovement, createProduct, getContainers, getProducts, getStock } from '@/lib/api'
-import { Badge, Button, Card, PageHeader, formatBRL } from '@/components/ui'
+import { Badge, Button, Card, PageHeader, StatTile, formatBRL } from '@/components/ui'
 import type { Container, MovementType, Product, ProductStock } from '@/types/domain'
 
 export function Estoque() {
@@ -10,6 +10,9 @@ export function Estoque() {
   const [loading, setLoading] = useState(true)
   const [showMovementForm, setShowMovementForm] = useState(false)
   const [showProductForm, setShowProductForm] = useState(false)
+  const [search, setSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('todas')
+  const [statusFilter, setStatusFilter] = useState<'todos' | 'baixo' | 'ok'>('todos')
 
   const reload = () => {
     Promise.all([getStock(), getProducts(), getContainers()]).then(([s, p, c]) => {
@@ -21,6 +24,23 @@ export function Estoque() {
   }
 
   useEffect(reload, [])
+
+  const categories = useMemo(() => {
+    const present = new Set(stock.map((p) => p.category))
+    return ['todas', ...Array.from(present).sort()]
+  }, [stock])
+
+  const filteredStock = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return stock.filter((p) => {
+      const low = p.quantity_in_stock <= p.min_stock_alert
+      if (categoryFilter !== 'todas' && p.category !== categoryFilter) return false
+      if (statusFilter === 'baixo' && !low) return false
+      if (statusFilter === 'ok' && low) return false
+      if (q && !p.name.toLowerCase().includes(q) && !p.sku.toLowerCase().includes(q)) return false
+      return true
+    })
+  }, [stock, search, categoryFilter, statusFilter])
 
   if (loading) return <div style={{ color: 'var(--text-secondary)' }}>Carregando...</div>
 
@@ -38,6 +58,20 @@ export function Estoque() {
           </div>
         }
       />
+
+      <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatTile label="SKUs cadastrados" value={String(stock.length)} />
+        <StatTile
+          label="Estoque baixo"
+          value={String(stock.filter((p) => p.quantity_in_stock <= p.min_stock_alert).length)}
+          status={stock.some((p) => p.quantity_in_stock <= p.min_stock_alert) ? 'warning' : 'good'}
+        />
+        <StatTile label="Unidades em estoque" value={stock.reduce((t, p) => t + p.quantity_in_stock, 0).toLocaleString('pt-BR')} />
+        <StatTile
+          label="Valor em estoque (custo)"
+          value={formatBRL(stock.reduce((t, p) => t + p.quantity_in_stock * p.cost_price_brl, 0))}
+        />
+      </div>
 
       {showProductForm && (
         <ProductForm
@@ -59,6 +93,43 @@ export function Estoque() {
         />
       )}
 
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por nome ou SKU..."
+          className="w-full rounded-lg border px-3 py-2 text-sm sm:w-64"
+          style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
+        />
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="rounded-lg border px-3 py-2 text-sm"
+          style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
+        >
+          {categories.map((c) => (
+            <option key={c} value={c}>
+              {c === 'todas' ? 'Todas as categorias' : c}
+            </option>
+          ))}
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+          className="rounded-lg border px-3 py-2 text-sm"
+          style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
+        >
+          <option value="todos">Todos os status</option>
+          <option value="baixo">Só estoque baixo</option>
+          <option value="ok">Só estoque OK</option>
+        </select>
+        {(search || categoryFilter !== 'todas' || statusFilter !== 'todos') && (
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            {filteredStock.length} de {stock.length} produtos
+          </span>
+        )}
+      </div>
+
       <Card className="mt-4 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -73,7 +144,14 @@ export function Estoque() {
             </tr>
           </thead>
           <tbody>
-            {stock.map((p) => {
+            {filteredStock.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                  Nenhum produto encontrado com esses filtros.
+                </td>
+              </tr>
+            ) : (
+              filteredStock.map((p) => {
               const low = p.quantity_in_stock <= p.min_stock_alert
               return (
                 <tr key={p.product_id} className="border-t" style={{ borderColor: 'var(--gridline)' }}>
@@ -100,7 +178,8 @@ export function Estoque() {
                   </td>
                 </tr>
               )
-            })}
+              })
+            )}
           </tbody>
         </table>
       </Card>

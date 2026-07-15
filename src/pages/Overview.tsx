@@ -80,13 +80,23 @@ export function Overview() {
     return days
   }, [sales, saleItems])
 
-  const stockByCategory = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const s of stock) {
-      map.set(s.category, (map.get(s.category) ?? 0) + s.quantity_in_stock)
+  const topModels = useMemo(() => {
+    const revenueByProduct = new Map<string, number>()
+    for (const s of sales) {
+      if (s.status === 'cancelado') continue
+      const items = saleItems.filter((i) => i.sale_id === s.id)
+      for (const i of items) {
+        revenueByProduct.set(i.product_id, (revenueByProduct.get(i.product_id) ?? 0) + i.quantity * i.unit_price_brl)
+      }
     }
-    return Array.from(map.entries()).map(([category, quantity]) => ({ category, quantity }))
-  }, [stock])
+    return Array.from(revenueByProduct.entries())
+      .map(([productId, revenue]) => ({
+        name: products.find((p) => p.id === productId)?.name ?? 'Produto removido',
+        revenue,
+      }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5)
+  }, [sales, saleItems, products])
 
   if (loading) return <div style={{ color: 'var(--text-secondary)' }}>Carregando...</div>
 
@@ -154,30 +164,52 @@ export function Overview() {
         </Card>
 
         <Card>
-          <h2 className="mb-4 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-            Estoque por categoria (unidades)
+          <h2 className="mb-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+            Top 5 modelos mais vendidos (receita)
           </h2>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={stockByCategory} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
-              <CartesianGrid stroke="var(--gridline)" vertical={false} />
-              <XAxis
-                dataKey="category"
-                tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
-                axisLine={{ stroke: 'var(--baseline)' }}
-                tickLine={false}
-              />
-              <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} width={32} />
-              <Tooltip
-                contentStyle={{
-                  background: 'var(--surface-1)',
-                  border: '1px solid var(--border-hairline)',
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-              />
-              <Bar dataKey="quantity" fill="var(--series-2)" radius={[4, 4, 0, 0]} maxBarSize={48} />
-            </BarChart>
-          </ResponsiveContainer>
+          <p className="mb-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+            Use isto para decidir o que priorizar no próximo container
+          </p>
+          {topModels.length === 0 ? (
+            <div className="flex h-[240px] items-center justify-center text-sm" style={{ color: 'var(--text-muted)' }}>
+              Ainda sem vendas registradas.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart
+                data={topModels}
+                layout="vertical"
+                margin={{ left: 0, right: 24, top: 4, bottom: 0 }}
+              >
+                <CartesianGrid stroke="var(--gridline)" horizontal={false} />
+                <XAxis
+                  type="number"
+                  tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => `R$${Math.round(v / 100) / 10}k`}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  tick={{ fontSize: 11, fill: 'var(--text-secondary)' }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={140}
+                />
+                <Tooltip
+                  formatter={(v) => formatBRL(Number(v))}
+                  contentStyle={{
+                    background: 'var(--surface-1)',
+                    border: '1px solid var(--border-hairline)',
+                    borderRadius: 8,
+                    fontSize: 12,
+                  }}
+                />
+                <Bar dataKey="revenue" fill="var(--series-2)" radius={[0, 4, 4, 0]} maxBarSize={28} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </Card>
       </div>
 
