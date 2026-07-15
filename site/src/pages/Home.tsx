@@ -127,7 +127,7 @@ export function Home() {
 
       {/* BLOCO DE ABERTURA — textura de fibra de carbono e dourado */}
       <section
-        className="relative overflow-hidden px-6 py-28 text-center sm:py-36"
+        className="relative overflow-hidden px-6 pb-16 pt-28 text-center sm:pb-20 sm:pt-36"
         style={{
           backgroundImage: 'url(/Section2-background.jpg)',
           backgroundSize: 'cover',
@@ -156,15 +156,15 @@ export function Home() {
           >
             Ver a coleção
           </a>
+        </motion.div>
 
-          <motion.div
-            className="mt-6 text-xs tracking-[0.3em]"
-            style={{ color: 'var(--ink-muted)' }}
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 2.4, repeat: Infinity }}
-          >
-            CONTINUE ROLANDO PARA EXPLORAR
-          </motion.div>
+        <motion.div
+          className="relative z-10 mt-16 text-xs tracking-[0.3em] sm:mt-24"
+          style={{ color: 'var(--ink-muted)' }}
+          animate={{ opacity: [0.3, 1, 0.3] }}
+          transition={{ duration: 2.4, repeat: Infinity }}
+        >
+          CONTINUE ROLANDO PARA EXPLORAR
         </motion.div>
       </section>
 
