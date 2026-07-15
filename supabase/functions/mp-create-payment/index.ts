@@ -24,8 +24,13 @@ interface Address {
   federalUnit: string
 }
 
-interface RequestBody {
+interface CheckoutItem {
   productId: string
+  quantity: number
+}
+
+interface RequestBody {
+  items: CheckoutItem[]
   customerName: string
   customerEmail: string
   customerCpf: string
@@ -54,7 +59,7 @@ Deno.serve(async (req) => {
   try {
     const body: RequestBody = await req.json()
     const {
-      productId,
+      items,
       customerName,
       customerEmail,
       customerCpf,
@@ -65,20 +70,30 @@ Deno.serve(async (req) => {
       address,
     } = body
 
-    if (!productId || !customerName || !customerEmail || !customerCpf || !paymentMethod || !address) {
+    if (!items?.length || !customerName || !customerEmail || !customerCpf || !paymentMethod || !address) {
       return json({ error: 'Dados obrigatórios ausentes.' }, 400)
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-    const { data: product, error: productError } = await supabase
+    const { data: products, error: productsError } = await supabase
       .from('products')
       .select('id, name, sale_price_brl')
-      .eq('id', productId)
-      .single()
-    if (productError || !product) {
-      return json({ error: 'Produto não encontrado.' }, 404)
+      .in('id', items.map((i) => i.productId))
+    if (productsError || !products || products.length !== items.length) {
+      return json({ error: 'Um ou mais produtos não foram encontrados.' }, 404)
     }
+
+    const lineItems = items.map((i) => {
+      const product = products.find((p) => p.id === i.productId)!
+      return { product, quantity: i.quantity }
+    })
+
+    const totalAmount = lineItems.reduce((t, li) => t + Number(li.product.sale_price_brl) * li.quantity, 0)
+    const description =
+      lineItems.length === 1
+        ? lineItems[0].product.name
+        : `${lineItems.reduce((t, li) => t + li.quantity, 0)} itens — ${lineItems.map((li) => li.product.name).join(', ')}`.slice(0, 250)
 
     const { data: sale, error: saleError } = await supabase
       .from('sales')
@@ -92,7 +107,7 @@ Deno.serve(async (req) => {
         payment_provider: 'mercadopago',
         shipping_cost_brl: 0,
         discount_brl: 0,
-        notes: `Pedido feito pelo site — ${product.name}`,
+        notes: `Pedido feito pelo site — ${description}`,
         shipping_zip_code: address.zipCode.replace(/\D/g, ''),
         shipping_street_name: address.streetName,
         shipping_street_number: address.streetNumber,
@@ -106,13 +121,15 @@ Deno.serve(async (req) => {
       return json({ error: 'Não foi possível registrar o pedido.' }, 500)
     }
 
-    await supabase.from('sale_items').insert({
-      sale_id: sale.id,
-      product_id: product.id,
-      quantity: 1,
-      unit_price_brl: product.sale_price_brl,
-      unit_cost_brl: 0,
-    })
+    await supabase.from('sale_items').insert(
+      lineItems.map((li) => ({
+        sale_id: sale.id,
+        product_id: li.product.id,
+        quantity: li.quantity,
+        unit_price_brl: li.product.sale_price_brl,
+        unit_cost_brl: 0,
+      })),
+    )
 
     const [firstName, ...rest] = customerName.trim().split(' ')
     const lastName = rest.join(' ') || firstName
@@ -127,8 +144,8 @@ Deno.serve(async (req) => {
     let mpBody: Record<string, unknown>
     if (paymentMethod === 'pix') {
       mpBody = {
-        transaction_amount: Number(product.sale_price_brl),
-        description: product.name,
+        transaction_amount: totalAmount,
+        description,
         payment_method_id: 'pix',
         payer: payerBase,
         external_reference: sale.id,
@@ -136,8 +153,8 @@ Deno.serve(async (req) => {
       }
     } else if (paymentMethod === 'boleto') {
       mpBody = {
-        transaction_amount: Number(product.sale_price_brl),
-        description: product.name,
+        transaction_amount: totalAmount,
+        description,
         payment_method_id: 'bolbradesco',
         payer: {
           ...payerBase,
@@ -158,9 +175,9 @@ Deno.serve(async (req) => {
         return json({ error: 'Token de cartão ausente.' }, 400)
       }
       mpBody = {
-        transaction_amount: Number(product.sale_price_brl),
+        transaction_amount: totalAmount,
         token: cardToken,
-        description: product.name,
+        description,
         installments: installments ?? 1,
         payment_method_id: cardPaymentMethodId,
         payer: payerBase,

@@ -4,12 +4,16 @@ import { motion } from 'framer-motion'
 import { ProductArt } from '@/components/ProductArt'
 import { getProduct } from '@/lib/api'
 import { formatBRL } from '@/lib/format'
+import { useCart } from '@/lib/cart'
 import type { CatalogProduct } from '@/types/catalog'
 
 export function Product() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { addItem } = useCart()
   const [product, setProduct] = useState<CatalogProduct | null | undefined>(undefined)
+  const [quantity, setQuantity] = useState(1)
+  const [added, setAdded] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -74,22 +78,65 @@ export function Product() {
             </p>
           </div>
 
-          <div className="mt-10 flex items-end justify-between border-t pt-6" style={{ borderColor: 'var(--hairline)' }}>
-            <div>
-              <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-                INVESTIMENTO DE
+          <div className="mt-10 border-t pt-6" style={{ borderColor: 'var(--hairline)' }}>
+            <div className="flex items-end justify-between">
+              <div>
+                <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+                  INVESTIMENTO DE
+                </div>
+                <div className="tabular text-3xl font-semibold" style={{ color: 'var(--gold-bright)' }}>
+                  {formatBRL(product.sale_price_brl)}
+                </div>
               </div>
-              <div className="tabular text-3xl font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                {formatBRL(product.sale_price_brl)}
+
+              <div className="flex items-center gap-2 rounded-full border px-2 py-1.5" style={{ borderColor: 'var(--hairline)' }}>
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-sm"
+                  style={{ color: 'var(--ink)' }}
+                >
+                  −
+                </button>
+                <span className="tabular w-5 text-center text-sm" style={{ color: 'var(--ink)' }}>
+                  {quantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => q + 1)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-sm"
+                  style={{ color: 'var(--ink)' }}
+                >
+                  +
+                </button>
               </div>
             </div>
-            <Link
-              to={`/checkout/${product.id}`}
-              className="rounded-full px-8 py-3 text-sm font-medium tracking-wide"
-              style={{ background: 'var(--gold)', color: '#0a0a0a' }}
-            >
-              Comprar
-            </Link>
+
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => {
+                  addItem(product.id, quantity)
+                  setAdded(true)
+                  setTimeout(() => setAdded(false), 2000)
+                }}
+                className="flex-1 rounded-full border px-8 py-3 text-sm font-medium tracking-wide"
+                style={{ borderColor: 'var(--gold)', color: 'var(--gold-bright)' }}
+              >
+                {added ? 'Adicionado ✓' : 'Adicionar ao carrinho'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  addItem(product.id, quantity)
+                  navigate('/checkout')
+                }}
+                className="flex-1 rounded-full px-8 py-3 text-sm font-medium tracking-wide"
+                style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+              >
+                Comprar agora
+              </button>
+            </div>
           </div>
         </motion.div>
       </div>

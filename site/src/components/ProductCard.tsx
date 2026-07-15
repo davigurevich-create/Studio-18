@@ -2,9 +2,12 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ProductArt } from '@/components/ProductArt'
 import { formatBRL } from '@/lib/format'
+import { useCart } from '@/lib/cart'
 import type { CatalogProduct } from '@/types/catalog'
 
 export function ProductCard({ product, index = 0 }: { product: CatalogProduct; index?: number }) {
+  const { addItem } = useCart()
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -45,13 +48,27 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
             <span className="tabular">{product.piece_count?.toLocaleString('pt-BR')} peças</span>
           </div>
 
-          <div className="mt-4 flex items-baseline justify-between border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
-            <span className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-              INVESTIMENTO DE
-            </span>
-            <span className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-              {formatBRL(product.sale_price_brl)}
-            </span>
+          <div className="mt-4 flex items-center justify-between border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
+            <div>
+              <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+                INVESTIMENTO DE
+              </div>
+              <div className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
+                {formatBRL(product.sale_price_brl)}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                addItem(product.id)
+              }}
+              className="shrink-0 rounded-full px-3 py-2 text-xs font-medium"
+              style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+            >
+              + Carrinho
+            </button>
           </div>
         </div>
       </Link>

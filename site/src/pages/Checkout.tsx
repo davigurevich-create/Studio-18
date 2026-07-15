@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CardPayment } from '@mercadopago/sdk-react'
-import { createPayment, getProduct, isDemoMode, type CreatePaymentResult } from '@/lib/api'
+import { createPayment, getCatalog, isDemoMode, type CreatePaymentResult } from '@/lib/api'
 import { ensureMercadoPagoInit, isMercadoPagoConfigured } from '@/lib/mercadopago'
 import { formatBRL } from '@/lib/format'
+import { useCart } from '@/lib/cart'
 import type { CatalogProduct, PaymentMethod } from '@/types/catalog'
 
 const methods: { id: PaymentMethod; label: string; hint: string }[] = [
@@ -14,8 +15,9 @@ const methods: { id: PaymentMethod; label: string; hint: string }[] = [
 ]
 
 export function Checkout() {
-  const { id } = useParams<{ id: string }>()
-  const [product, setProduct] = useState<CatalogProduct | null | undefined>(undefined)
+  const navigate = useNavigate()
+  const { lines, clear } = useCart()
+  const [catalog, setCatalog] = useState<CatalogProduct[] | undefined>(undefined)
   const [method, setMethod] = useState<PaymentMethod>('pix')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -32,17 +34,31 @@ export function Checkout() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!id) return
-    getProduct(id).then((p) => setProduct(p ?? null))
-  }, [id])
+    getCatalog().then(setCatalog)
+  }, [])
 
   useEffect(() => {
     if (method === 'cartao') ensureMercadoPagoInit()
   }, [method])
 
+  const items = useMemo(
+    () =>
+      lines
+        .map((l) => ({ line: l, product: catalog?.find((p) => p.id === l.productId) }))
+        .filter((i): i is { line: typeof lines[number]; product: CatalogProduct } => Boolean(i.product)),
+    [lines, catalog],
+  )
+
+  const subtotal = items.reduce((t, i) => t + i.product.sale_price_brl * i.line.quantity, 0)
+
+  const checkoutItems = useMemo(
+    () => items.map((i) => ({ productId: i.product.id, quantity: i.line.quantity })),
+    [items],
+  )
+
   const handleContactSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!product) return
+    if (items.length === 0) return
     if (cpf.replace(/\D/g, '').length !== 11) {
       setError('Informe um CPF válido (11 dígitos).')
       return
@@ -61,7 +77,7 @@ export function Checkout() {
     setSubmitting(true)
     try {
       const res = await createPayment({
-        productId: product.id,
+        items: checkoutItems,
         customerName: name,
         customerEmail: email,
         customerCpf: cpf,
@@ -70,6 +86,7 @@ export function Checkout() {
       })
       setResult(res)
       setStep('done')
+      clear()
     } catch {
       setError('Não foi possível registrar o pedido agora. Tente novamente em instantes.')
     } finally {
@@ -79,10 +96,10 @@ export function Checkout() {
 
   const handleCardSubmit = useCallback(
     async (formData: { token: string; installments: number; payment_method_id: string }) => {
-      if (!product) return
+      if (checkoutItems.length === 0) return
       try {
         const res = await createPayment({
-          productId: product.id,
+          items: checkoutItems,
           customerName: name,
           customerEmail: email,
           customerCpf: cpf,
@@ -94,31 +111,29 @@ export function Checkout() {
         })
         setResult(res)
         setStep('done')
+        clear()
       } catch {
         setError('Não foi possível processar o pagamento agora. Tente novamente.')
         throw new Error('payment_failed')
       }
     },
-    [product, name, email, cpf, zipCode, streetName, streetNumber, neighborhood, city, federalUnit],
+    [checkoutItems, name, email, cpf, zipCode, streetName, streetNumber, neighborhood, city, federalUnit, clear],
   )
 
   const handleCardError = useCallback(() => {
     setError('Não foi possível validar os dados do cartão.')
   }, [])
 
-  const cardInitialization = useMemo(
-    () => ({ amount: product ? Number(product.sale_price_brl) : 0 }),
-    [product],
-  )
+  const cardInitialization = useMemo(() => ({ amount: subtotal }), [subtotal])
 
-  if (product === undefined) {
+  if (catalog === undefined) {
     return <div className="px-6 py-40 text-center" style={{ color: 'var(--ink-muted)' }}>Carregando...</div>
   }
 
-  if (product === null) {
+  if (step !== 'done' && items.length === 0) {
     return (
       <div className="px-6 py-40 text-center">
-        <p style={{ color: 'var(--ink-muted)' }}>Modelo não encontrado.</p>
+        <p style={{ color: 'var(--ink-muted)' }}>Seu carrinho está vazio.</p>
         <Link to="/" className="mt-4 inline-block text-sm" style={{ color: 'var(--gold)' }}>
           Voltar para a coleção
         </Link>
@@ -135,8 +150,8 @@ export function Checkout() {
               <div className="mb-5 text-4xl" style={{ color: '#e88b8b' }}>✕</div>
               <h1 className="mb-3 text-2xl">Pagamento não aprovado</h1>
               <p className="text-sm" style={{ color: 'var(--ink-secondary)' }}>
-                O pagamento do <strong style={{ color: 'var(--ink)' }}>{product.name}</strong> não foi aprovado.
-                Você pode tentar novamente com outro cartão ou forma de pagamento.
+                O pagamento do seu pedido não foi aprovado. Você pode tentar novamente com outro cartão ou forma de
+                pagamento.
               </p>
               <button
                 onClick={() => {
@@ -156,7 +171,7 @@ export function Checkout() {
                 {result.status === 'pago' ? 'Pagamento aprovado' : 'Pedido registrado'}
               </h1>
               <p className="mb-6 text-sm" style={{ color: 'var(--ink-secondary)' }}>
-                Recebemos seu pedido do <strong style={{ color: 'var(--ink)' }}>{product.name}</strong> via{' '}
+                Recebemos seu pedido via{' '}
                 <strong style={{ color: 'var(--ink)' }}>{methods.find((m) => m.id === method)?.label}</strong>.
               </p>
 
@@ -219,9 +234,9 @@ export function Checkout() {
 
   return (
     <div className="mx-auto max-w-2xl px-6 pb-24 pt-32">
-      <Link to={`/produto/${product.id}`} className="mb-8 inline-block text-sm" style={{ color: 'var(--ink-muted)' }}>
-        ← Voltar para o modelo
-      </Link>
+      <button onClick={() => navigate(-1)} className="mb-8 text-sm" style={{ color: 'var(--ink-muted)' }}>
+        ← Voltar
+      </button>
 
       <h1 className="mb-8 text-3xl">Finalizar pedido</h1>
 
@@ -235,20 +250,29 @@ export function Checkout() {
         </div>
       )}
 
-      <div
-        className="mb-8 flex items-center justify-between rounded-xl border p-4"
-        style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}
-      >
-        <div>
-          <div className="text-sm" style={{ color: 'var(--ink)' }}>
-            {product.name}
+      <div className="mb-8 flex flex-col gap-3 rounded-xl border p-4" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}>
+        {items.map(({ line, product }) => (
+          <div key={product.id} className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-sm" style={{ color: 'var(--ink)' }}>
+                {line.quantity}x {product.name}
+              </div>
+              <div className="text-xs" style={{ color: 'var(--ink-muted)' }}>
+                {product.manufacturer} · {product.scale}
+              </div>
+            </div>
+            <div className="tabular shrink-0 text-sm font-medium" style={{ color: 'var(--gold-bright)' }}>
+              {formatBRL(product.sale_price_brl * line.quantity)}
+            </div>
           </div>
-          <div className="text-xs" style={{ color: 'var(--ink-muted)' }}>
-            {product.manufacturer} · {product.scale} · {product.piece_count?.toLocaleString('pt-BR')} peças
-          </div>
-        </div>
-        <div className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-          {formatBRL(product.sale_price_brl)}
+        ))}
+        <div className="flex items-center justify-between border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
+          <span className="text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+            TOTAL
+          </span>
+          <span className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
+            {formatBRL(subtotal)}
+          </span>
         </div>
       </div>
 
@@ -327,7 +351,7 @@ export function Checkout() {
               ? 'Registrando pedido...'
               : method === 'cartao'
                 ? 'Continuar para pagamento'
-                : `Confirmar pedido — ${formatBRL(product.sale_price_brl)}`}
+                : `Confirmar pedido — ${formatBRL(subtotal)}`}
           </button>
         </form>
       )}

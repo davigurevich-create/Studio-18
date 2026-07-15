@@ -2,6 +2,8 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChatWidget } from '@/components/ChatWidget'
+import { CartDrawer } from '@/components/CartDrawer'
+import { useCart } from '@/lib/cart'
 
 const navLinks = [
   { href: '/#manifesto', label: 'Manifesto' },
@@ -15,6 +17,8 @@ export function Layout() {
   const location = useLocation()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [cartOpen, setCartOpen] = useState(false)
+  const { totalCount } = useCart()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24)
@@ -41,40 +45,65 @@ export function Layout() {
           <Link to="/" className="text-lg font-semibold tracking-[0.2em]" style={{ color: 'var(--ink)' }}>
             STUDIO <span style={{ color: 'var(--gold)' }}>18</span>
           </Link>
-          <nav className="hidden gap-8 text-sm tracking-wide sm:flex" style={{ color: 'var(--ink-secondary)' }}>
-            {navLinks.map((l) =>
-              l.href.startsWith('/#') ? (
-                <a key={l.href} href={l.href} className="hover:text-[var(--gold)]">
-                  {l.label}
-                </a>
-              ) : (
-                <Link key={l.href} to={l.href} className="hover:text-[var(--gold)]">
-                  {l.label}
-                </Link>
-              ),
-            )}
-          </nav>
-          <button
-            type="button"
-            aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
-            onClick={() => setMenuOpen((v) => !v)}
-            className="flex h-9 w-9 items-center justify-center sm:hidden"
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={'var(--ink)'} strokeWidth="1.8" strokeLinecap="round">
-              {menuOpen ? (
-                <>
-                  <line x1="5" y1="5" x2="19" y2="19" />
-                  <line x1="19" y1="5" x2="5" y2="19" />
-                </>
-              ) : (
-                <>
-                  <line x1="3" y1="7" x2="21" y2="7" />
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="3" y1="17" x2="21" y2="17" />
-                </>
+          <div className="flex items-center gap-6">
+            <nav className="hidden gap-8 text-sm tracking-wide sm:flex" style={{ color: 'var(--ink-secondary)' }}>
+              {navLinks.map((l) =>
+                l.href.startsWith('/#') ? (
+                  <a key={l.href} href={l.href} className="hover:text-[var(--gold)]">
+                    {l.label}
+                  </a>
+                ) : (
+                  <Link key={l.href} to={l.href} className="hover:text-[var(--gold)]">
+                    {l.label}
+                  </Link>
+                ),
               )}
-            </svg>
-          </button>
+            </nav>
+
+            <button
+              type="button"
+              aria-label="Abrir carrinho"
+              onClick={() => setCartOpen(true)}
+              className="relative flex h-9 w-9 items-center justify-center"
+              style={{ color: 'var(--ink)' }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="21" r="1" />
+                <circle cx="20" cy="21" r="1" />
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+              </svg>
+              {totalCount > 0 && (
+                <span
+                  className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-semibold"
+                  style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+                >
+                  {totalCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+              onClick={() => setMenuOpen((v) => !v)}
+              className="flex h-9 w-9 items-center justify-center sm:hidden"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={'var(--ink)'} strokeWidth="1.8" strokeLinecap="round">
+                {menuOpen ? (
+                  <>
+                    <line x1="5" y1="5" x2="19" y2="19" />
+                    <line x1="19" y1="5" x2="5" y2="19" />
+                  </>
+                ) : (
+                  <>
+                    <line x1="3" y1="7" x2="21" y2="7" />
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                    <line x1="3" y1="17" x2="21" y2="17" />
+                  </>
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
 
         <AnimatePresence>
@@ -131,6 +160,7 @@ export function Layout() {
         </div>
       </footer>
 
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
       <ChatWidget />
     </div>
   )

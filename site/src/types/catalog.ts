@@ -27,8 +27,13 @@ export interface CheckoutAddress {
   federalUnit: string
 }
 
-export interface CheckoutInput {
+export interface CheckoutItem {
   productId: string
+  quantity: number
+}
+
+export interface CheckoutInput {
+  items: CheckoutItem[]
   customerName: string
   customerEmail: string
   customerCpf: string
