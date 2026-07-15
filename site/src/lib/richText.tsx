@@ -26,7 +26,7 @@ export function renderBlogContent(content: string): ReactNode[] {
   return blocks.map((block, i) => {
     if (block.startsWith('## ')) {
       return (
-        <h2 key={i} className="mt-4 text-xl font-semibold sm:text-2xl" style={{ color: 'var(--ink)' }}>
+        <h2 key={i} className="mt-4 text-xl font-semibold sm:text-2xl" style={{ color: '#141210' }}>
           {renderInline(block.slice(3))}
         </h2>
       )
@@ -35,7 +35,7 @@ export function renderBlogContent(content: string): ReactNode[] {
     const lines = block.split('\n').map((l) => l.trim()).filter(Boolean)
     if (lines.length > 0 && lines.every((l) => l.startsWith('- '))) {
       return (
-        <ul key={i} className="list-disc pl-5" style={{ color: 'var(--ink-secondary)' }}>
+        <ul key={i} className="list-disc pl-5" style={{ color: '#3a3833' }}>
           {lines.map((l, j) => (
             <li key={j} className="text-base leading-relaxed">
               {renderInline(l.slice(2))}
@@ -46,7 +46,7 @@ export function renderBlogContent(content: string): ReactNode[] {
     }
 
     return (
-      <p key={i} className="text-base leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
+      <p key={i} className="text-base leading-relaxed" style={{ color: '#3a3833' }}>
         {lines.flatMap((l, j) => (j === 0 ? renderInline(l) : [<br key={`br-${j}`} />, ...renderInline(l)]))}
       </p>
     )

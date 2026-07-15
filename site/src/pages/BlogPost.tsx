@@ -20,13 +20,17 @@ export function BlogPost() {
   }, [slug])
 
   if (post === undefined) {
-    return <div className="px-6 py-40 text-center" style={{ color: 'var(--ink-muted)' }}>Carregando...</div>
+    return (
+      <div className="px-6 py-40 text-center" style={{ background: '#ffffff', color: '#6b6862' }}>
+        Carregando...
+      </div>
+    )
   }
 
   if (post === null) {
     return (
-      <div className="px-6 py-40 text-center">
-        <p style={{ color: 'var(--ink-muted)' }}>Artigo não encontrado.</p>
+      <div className="px-6 py-40 text-center" style={{ background: '#ffffff' }}>
+        <p style={{ color: '#6b6862' }}>Artigo não encontrado.</p>
         <Link to="/blog" className="mt-4 inline-block text-sm" style={{ color: 'var(--gold)' }}>
           Voltar para o blog
         </Link>
@@ -35,36 +39,40 @@ export function BlogPost() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-6 pb-24 pt-32">
-      <Link to="/blog" className="mb-8 inline-block text-sm" style={{ color: 'var(--ink-muted)' }}>
-        ← Voltar para o blog
-      </Link>
+    <div style={{ background: '#ffffff' }}>
+      <div className="mx-auto max-w-2xl px-6 pb-24 pt-32">
+        <Link to="/blog" className="mb-8 inline-block text-sm" style={{ color: '#6b6862' }}>
+          ← Voltar para o blog
+        </Link>
 
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <div className="mb-4 text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-          {formatDate(post.published_at).toUpperCase()} · {post.author.toUpperCase()}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <div className="mb-4 text-xs tracking-widest" style={{ color: '#8a867e' }}>
+            {formatDate(post.published_at).toUpperCase()} · {post.author.toUpperCase()}
+          </div>
+          <h1 className="mb-8 text-3xl sm:text-4xl" style={{ color: '#141210' }}>
+            {post.title}
+          </h1>
+
+          {post.cover_image_url && (
+            <img
+              src={post.cover_image_url}
+              alt={post.title}
+              className="mb-10 aspect-video w-full rounded-xl object-cover"
+            />
+          )}
+
+          <div className="flex flex-col gap-5">{renderBlogContent(post.content)}</div>
+        </motion.div>
+
+        <div className="mt-14 border-t pt-8 text-center" style={{ borderColor: 'rgba(20,18,16,0.1)' }}>
+          <a
+            href="/#colecao"
+            className="inline-block rounded-full px-8 py-3 text-sm font-medium tracking-wide"
+            style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+          >
+            Ver a coleção
+          </a>
         </div>
-        <h1 className="mb-8 text-3xl sm:text-4xl">{post.title}</h1>
-
-        {post.cover_image_url && (
-          <img
-            src={post.cover_image_url}
-            alt={post.title}
-            className="mb-10 aspect-video w-full rounded-xl object-cover"
-          />
-        )}
-
-        <div className="flex flex-col gap-5">{renderBlogContent(post.content)}</div>
-      </motion.div>
-
-      <div className="mt-14 border-t pt-8 text-center" style={{ borderColor: 'var(--hairline)' }}>
-        <a
-          href="/#colecao"
-          className="inline-block rounded-full px-8 py-3 text-sm font-medium tracking-wide"
-          style={{ background: 'var(--gold)', color: '#0a0a0a' }}
-        >
-          Ver a coleção
-        </a>
       </div>
     </div>
   )

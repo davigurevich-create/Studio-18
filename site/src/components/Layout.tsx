@@ -32,14 +32,20 @@ export function Layout() {
     setMenuOpen(false)
   }, [location.pathname])
 
+  // Paginas de leitura de artigo tem fundo branco — o cabecalho precisa
+  // ficar sempre escuro ali, senao fica ilegivel (texto claro sobre branco)
+  // no topo da pagina, antes do usuario rolar.
+  const forceDarkHeader = location.pathname.startsWith('/blog/')
+  const showDarkHeader = scrolled || menuOpen || forceDarkHeader
+
   return (
     <div style={{ background: 'var(--carbon-0)', color: 'var(--ink)', minHeight: '100vh' }}>
       <header
         className="fixed inset-x-0 top-0 z-50 transition-colors"
         style={{
-          background: scrolled || menuOpen ? 'rgba(6,6,6,0.85)' : 'transparent',
-          borderBottom: scrolled || menuOpen ? '1px solid var(--hairline)' : '1px solid transparent',
-          backdropFilter: scrolled || menuOpen ? 'blur(10px)' : 'none',
+          background: showDarkHeader ? 'rgba(6,6,6,0.85)' : 'transparent',
+          borderBottom: showDarkHeader ? '1px solid var(--hairline)' : '1px solid transparent',
+          backdropFilter: showDarkHeader ? 'blur(10px)' : 'none',
         }}
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
