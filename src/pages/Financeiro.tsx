@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { addExpense, getExpenses, getSaleItems, getSales } from '@/lib/api'
 import { Button, Card, PageHeader, StatTile, formatBRL } from '@/components/ui'
 import type { Expense, ExpenseCategory, Sale, SaleItem } from '@/types/domain'
@@ -13,12 +13,33 @@ const categoryLabels: Record<ExpenseCategory, string> = {
   outros: 'Outros',
 }
 
+type Period = 'mes' | '30d' | 'tudo'
+
+const periodLabels: Record<Period, string> = {
+  mes: 'Este mês',
+  '30d': 'Últimos 30 dias',
+  tudo: 'Todo o período',
+}
+
+function periodStart(period: Period): Date {
+  const now = new Date()
+  if (period === 'mes') {
+    const d = new Date(now.getFullYear(), now.getMonth(), 1)
+    return d
+  }
+  if (period === '30d') {
+    return new Date(now.getTime() - 30 * 86400000)
+  }
+  return new Date(0)
+}
+
 export function Financeiro() {
   const [sales, setSales] = useState<Sale[]>([])
   const [saleItems, setSaleItems] = useState<SaleItem[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [period, setPeriod] = useState<Period>('mes')
 
   const reload = () => {
     Promise.all([getSales(), getSaleItems(), getExpenses()]).then(([s, si, ex]) => {
@@ -31,32 +52,116 @@ export function Financeiro() {
 
   useEffect(reload, [])
 
-  const totals = useMemo(() => {
-    const revenue = sales
-      .filter((s) => s.status !== 'cancelado')
+  const start = useMemo(() => periodStart(period), [period])
+  const periodSales = useMemo(
+    () => sales.filter((s) => s.status !== 'cancelado' && new Date(s.sale_date) >= start),
+    [sales, start],
+  )
+  const periodExpenses = useMemo(() => expenses.filter((e) => new Date(e.expense_date) >= start), [expenses, start])
+
+  // ---------------------------------------------------------------------
+  // DRE (Demonstração do Resultado do Exercício) — regime de competência,
+  // simplificada: sem linha de impostos sobre o lucro (IR/CSLL), pois o
+  // sistema ainda não tem esse dado. Despesas de importação/frete entram
+  // como despesa operacional (não alocadas ao CMV por SKU).
+  // ---------------------------------------------------------------------
+  const dre = useMemo(() => {
+    const grossRevenue = periodSales.reduce((sum, s) => {
+      const items = saleItems.filter((i) => i.sale_id === s.id)
+      return sum + items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0) + s.shipping_cost_brl
+    }, 0)
+    const discounts = periodSales.reduce((sum, s) => sum + s.discount_brl, 0)
+    const netRevenue = grossRevenue - discounts
+    const cogs = periodSales.reduce((sum, s) => {
+      const items = saleItems.filter((i) => i.sale_id === s.id)
+      return sum + items.reduce((t, i) => t + i.quantity * i.unit_cost_brl, 0)
+    }, 0)
+    const grossProfit = netRevenue - cogs
+
+    const expensesByCategory = new Map<ExpenseCategory, number>()
+    for (const e of periodExpenses) expensesByCategory.set(e.category, (expensesByCategory.get(e.category) ?? 0) + e.amount_brl)
+    const totalOperatingExpenses = periodExpenses.reduce((sum, e) => sum + e.amount_brl, 0)
+
+    const operatingResult = grossProfit - totalOperatingExpenses
+
+    return {
+      grossRevenue,
+      discounts,
+      netRevenue,
+      cogs,
+      grossProfit,
+      grossMarginPct: netRevenue > 0 ? (grossProfit / netRevenue) * 100 : 0,
+      expensesByCategory,
+      totalOperatingExpenses,
+      operatingResult,
+      netMarginPct: netRevenue > 0 ? (operatingResult / netRevenue) * 100 : 0,
+    }
+  }, [periodSales, periodExpenses, saleItems])
+
+  // ---------------------------------------------------------------------
+  // Fluxo de caixa — regime de caixa: entradas = vendas com pagamento
+  // confirmado (pago/enviado/entregue), por mês de competência da venda;
+  // saidas = despesas, por mes da despesa. Saldo acumulado ao longo do
+  // tempo (considera todo o historico, independente do filtro de periodo
+  // acima, para mostrar a tendencia real do caixa).
+  // ---------------------------------------------------------------------
+  const cashFlow = useMemo(() => {
+    const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const monthLabel = (d: Date) => d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+
+    const months: { key: string; label: string; inflow: number; outflow: number }[] = []
+    const now = new Date()
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      months.push({ key: monthKey(d), label: monthLabel(d), inflow: 0, outflow: 0 })
+    }
+
+    const receivedStatuses = new Set(['pago', 'enviado', 'entregue'])
+    for (const s of sales) {
+      if (!receivedStatuses.has(s.status)) continue
+      const key = monthKey(new Date(s.sale_date))
+      const bucket = months.find((m) => m.key === key)
+      if (!bucket) continue
+      const items = saleItems.filter((i) => i.sale_id === s.id)
+      bucket.inflow += items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0) - s.discount_brl + s.shipping_cost_brl
+    }
+    for (const e of expenses) {
+      const key = monthKey(new Date(e.expense_date))
+      const bucket = months.find((m) => m.key === key)
+      if (!bucket) continue
+      bucket.outflow += e.amount_brl
+    }
+
+    // saldo acumulado considerando TODO o historico (nao so os 6 meses
+    // exibidos), para o numero de "caixa atual" ser real.
+    const allTimeInflow = sales
+      .filter((s) => receivedStatuses.has(s.status))
       .reduce((sum, s) => {
         const items = saleItems.filter((i) => i.sale_id === s.id)
         return sum + items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0) - s.discount_brl + s.shipping_cost_brl
       }, 0)
-    const cogs = sales
-      .filter((s) => s.status !== 'cancelado')
-      .reduce((sum, s) => {
-        const items = saleItems.filter((i) => i.sale_id === s.id)
-        return sum + items.reduce((t, i) => t + i.quantity * i.unit_cost_brl, 0)
-      }, 0)
-    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount_brl, 0)
-    const netResult = revenue - cogs - totalExpenses
-    return { revenue, cogs, totalExpenses, netResult }
-  }, [sales, saleItems, expenses])
+    const allTimeOutflow = expenses.reduce((sum, e) => sum + e.amount_brl, 0)
+    const currentBalance = allTimeInflow - allTimeOutflow
 
-  const byCategory = useMemo(() => {
-    const map = new Map<ExpenseCategory, number>()
-    for (const e of expenses) map.set(e.category, (map.get(e.category) ?? 0) + e.amount_brl)
-    return Array.from(map.entries()).map(([category, amount]) => ({
-      category: categoryLabels[category],
-      amount,
-    }))
-  }, [expenses])
+    // saldo acumulado ponto-a-ponto dos ULTIMOS 6 meses exibidos, partindo
+    // do saldo que já existia antes do primeiro mês do grafico.
+    const balanceBeforeChart = currentBalance - months.reduce((t, m) => t + (m.inflow - m.outflow), 0)
+    let running = balanceBeforeChart
+    const series = months.map((m) => {
+      running += m.inflow - m.outflow
+      return { ...m, balance: running }
+    })
+
+    const thisMonthKey = monthKey(now)
+    const thisMonth = months.find((m) => m.key === thisMonthKey)
+
+    return {
+      series,
+      currentBalance,
+      monthInflow: thisMonth?.inflow ?? 0,
+      monthOutflow: thisMonth?.outflow ?? 0,
+    }
+  }, [sales, saleItems, expenses])
 
   if (loading) return <div style={{ color: 'var(--text-secondary)' }}>Carregando...</div>
 
@@ -64,7 +169,7 @@ export function Financeiro() {
     <div>
       <PageHeader
         title="Financeiro"
-        description="Receita, custo de mercadoria vendida, despesas e resultado líquido"
+        description="Fluxo de caixa, DRE e despesas"
         action={<Button onClick={() => setShowForm((v) => !v)}>+ Despesa</Button>}
       />
 
@@ -77,46 +182,107 @@ export function Financeiro() {
         />
       )}
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="Receita total (histórico)" value={formatBRL(totals.revenue)} />
-        <StatTile label="Custo da mercadoria (CMV)" value={formatBRL(totals.cogs)} />
-        <StatTile label="Despesas totais" value={formatBRL(totals.totalExpenses)} />
+      {/* FLUXO DE CAIXA */}
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          Fluxo de caixa
+        </h2>
+      </div>
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatTile
-          label="Resultado líquido"
-          value={formatBRL(totals.netResult)}
-          status={totals.netResult >= 0 ? 'good' : 'critical'}
+          label="Saldo de caixa atual"
+          value={formatBRL(cashFlow.currentBalance)}
+          status={cashFlow.currentBalance >= 0 ? 'good' : 'critical'}
         />
+        <StatTile label="Entradas do mês" value={formatBRL(cashFlow.monthInflow)} />
+        <StatTile label="Saídas do mês" value={formatBRL(cashFlow.monthOutflow)} />
+      </div>
+
+      <Card className="mb-6">
+        <h3 className="mb-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+          Entradas x saídas — últimos 6 meses
+        </h3>
+        <p className="mb-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+          Barras: entradas (recebido) e saídas (pago). Linha: saldo acumulado de caixa.
+        </p>
+        <ResponsiveContainer width="100%" height={260}>
+          <ComposedChart data={cashFlow.series} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
+            <CartesianGrid stroke="var(--gridline)" vertical={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={{ stroke: 'var(--baseline)' }} tickLine={false} />
+            <YAxis
+              tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
+              axisLine={false}
+              tickLine={false}
+              width={52}
+              tickFormatter={(v) => `R$${Math.round(v / 100) / 10}k`}
+            />
+            <Tooltip
+              formatter={(v, name) => [
+                formatBRL(Number(v)),
+                name === 'inflow' ? 'Entradas' : name === 'outflow' ? 'Saídas' : 'Saldo acumulado',
+              ]}
+              contentStyle={{ background: 'var(--surface-1)', border: '1px solid var(--border-hairline)', borderRadius: 8, fontSize: 12 }}
+            />
+            <Bar dataKey="inflow" fill="var(--status-good)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+            <Bar dataKey="outflow" fill="var(--status-critical)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+            <Line type="monotone" dataKey="balance" stroke="var(--series-1)" strokeWidth={2} dot={{ r: 3 }} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </Card>
+
+      {/* DRE */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          DRE — Demonstração do Resultado
+        </h2>
+        <div className="flex gap-1 rounded-lg border p-0.5" style={{ borderColor: 'var(--border-hairline)' }}>
+          {(Object.keys(periodLabels) as Period[]).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className="rounded-md px-3 py-1 text-xs font-medium transition"
+              style={{
+                background: period === p ? 'var(--series-1)' : 'transparent',
+                color: period === p ? '#fff' : 'var(--text-secondary)',
+              }}
+            >
+              {periodLabels[p]}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
-          <h2 className="mb-4 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-            Despesas por categoria
-          </h2>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={byCategory} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 0 }}>
-              <CartesianGrid stroke="var(--gridline)" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
-              <YAxis
-                type="category"
-                dataKey="category"
-                tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
-                axisLine={{ stroke: 'var(--baseline)' }}
-                tickLine={false}
-                width={90}
+          <table className="w-full text-sm">
+            <tbody>
+              <DreRow label="Receita bruta de vendas" value={dre.grossRevenue} />
+              <DreRow label="(–) Descontos concedidos" value={-dre.discounts} indent />
+              <DreRow label="(=) Receita líquida" value={dre.netRevenue} bold />
+              <DreRow label="(–) CMV (custo da mercadoria vendida)" value={-dre.cogs} indent />
+              <DreRow
+                label="(=) Lucro bruto"
+                value={dre.grossProfit}
+                bold
+                sub={`margem bruta ${dre.grossMarginPct.toFixed(1)}%`}
               />
-              <Tooltip
-                formatter={(v) => formatBRL(Number(v))}
-                contentStyle={{
-                  background: 'var(--surface-1)',
-                  border: '1px solid var(--border-hairline)',
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
+              {Array.from(dre.expensesByCategory.entries()).map(([cat, amount]) => (
+                <DreRow key={cat} label={`(–) ${categoryLabels[cat]}`} value={-amount} indent muted />
+              ))}
+              <DreRow label="(–) Total despesas operacionais" value={-dre.totalOperatingExpenses} indent />
+              <DreRow
+                label="(=) Resultado operacional (líquido do período)"
+                value={dre.operatingResult}
+                bold
+                status={dre.operatingResult >= 0 ? 'good' : 'critical'}
+                sub={`margem líquida ${dre.netMarginPct.toFixed(1)}%`}
               />
-              <Bar dataKey="amount" fill="var(--series-5)" radius={[0, 4, 4, 0]} maxBarSize={20} />
-            </BarChart>
-          </ResponsiveContainer>
+            </tbody>
+          </table>
+          <p className="mt-4 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            Regime de competência (considera a data da venda/despesa, não a data do recebimento/pagamento). Não inclui
+            impostos sobre o lucro (IR/CSLL) — consulte seu contador para o resultado após impostos.
+          </p>
         </Card>
 
         <Card className="overflow-x-auto">
@@ -154,6 +320,41 @@ export function Financeiro() {
         </Card>
       </div>
     </div>
+  )
+}
+
+function DreRow({
+  label,
+  value,
+  bold,
+  indent,
+  muted,
+  sub,
+  status,
+}: {
+  label: string
+  value: number
+  bold?: boolean
+  indent?: boolean
+  muted?: boolean
+  sub?: string
+  status?: 'good' | 'critical'
+}) {
+  const color = status === 'good' ? 'var(--status-good)' : status === 'critical' ? 'var(--status-critical)' : muted ? 'var(--text-muted)' : 'var(--text-primary)'
+  return (
+    <tr className="border-t" style={{ borderColor: 'var(--gridline)' }}>
+      <td className={`py-2 ${indent ? 'pl-4' : ''}`} style={{ color: bold ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: bold ? 600 : 400 }}>
+        {label}
+        {sub && (
+          <div className="text-[11px] font-normal" style={{ color: 'var(--text-muted)' }}>
+            {sub}
+          </div>
+        )}
+      </td>
+      <td className="tabular py-2 text-right" style={{ color, fontWeight: bold ? 600 : 400 }}>
+        {formatBRL(value)}
+      </td>
+    </tr>
   )
 }
 
