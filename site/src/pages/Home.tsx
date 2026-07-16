@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { motion, useScroll } from 'framer-motion'
-import { Hand } from 'lucide-react'
+import { motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform } from 'framer-motion'
+import { BadgePercent, Hand, PackageOpen, ShieldCheck, Warehouse } from 'lucide-react'
 import { HeroCar } from '@/components/HeroCar'
 import { ProductCard } from '@/components/ProductCard'
 import { getCatalog } from '@/lib/api'
@@ -23,20 +23,24 @@ const fadeUp = {
 
 const diferenciais = [
   {
-    title: 'Pronta entrega no Brasil',
-    text: 'Sem esperar meses por uma importação individual — seu set chega rápido, direto do nosso estoque no Brasil.',
+    icon: Warehouse,
+    title: 'Único com estoque físico no Brasil',
+    text: 'Somos o único importador de sets técnicos em escala 1:8 com estoque físico em território nacional — fruto de uma importação oficial direto dos maiores fabricantes do mundo. Nada de esperar um container do outro lado do oceano: o seu já está aqui.',
   },
   {
-    title: 'Valor mais acessível',
-    text: 'Importamos em escala, com toda a logística resolvida — o que se traduz em um preço mais justo do que importar sozinho em qualquer site.',
+    icon: BadgePercent,
+    title: 'Preço competitivo, entrega em dias',
+    text: 'Importar em escala elimina os intermediários e os custos que encarecem uma importação individual. O resultado: um preço muito mais justo e pronta entrega em apenas 2 a 5 dias úteis em todo o Brasil.',
   },
   {
-    title: 'Experiência completa',
-    text: 'Caixa oficial, manual completo e detalhado. Cada set chega como deveria: pronto para o ritual da montagem.',
+    icon: PackageOpen,
+    title: 'Experiência oficial, do início ao fim',
+    text: 'Cada set chega na caixa original do fabricante, com manual extremamente detalhado — a mesma experiência de quem importa direto, sem abrir mão de nenhum detalhe do ritual de montagem.',
   },
   {
-    title: 'Curadoria de sofisticação',
-    text: 'Cada modelo é selecionado a dedo — carros, motos e motores que se tornam esculturas de engenharia na sua estante.',
+    icon: ShieldCheck,
+    title: 'Testado pelos próprios fundadores',
+    text: 'Nenhum modelo entra no nosso catálogo sem antes ser montado, peça por peça, pelos fundadores do Studio 18. Só chega ao seu Studio o que já provamos ser excepcional.',
   },
 ]
 
@@ -243,24 +247,7 @@ export function Home() {
           </motion.h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {diferenciais.map((d, i) => (
-              <motion.div
-                key={d.title}
-                variants={fadeUp}
-                initial="hidden"
-                whileInView="show"
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.5, delay: i * 0.08 }}
-                className="rounded-xl border p-6"
-                style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}
-              >
-                <div className="mb-4 h-px w-8" style={{ background: 'var(--gold)' }} />
-                <h3 className="mb-2 text-base font-semibold" style={{ color: 'var(--ink)' }}>
-                  {d.title}
-                </h3>
-                <p className="text-sm" style={{ color: 'var(--ink-secondary)' }}>
-                  {d.text}
-                </p>
-              </motion.div>
+              <DiferencialCard key={d.title} {...d} index={i} />
             ))}
           </div>
 
@@ -369,5 +356,85 @@ export function Home() {
         )}
       </section>
     </div>
+  )
+}
+
+function DiferencialCard({
+  icon: Icon,
+  title,
+  text,
+  index,
+}: {
+  icon: typeof Warehouse
+  title: string
+  text: string
+  index: number
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const mx = useMotionValue(0)
+  const my = useMotionValue(0)
+  const [hovering, setHovering] = useState(false)
+
+  const tiltSpring = { stiffness: 200, damping: 20, mass: 0.5 }
+  const rotateX = useSpring(useTransform(my, [-0.5, 0.5], [7, -7]), tiltSpring)
+  const rotateY = useSpring(useTransform(mx, [-0.5, 0.5], [-7, 7]), tiltSpring)
+  const lift = useSpring(hovering ? -6 : 0, tiltSpring)
+
+  const glowX = useTransform(mx, [-0.5, 0.5], ['0%', '100%'])
+  const glowY = useTransform(my, [-0.5, 0.5], ['0%', '100%'])
+  const glowOpacity = useSpring(hovering ? 1 : 0, { stiffness: 120, damping: 22 })
+  const glowBackground = useMotionTemplate`radial-gradient(220px circle at ${glowX} ${glowY}, rgba(230, 199, 120, 0.16), transparent 70%)`
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = ref.current?.getBoundingClientRect()
+    if (!rect) return
+    mx.set((e.clientX - rect.left) / rect.width - 0.5)
+    my.set((e.clientY - rect.top) / rect.height - 0.5)
+  }
+
+  return (
+    <motion.div
+      ref={ref}
+      variants={fadeUp}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.5, delay: index * 0.08 }}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+      className="group relative overflow-hidden rounded-xl border p-6 transition-colors duration-300"
+      style={{
+        borderColor: hovering ? 'var(--gold-dim)' : 'var(--hairline)',
+        background: 'var(--carbon-2)',
+        perspective: 800,
+        rotateX,
+        rotateY,
+        y: lift,
+      }}
+    >
+      <motion.div
+        className="pointer-events-none absolute inset-0"
+        style={{ background: glowBackground, opacity: glowOpacity }}
+      />
+
+      <motion.div
+        className="relative z-10 mb-4 flex h-11 w-11 items-center justify-center rounded-full"
+        style={{ background: 'var(--gold-wash)', border: '1px solid var(--gold-dim)' }}
+        animate={{ y: [0, -3, 0] }}
+        transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut', delay: index * 0.25 }}
+      >
+        <Icon size={18} strokeWidth={1.75} style={{ color: 'var(--gold-bright)' }} />
+      </motion.div>
+
+      <div className="relative z-10 mb-3 h-px w-8 origin-left scale-x-100 transition-transform duration-500 group-hover:scale-x-[1.6]" style={{ background: 'var(--gold)' }} />
+
+      <h3 className="relative z-10 mb-2 text-base font-semibold" style={{ color: 'var(--ink)' }}>
+        {title}
+      </h3>
+      <p className="relative z-10 text-sm" style={{ color: 'var(--ink-secondary)' }}>
+        {text}
+      </p>
+    </motion.div>
   )
 }
