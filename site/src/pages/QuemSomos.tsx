@@ -2,15 +2,20 @@ import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Camera } from 'lucide-react'
 
-const linesOfText = [
-  'Nascemos da paixão dos',
-  'fundadores. 2 amigos engenheiros',
-  'e 1 filho, amantes',
-  'do universo de blocos',
-  'de montar técnicos, e',
-  'comprometidos a levar engenharia',
-  'em forma de arte',
-  'para o seu Studio.',
+interface Word {
+  text: string
+  gold?: boolean
+}
+
+const linesOfText: Word[][] = [
+  [{ text: 'Nascemos' }, { text: 'da' }, { text: 'paixão' }, { text: 'dos' }],
+  [{ text: 'fundadores.' }, { text: '2', gold: true }, { text: 'amigos', gold: true }, { text: 'engenheiros', gold: true }],
+  [{ text: 'e', gold: true }, { text: '1', gold: true }, { text: 'filho,', gold: true }, { text: 'amantes' }],
+  [{ text: 'do' }, { text: 'universo' }, { text: 'de' }, { text: 'blocos' }],
+  [{ text: 'de' }, { text: 'montar' }, { text: 'técnicos,' }, { text: 'e' }],
+  [{ text: 'comprometidos' }, { text: 'a' }, { text: 'levar' }, { text: 'engenharia' }],
+  [{ text: 'em' }, { text: 'forma' }, { text: 'de' }, { text: 'arte' }],
+  [{ text: 'para' }, { text: 'o' }, { text: 'seu' }, { text: 'Studio.' }],
 ]
 
 export function QuemSomos() {
@@ -53,7 +58,7 @@ export function QuemSomos() {
       <section className="mx-auto max-w-5xl px-6 py-32 sm:py-48">
         <div className="flex flex-col gap-2 sm:gap-4">
           {linesOfText.map((line, i) => (
-            <RevealLine key={i} text={line} />
+            <RevealLine key={i} words={line} />
           ))}
         </div>
       </section>
@@ -61,7 +66,7 @@ export function QuemSomos() {
   )
 }
 
-function RevealLine({ text }: { text: string }) {
+function RevealLine({ words }: { words: Word[] }) {
   const ref = useRef<HTMLParagraphElement>(null)
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start 0.92', 'start 0.4'] })
   const opacity = useTransform(scrollYProgress, [0, 1], [0.1, 1])
@@ -75,11 +80,15 @@ function RevealLine({ text }: { text: string }) {
         y,
         scaleY: 1.16,
         transformOrigin: 'bottom',
-        color: 'var(--ink)',
       }}
       className="text-[9vw] font-black uppercase leading-[0.95] tracking-tight sm:text-[6vw] lg:text-[4.25rem]"
     >
-      {text}
+      {words.map((w, i) => (
+        <span key={i} style={{ color: w.gold ? 'var(--gold-bright)' : 'var(--ink)' }}>
+          {w.text}
+          {i < words.length - 1 ? ' ' : ''}
+        </span>
+      ))}
     </motion.p>
   )
 }
