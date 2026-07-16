@@ -112,12 +112,15 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
             {items.length > 0 && (
               <div className="border-t px-5 py-4" style={{ borderColor: 'var(--hairline)' }}>
-                <div className="mb-4 flex items-center justify-between text-sm">
+                <div className="mb-1 flex items-center justify-between text-sm">
                   <span style={{ color: 'var(--ink-muted)' }}>Total</span>
                   <span className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
                     {formatBRL(total)}
                   </span>
                 </div>
+                <p className="mb-4 text-[11px]" style={{ color: 'var(--gold-bright)' }}>
+                  Pague à vista no PIX e ganhe 10% de desconto no checkout.
+                </p>
                 <button
                   type="button"
                   onClick={() => {

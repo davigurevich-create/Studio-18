@@ -57,6 +57,14 @@ function emailShell(title: string, bodyHtml: string): string {
 
 type PaymentMethod = 'pix' | 'cartao' | 'boleto'
 
+// Desconto de 10% para pagamento à vista no PIX — mesmo valor usado no
+// front-end (site/src/lib/pricing.ts). Fonte real da cobrança: é aqui que o
+// valor de fato vira transaction_amount no Mercado Pago.
+const PIX_DISCOUNT = 0.1
+function pixPrice(fullPrice: number): number {
+  return Math.round(fullPrice * (1 - PIX_DISCOUNT) * 100) / 100
+}
+
 interface Address {
   zipCode: string
   streetName: string
@@ -129,10 +137,14 @@ Deno.serve(async (req) => {
 
     const lineItems = items.map((i) => {
       const product = products.find((p) => p.id === i.productId)!
-      return { product, quantity: i.quantity }
+      const fullUnitPrice = Number(product.sale_price_brl)
+      const unitPrice = paymentMethod === 'pix' ? pixPrice(fullUnitPrice) : fullUnitPrice
+      return { product, quantity: i.quantity, unitPrice, fullUnitPrice }
     })
 
-    const totalAmount = lineItems.reduce((t, li) => t + Number(li.product.sale_price_brl) * li.quantity, 0)
+    const totalAmount = lineItems.reduce((t, li) => t + li.unitPrice * li.quantity, 0)
+    const fullTotalAmount = lineItems.reduce((t, li) => t + li.fullUnitPrice * li.quantity, 0)
+    const discountAmount = Math.round((fullTotalAmount - totalAmount) * 100) / 100
     const description =
       lineItems.length === 1
         ? lineItems[0].product.name
@@ -149,7 +161,7 @@ Deno.serve(async (req) => {
         status: 'pendente',
         payment_provider: 'mercadopago',
         shipping_cost_brl: 0,
-        discount_brl: 0,
+        discount_brl: discountAmount,
         notes: `Pedido feito pelo site — ${description}`,
         shipping_zip_code: address.zipCode.replace(/\D/g, ''),
         shipping_street_name: address.streetName,
@@ -170,7 +182,7 @@ Deno.serve(async (req) => {
         sale_id: sale.id,
         product_id: li.product.id,
         quantity: li.quantity,
-        unit_price_brl: li.product.sale_price_brl,
+        unit_price_brl: li.unitPrice,
         unit_cost_brl: 0,
       })),
     )
@@ -261,10 +273,17 @@ Deno.serve(async (req) => {
         (li) =>
           `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
             <span>${li.quantity}x ${li.product.name}</span>
-            <span>R$ ${(Number(li.product.sale_price_brl) * li.quantity).toFixed(2).replace('.', ',')}</span>
+            <span>R$ ${(li.unitPrice * li.quantity).toFixed(2).replace('.', ',')}</span>
           </div>`,
       )
       .join('')
+
+    const discountRowHtml =
+      discountAmount > 0
+        ? `<div style="display:flex;justify-content:space-between;padding:6px 0;color:#8fce8f;">
+            <span>Desconto à vista no PIX (10%)</span><span>-R$ ${discountAmount.toFixed(2).replace('.', ',')}</span>
+          </div>`
+        : ''
 
     let paymentBlockHtml = ''
     if (paymentMethod === 'pix') {
@@ -285,7 +304,7 @@ Deno.serve(async (req) => {
       emailShell(
         'Recebemos seu pedido!',
         `<p>Olá, ${customerName.split(' ')[0]}! Seu pedido <strong>#${sale.id.slice(0, 8)}</strong> foi registrado com sucesso.</p>
-         <div style="margin:16px 0;">${itemsListHtml}</div>
+         <div style="margin:16px 0;">${itemsListHtml}${discountRowHtml}</div>
          <div style="display:flex;justify-content:space-between;padding:10px 0;font-weight:700;color:#f3f1ec;">
            <span>Total</span><span>R$ ${totalAmount.toFixed(2).replace('.', ',')}</span>
          </div>

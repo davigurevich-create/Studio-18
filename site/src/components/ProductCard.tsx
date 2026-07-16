@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ProductArt } from '@/components/ProductArt'
 import { formatBRL } from '@/lib/format'
+import { pixPrice } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import type { CatalogProduct } from '@/types/catalog'
 
@@ -51,10 +52,15 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
           <div className="mt-4 flex items-center justify-between border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
             <div>
               <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-                INVESTIMENTO DE
+                À VISTA NO PIX
               </div>
-              <div className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                {formatBRL(product.sale_price_brl)}
+              <div className="flex items-baseline gap-2">
+                <span className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
+                  {formatBRL(pixPrice(product.sale_price_brl))}
+                </span>
+                <span className="tabular text-xs line-through" style={{ color: 'var(--ink-muted)' }}>
+                  {formatBRL(product.sale_price_brl)}
+                </span>
               </div>
             </div>
             <button

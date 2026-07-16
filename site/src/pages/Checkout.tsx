@@ -5,11 +5,12 @@ import { CardPayment } from '@mercadopago/sdk-react'
 import { createPayment, getCatalog, isDemoMode, type CreatePaymentResult } from '@/lib/api'
 import { ensureMercadoPagoInit, isMercadoPagoConfigured } from '@/lib/mercadopago'
 import { formatBRL } from '@/lib/format'
+import { pixPrice } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import type { CatalogProduct, PaymentMethod } from '@/types/catalog'
 
-const methods: { id: PaymentMethod; label: string; hint: string }[] = [
-  { id: 'pix', label: 'PIX', hint: 'Aprovação em minutos' },
+const methods: { id: PaymentMethod; label: string; hint: string; badge?: string }[] = [
+  { id: 'pix', label: 'PIX', hint: 'Aprovação em minutos', badge: '-10%' },
   { id: 'cartao', label: 'Cartão', hint: 'Crédito, em até 12x' },
   { id: 'boleto', label: 'Boleto', hint: 'Compensação em até 3 dias úteis' },
 ]
@@ -58,6 +59,7 @@ export function Checkout() {
   )
 
   const subtotal = items.reduce((t, i) => t + i.product.sale_price_brl * i.line.quantity, 0)
+  const total = method === 'pix' ? pixPrice(subtotal) : subtotal
 
   const checkoutItems = useMemo(
     () => items.map((i) => ({ productId: i.product.id, quantity: i.line.quantity })),
@@ -303,11 +305,18 @@ export function Checkout() {
         ))}
         <div className="flex items-center justify-between border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
           <span className="text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-            TOTAL
+            {method === 'pix' ? 'TOTAL À VISTA NO PIX' : 'TOTAL'}
           </span>
-          <span className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-            {formatBRL(subtotal)}
-          </span>
+          <div className="flex items-baseline gap-2">
+            {method === 'pix' && (
+              <span className="tabular text-xs line-through" style={{ color: 'var(--ink-muted)' }}>
+                {formatBRL(subtotal)}
+              </span>
+            )}
+            <span className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
+              {formatBRL(total)}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -323,12 +332,20 @@ export function Checkout() {
                   key={m.id}
                   type="button"
                   onClick={() => setMethod(m.id)}
-                  className="rounded-lg border p-3 text-left transition"
+                  className="relative rounded-lg border p-3 text-left transition"
                   style={{
                     borderColor: method === m.id ? 'var(--gold)' : 'var(--hairline)',
                     background: method === m.id ? 'var(--gold-wash)' : 'var(--carbon-2)',
                   }}
                 >
+                  {m.badge && (
+                    <span
+                      className="absolute -top-2 right-2 rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+                      style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+                    >
+                      {m.badge}
+                    </span>
+                  )}
                   <div className="text-sm font-medium" style={{ color: method === m.id ? 'var(--gold-bright)' : 'var(--ink)' }}>
                     {m.label}
                   </div>
@@ -369,7 +386,7 @@ export function Checkout() {
           </div>
 
           {method === 'pix' && (
-            <PaymentNote text="Após confirmar, geramos o QR Code / código PIX copia-e-cola para pagamento." />
+            <PaymentNote text={`Após confirmar, geramos o QR Code / código PIX copia-e-cola para pagamento — com 10% de desconto já aplicado (${formatBRL(total)}).`} />
           )}
           {method === 'cartao' && (
             <PaymentNote text="Após confirmar, você preenche os dados do cartão numa tela segura do Mercado Pago." />
@@ -394,7 +411,7 @@ export function Checkout() {
               ? 'Registrando pedido...'
               : method === 'cartao'
                 ? 'Continuar para pagamento'
-                : `Confirmar pedido — ${formatBRL(subtotal)}`}
+                : `Confirmar pedido — ${formatBRL(total)}`}
           </button>
         </form>
       )}
