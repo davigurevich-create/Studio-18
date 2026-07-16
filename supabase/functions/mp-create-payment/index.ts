@@ -62,6 +62,7 @@ interface Address {
   zipCode: string
   streetName: string
   streetNumber: string
+  complement?: string
   neighborhood: string
   city: string
   federalUnit: string
@@ -154,6 +155,7 @@ Deno.serve(async (req) => {
         shipping_zip_code: address.zipCode.replace(/\D/g, ''),
         shipping_street_name: address.streetName,
         shipping_street_number: address.streetNumber,
+        shipping_complement: address.complement || null,
         shipping_neighborhood: address.neighborhood,
         shipping_city: address.city,
         shipping_federal_unit: address.federalUnit,
@@ -289,7 +291,7 @@ Deno.serve(async (req) => {
            <span>Total</span><span>R$ ${totalAmount.toFixed(2).replace('.', ',')}</span>
          </div>
          ${paymentBlockHtml}
-         <p style="margin-top:20px;">Entrega para: ${address.streetName}, ${address.streetNumber} — ${address.neighborhood}, ${address.city}/${address.federalUnit}</p>
+         <p style="margin-top:20px;">Entrega para: ${address.streetName}, ${address.streetNumber}${address.complement ? ` — ${address.complement}` : ''} — ${address.neighborhood}, ${address.city}/${address.federalUnit}</p>
          <p style="margin-top:24px;">
            <a href="${SITE_URL}/rastreio" style="color:#e6c778;">Acompanhe seu pedido a qualquer momento em ${SITE_URL}/rastreio</a>
          </p>`,

@@ -22,6 +22,7 @@ export interface CheckoutAddress {
   zipCode: string
   streetName: string
   streetNumber: string
+  complement?: string
   neighborhood: string
   city: string
   federalUnit: string

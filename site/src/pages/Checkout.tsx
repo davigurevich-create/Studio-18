@@ -25,6 +25,7 @@ export function Checkout() {
   const [zipCode, setZipCode] = useState('')
   const [streetName, setStreetName] = useState('')
   const [streetNumber, setStreetNumber] = useState('')
+  const [complement, setComplement] = useState('')
   const [neighborhood, setNeighborhood] = useState('')
   const [city, setCity] = useState('')
   const [federalUnit, setFederalUnit] = useState('')
@@ -89,7 +90,7 @@ export function Checkout() {
         customerEmail: email,
         customerCpf: cpf,
         paymentMethod: method,
-        address: { zipCode, streetName, streetNumber, neighborhood, city, federalUnit },
+        address: { zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit },
       })
       setResult(res)
       setStep('done')
@@ -114,7 +115,7 @@ export function Checkout() {
           cardToken: formData.token,
           cardPaymentMethodId: formData.payment_method_id,
           installments: formData.installments,
-          address: { zipCode, streetName, streetNumber, neighborhood, city, federalUnit },
+          address: { zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit },
         })
         setResult(res)
         setStep('done')
@@ -124,7 +125,7 @@ export function Checkout() {
         throw new Error('payment_failed')
       }
     },
-    [checkoutItems, name, email, cpf, zipCode, streetName, streetNumber, neighborhood, city, federalUnit, clear],
+    [checkoutItems, name, email, cpf, zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit, clear],
   )
 
   const handleCardError = useCallback(() => {
@@ -352,6 +353,14 @@ export function Checkout() {
               <Field label="Número" value={streetNumber} onChange={setStreetNumber} required />
               <div className="col-span-2">
                 <Field label="Rua" value={streetName} onChange={setStreetName} required />
+              </div>
+              <div className="col-span-2">
+                <Field
+                  label="Complemento (opcional)"
+                  value={complement}
+                  onChange={setComplement}
+                  placeholder="Apto, bloco, casa..."
+                />
               </div>
               <Field label="Bairro" value={neighborhood} onChange={setNeighborhood} required />
               <Field label="Cidade" value={city} onChange={setCity} required />
