@@ -140,6 +140,7 @@ export function Estoque() {
               <th className="pb-2 pr-4 font-medium whitespace-nowrap">Produto</th>
               <th className="pb-2 pr-4 font-medium whitespace-nowrap">Fabricante</th>
               <th className="pb-2 pr-4 font-medium whitespace-nowrap">Categoria</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Peças (clique p/ editar)</th>
               <th className="pb-2 pr-4 font-medium whitespace-nowrap">Em estoque</th>
               <th className="pb-2 pr-4 font-medium whitespace-nowrap">Custo unit. (clique p/ editar)</th>
               <th className="pb-2 pr-4 font-medium whitespace-nowrap">Preço venda (clique p/ editar)</th>
@@ -152,7 +153,7 @@ export function Estoque() {
           <tbody>
             {filteredStock.length === 0 ? (
               <tr>
-                <td colSpan={11} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                <td colSpan={12} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
                   Nenhum produto encontrado com esses filtros.
                 </td>
               </tr>
@@ -172,6 +173,20 @@ export function Estoque() {
                   </td>
                   <td className="py-2.5 pr-4 capitalize" style={{ color: 'var(--text-secondary)' }}>
                     {p.category}
+                  </td>
+                  <td className="py-2.5 pr-4">
+                    <EditableDimension
+                      value={p.piece_count}
+                      unit=""
+                      step="1"
+                      onSave={(v) =>
+                        updateProduct(
+                          p.product_id,
+                          { piece_count: v },
+                          `Editou quantidade de peças do SKU ${p.sku}: ${p.piece_count ?? '—'} → ${v}`,
+                        ).then(reload)
+                      }
+                    />
                   </td>
                   <td className="tabular py-2.5 pr-4" style={{ color: 'var(--text-primary)' }}>
                     {p.quantity_in_stock}
@@ -513,7 +528,17 @@ function EditablePrice({ value, onSave }: { value: number; onSave: (value: numbe
   )
 }
 
-function EditableDimension({ value, onSave }: { value: number | null; onSave: (value: number) => void }) {
+function EditableDimension({
+  value,
+  onSave,
+  unit = 'cm',
+  step = '0.1',
+}: {
+  value: number | null
+  onSave: (value: number) => void
+  unit?: string
+  step?: string
+}) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(String(value ?? ''))
 
@@ -529,7 +554,7 @@ function EditableDimension({ value, onSave }: { value: number | null; onSave: (v
         style={{ color: 'var(--text-secondary)' }}
         title="Clique para editar"
       >
-        {value != null ? `${value} cm` : '—'}
+        {value != null ? (unit ? `${value} ${unit}` : String(value)) : '—'}
       </button>
     )
   }
@@ -544,7 +569,7 @@ function EditableDimension({ value, onSave }: { value: number | null; onSave: (v
     <input
       autoFocus
       type="number"
-      step="0.1"
+      step={step}
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}

@@ -123,6 +123,7 @@ export interface ProductStock {
   height_cm: number | null
   width_cm: number | null
   quantity_in_stock: number
+  piece_count: number | null
 }
 
 export interface SaleWithItems extends Sale {

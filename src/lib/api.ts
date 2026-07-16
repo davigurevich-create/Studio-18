@@ -144,6 +144,7 @@ export async function getStock(): Promise<ProductStock[]> {
       height_cm: p.height_cm ?? null,
       width_cm: p.width_cm ?? null,
       quantity_in_stock: qty,
+      piece_count: p.piece_count ?? null,
     }
   })
 }
