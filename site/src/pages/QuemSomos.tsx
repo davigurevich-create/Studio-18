@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useMotionTemplate, useScroll, useTransform } from 'framer-motion'
 import { Camera } from 'lucide-react'
 
 interface Word {
@@ -58,7 +58,7 @@ export function QuemSomos() {
       <section className="mx-auto max-w-5xl px-6 py-32 sm:py-48">
         <div className="flex flex-col gap-2 sm:gap-4">
           {linesOfText.map((line, i) => (
-            <RevealLine key={i} words={line} />
+            <RevealLine key={i} words={line} index={i} />
           ))}
         </div>
       </section>
@@ -66,11 +66,15 @@ export function QuemSomos() {
   )
 }
 
-function RevealLine({ words }: { words: Word[] }) {
+function RevealLine({ words, index }: { words: Word[]; index: number }) {
   const ref = useRef<HTMLParagraphElement>(null)
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 0.92', 'start 0.4'] })
-  const opacity = useTransform(scrollYProgress, [0, 1], [0.1, 1])
-  const y = useTransform(scrollYProgress, [0, 1], [28, 0])
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 0.95', 'start 0.35'] })
+  const opacity = useTransform(scrollYProgress, [0, 1], [0.08, 1])
+  const y = useTransform(scrollYProgress, [0, 1], [70, 0])
+  const xDirection = index % 2 === 0 ? 1 : -1
+  const x = useTransform(scrollYProgress, [0, 1], [40 * xDirection, 0])
+  const blurAmount = useTransform(scrollYProgress, [0, 1], [10, 0])
+  const filter = useMotionTemplate`blur(${blurAmount}px)`
 
   return (
     <motion.p
@@ -78,6 +82,8 @@ function RevealLine({ words }: { words: Word[] }) {
       style={{
         opacity,
         y,
+        x,
+        filter,
         scaleY: 1.16,
         transformOrigin: 'bottom',
       }}
