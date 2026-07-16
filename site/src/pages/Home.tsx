@@ -358,8 +358,21 @@ export function Home() {
       </section>
 
       {/* PEÇAS FALTANTES */}
-      <section id="pecas-faltantes" className="border-t px-6 py-24" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)' }}>
-        <div className="mx-auto max-w-6xl">
+      <section
+        id="pecas-faltantes"
+        className="relative overflow-hidden border-t px-6 py-24"
+        style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)' }}
+      >
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: 'url(/part-request-background.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0" style={{ background: 'rgba(6,6,6,0.78)' }} />
+        <div className="relative z-10 mx-auto max-w-6xl">
           <motion.p variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="eyebrow mb-3 text-center">
             Suporte pós-venda
           </motion.p>

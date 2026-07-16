@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { Factory, Printer } from 'lucide-react'
-import { submitPartRequest, type PartRequestInput } from '@/lib/api'
+import { getCatalog, submitPartRequest, type PartRequestInput } from '@/lib/api'
+import type { CatalogProduct } from '@/types/catalog'
 
 const replacementOptions: {
   id: PartRequestInput['replacementType']
@@ -24,6 +25,7 @@ const replacementOptions: {
 ]
 
 export function PartRequestForm() {
+  const [catalog, setCatalog] = useState<CatalogProduct[]>([])
   const [customerName, setCustomerName] = useState('')
   const [customerEmail, setCustomerEmail] = useState('')
   const [orderReference, setOrderReference] = useState('')
@@ -33,6 +35,10 @@ export function PartRequestForm() {
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    getCatalog().then(setCatalog)
+  }, [])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -87,7 +93,27 @@ export function PartRequestForm() {
         <Field label="Nome completo" value={customerName} onChange={setCustomerName} required />
         <Field label="E-mail" value={customerEmail} onChange={setCustomerEmail} type="email" required />
         <Field label="Número do pedido" value={orderReference} onChange={setOrderReference} required />
-        <Field label="Modelo do set" value={productModel} onChange={setProductModel} required />
+        <div>
+          <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+            MODELO DO SET
+          </label>
+          <select
+            value={productModel}
+            onChange={(e) => setProductModel(e.target.value)}
+            required
+            className="w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm outline-none"
+            style={{ borderColor: 'var(--hairline)', color: productModel ? 'var(--ink)' : 'var(--ink-muted)' }}
+          >
+            <option value="" disabled style={{ color: 'var(--ink-muted)' }}>
+              Selecione o modelo...
+            </option>
+            {catalog.map((p) => (
+              <option key={p.id} value={p.name} style={{ color: 'var(--ink)', background: 'var(--carbon-2)' }}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div>
