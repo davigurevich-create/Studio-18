@@ -52,7 +52,7 @@ export function Layout() {
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center">
-            <img src="/logo-studio18.png" alt="Studio 18" className="h-7 w-auto sm:h-8" />
+            <img src="/logo-studio18.png" alt="Studio 18" className="h-12 w-auto sm:h-16" />
           </Link>
           <div className="flex items-center gap-6">
             <nav className="hidden gap-8 text-sm tracking-wide sm:flex" style={{ color: 'var(--ink-secondary)' }}>
@@ -149,7 +149,7 @@ export function Layout() {
 
       <footer className="border-t px-6 py-10" style={{ borderColor: 'var(--hairline)' }}>
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 text-center">
-          <img src="/logo-studio18.png" alt="Studio 18" className="h-8 w-auto" />
+          <img src="/logo-studio18.png" alt="Studio 18" className="h-16 w-auto sm:h-20" />
           <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>
             Do nosso Studio para o seu.
           </p>
