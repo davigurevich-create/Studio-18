@@ -54,8 +54,11 @@ export function QuemSomos() {
         </div>
       </div>
 
-      {/* TEXTO DE IMPACTO — revela linha por linha conforme a rolagem */}
-      <section className="mx-auto max-w-5xl px-6 py-32 sm:py-48">
+      {/* TEXTO DE IMPACTO — revela linha por linha conforme a rolagem.
+          O padding inferior generoso (em vh) garante espaço de rolagem
+          suficiente para a ultima linha terminar 100% nitida antes do fim
+          da pagina, em qualquer altura de tela. */}
+      <section className="mx-auto max-w-5xl px-6 pt-32 pb-[60svh] sm:pt-48 sm:pb-[65svh]">
         <div className="flex flex-col gap-2 sm:gap-4">
           {linesOfText.map((line, i) => (
             <RevealLine key={i} words={line} index={i} />
