@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
-const faqs = [
+const faqs: { q: string; a: ReactNode }[] = [
   {
     q: 'Quanto tempo leva para o pedido chegar?',
-    a: 'Os sets ficam em pronta entrega no Brasil (não é uma importação individual) — o prazo de envio segue a modalidade escolhida no frete, geralmente entre 5 e 15 dias úteis dependendo da região.',
+    a: 'Os sets ficam em pronta entrega no Brasil (não é uma importação individual) — o prazo de envio é de 2 a 5 dias úteis, a depender da localidade do cliente.',
   },
   {
     q: 'Como acompanho meu pedido?',
@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     q: 'Os sets são originais?',
-    a: 'Trabalhamos com fabricantes de blocos de montar técnicos premium em escala 1:8, com curadoria própria da Studio 18. Cada set vem com caixa oficial e manual completo do fabricante.',
+    a: 'Sim. Somos importadores e representantes oficiais dos fabricantes CADA, GULY, REOBRIX e KBOX — referências no segmento de blocos de montar técnicos em escala 1:8. Cada set vem com caixa oficial e manual completo do fabricante.',
   },
   {
     q: 'Posso trocar ou devolver meu pedido?',
@@ -24,7 +24,16 @@ const faqs = [
   },
   {
     q: 'O que faço se o set chegar com peças faltando ou danificadas?',
-    a: 'Entre em contato com a gente informando o número do pedido — resolvemos com reposição de peças ou troca do set, sem custo adicional.',
+    a: (
+      <>
+        Preencha nosso{' '}
+        <a href="/#pecas-faltantes" className="underline" style={{ color: 'var(--gold)' }}>
+          formulário de peças faltantes
+        </a>{' '}
+        informando o número do pedido. Você escolhe entre receber uma peça impressa em 3D pelo nosso próprio
+        estúdio em até 2 dias úteis, ou a peça original pedida ao fabricante — sempre sem nenhum custo.
+      </>
+    ),
   },
 ]
 
