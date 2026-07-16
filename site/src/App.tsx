@@ -9,6 +9,7 @@ import { Faq } from '@/pages/Faq'
 import { PoliticaDevolucao } from '@/pages/PoliticaDevolucao'
 import { Blog } from '@/pages/Blog'
 import { BlogPost } from '@/pages/BlogPost'
+import { QuemSomos } from '@/pages/QuemSomos'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="/politica-de-devolucao" element={<PoliticaDevolucao />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/quem-somos" element={<QuemSomos />} />
           </Route>
         </Routes>
       </BrowserRouter>
