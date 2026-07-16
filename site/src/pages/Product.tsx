@@ -78,6 +78,22 @@ export function Product() {
             </p>
           </div>
 
+          {product.spec_highlights && product.spec_highlights.length > 0 && (
+            <div className="mt-6">
+              <h2 className="mb-3 text-sm font-semibold tracking-wide" style={{ color: 'var(--ink)' }}>
+                Ficha técnica
+              </h2>
+              <ul className="flex flex-col gap-2">
+                {product.spec_highlights.map((item, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--ink-secondary)' }}>
+                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full" style={{ background: 'var(--gold)' }} />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="mt-10 border-t pt-6" style={{ borderColor: 'var(--hairline)' }}>
             <div className="flex items-end justify-between">
               <div>

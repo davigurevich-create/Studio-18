@@ -17,6 +17,7 @@ export interface Product {
   collection_tag?: string | null
   automotive_history?: string | null
   dimensions?: string | null
+  spec_highlights?: string[] | null
   active: boolean
   created_at: string
 }

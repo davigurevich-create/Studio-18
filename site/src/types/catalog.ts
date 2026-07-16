@@ -13,6 +13,7 @@ export interface CatalogProduct {
   image_urls: string[]
   automotive_history: string | null
   dimensions: string | null
+  spec_highlights: string[] | null
   quantity_available: number
 }
 
