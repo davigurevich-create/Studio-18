@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Package, ShoppingCart, Wallet, Ship, Newspaper, LogOut } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Wallet, Ship, Newspaper, Wrench, LogOut } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
-import { getBlogPosts } from '@/lib/api'
+import { getBlogPosts, getPartRequests } from '@/lib/api'
 
 const navItems = [
   { to: '/', label: 'Visão geral', icon: LayoutDashboard, end: true },
   { to: '/estoque', label: 'Estoque', icon: Package },
   { to: '/vendas', label: 'Vendas', icon: ShoppingCart },
+  { to: '/pecas-faltantes', label: 'Peças faltantes', icon: Wrench },
   { to: '/financeiro', label: 'Financeiro', icon: Wallet },
   { to: '/containers', label: 'Containers', icon: Ship },
   { to: '/blog', label: 'Blog', icon: Newspaper },
@@ -16,10 +17,14 @@ const navItems = [
 export function Layout() {
   const { demo, signOut } = useAuth()
   const [pendingBlogDrafts, setPendingBlogDrafts] = useState(0)
+  const [pendingPartRequests, setPendingPartRequests] = useState(0)
 
   useEffect(() => {
     getBlogPosts()
       .then((posts) => setPendingBlogDrafts(posts.filter((p) => p.ai_generated && !p.published).length))
+      .catch(() => {})
+    getPartRequests()
+      .then((requests) => setPendingPartRequests(requests.filter((r) => r.status === 'pendente').length))
       .catch(() => {})
   }, [])
 
@@ -62,6 +67,14 @@ export function Layout() {
                   style={{ background: 'var(--status-warning)', color: '#3a2500' }}
                 >
                   {pendingBlogDrafts}
+                </span>
+              )}
+              {to === '/pecas-faltantes' && pendingPartRequests > 0 && (
+                <span
+                  className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
+                  style={{ background: 'var(--status-warning)', color: '#3a2500' }}
+                >
+                  {pendingPartRequests}
                 </span>
               )}
             </NavLink>

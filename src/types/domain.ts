@@ -122,6 +122,22 @@ export interface SaleWithItems extends Sale {
   items: (SaleItem & { product?: Product })[]
 }
 
+export type ReplacementType = 'impressao_3d' | 'original_fabricante'
+export type PartRequestStatus = 'pendente' | 'em_producao' | 'enviado' | 'concluido'
+
+export interface PartRequest {
+  id: string
+  created_at: string
+  customer_name: string
+  customer_email: string
+  order_reference: string
+  product_model: string
+  part_description: string
+  replacement_type: ReplacementType
+  status: PartRequestStatus
+  admin_notes: string | null
+}
+
 export interface BlogPost {
   id: string
   slug: string

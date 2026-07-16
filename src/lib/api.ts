@@ -5,6 +5,7 @@ import {
   seedContainers,
   seedExpenses,
   seedMovements,
+  seedPartRequests,
   seedProducts,
   seedSaleItems,
   seedSales,
@@ -14,6 +15,8 @@ import type {
   Container,
   Expense,
   InventoryMovement,
+  PartRequest,
+  PartRequestStatus,
   Product,
   ProductStock,
   Sale,
@@ -27,6 +30,7 @@ const salesTable = makeTable<Sale>('sales', seedSales)
 const saleItemsTable = makeTable<SaleItem>('sale_items', seedSaleItems)
 const expensesTable = makeTable<Expense>('expenses', seedExpenses)
 const blogPostsTable = makeTable<BlogPost>('blog_posts', seedBlogPosts)
+const partRequestsTable = makeTable<PartRequest>('part_requests', seedPartRequests)
 
 /** True when reading from the local demo store instead of Supabase. */
 export const isDemoMode = !isSupabaseConfigured
@@ -284,4 +288,34 @@ export async function deleteBlogPost(id: string): Promise<void> {
     return
   }
   blogPostsTable.remove(id)
+}
+
+// ---------------------------------------------------------------------------
+// Solicitações de peças faltantes
+// ---------------------------------------------------------------------------
+export async function getPartRequests(): Promise<PartRequest[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('part_requests').select('*').order('created_at', { ascending: false })
+    if (error) throw error
+    return data as PartRequest[]
+  }
+  return [...partRequestsTable.all()].sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+export async function updatePartRequestStatus(id: string, status: PartRequestStatus): Promise<void> {
+  if (supabase) {
+    const { error } = await supabase.from('part_requests').update({ status }).eq('id', id)
+    if (error) throw error
+    return
+  }
+  partRequestsTable.update(id, { status })
+}
+
+export async function updatePartRequestNotes(id: string, admin_notes: string): Promise<void> {
+  if (supabase) {
+    const { error } = await supabase.from('part_requests').update({ admin_notes }).eq('id', id)
+    if (error) throw error
+    return
+  }
+  partRequestsTable.update(id, { admin_notes })
 }

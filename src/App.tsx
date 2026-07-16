@@ -8,6 +8,7 @@ import { Vendas } from '@/pages/Vendas'
 import { Financeiro } from '@/pages/Financeiro'
 import { Containers } from '@/pages/Containers'
 import { Blog } from '@/pages/Blog'
+import { PecasFaltantes } from '@/pages/PecasFaltantes'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { session, loading, demo } = useAuth()
@@ -36,6 +37,7 @@ function App() {
             <Route path="/financeiro" element={<Financeiro />} />
             <Route path="/containers" element={<Containers />} />
             <Route path="/blog" element={<Blog />} />
+            <Route path="/pecas-faltantes" element={<PecasFaltantes />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

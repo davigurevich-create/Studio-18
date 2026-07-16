@@ -69,6 +69,33 @@ export async function getOrderStatus(orderId: string, email: string): Promise<Or
   return data[0] as OrderStatus
 }
 
+export interface PartRequestInput {
+  customerName: string
+  customerEmail: string
+  orderReference: string
+  productModel: string
+  partDescription: string
+  replacementType: 'impressao_3d' | 'original_fabricante'
+}
+
+/**
+ * Envia uma solicitacao de reposicao de peca faltante (formulario publico,
+ * sem login). Sempre gratuito para o cliente — a Edge Function registra em
+ * part_requests e dispara o e-mail de confirmacao.
+ */
+export async function submitPartRequest(input: PartRequestInput): Promise<{ requestId: string }> {
+  if (supabase) {
+    const { data, error } = await supabase.functions.invoke('submit-part-request', { body: input })
+    if (error) throw error
+    if (data?.error) throw new Error(data.error)
+    return data as { requestId: string }
+  }
+
+  // Modo demonstracao: nao ha backend para registrar a solicitacao.
+  await new Promise((resolve) => setTimeout(resolve, 600))
+  return { requestId: `demo-${Date.now()}` }
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string

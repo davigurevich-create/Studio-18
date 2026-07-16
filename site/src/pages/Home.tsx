@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform } from 'framer-motion'
 import { BadgePercent, Hand, PackageOpen, ShieldCheck, Warehouse } from 'lucide-react'
+import { PartRequestForm } from '@/components/PartRequestForm'
 import { HeroCar } from '@/components/HeroCar'
 import { ProductCard } from '@/components/ProductCard'
 import { getCatalog } from '@/lib/api'
@@ -354,6 +355,39 @@ export function Home() {
             )}
           </>
         )}
+      </section>
+
+      {/* PEÇAS FALTANTES */}
+      <section id="pecas-faltantes" className="border-t px-6 py-24" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)' }}>
+        <div className="mx-auto max-w-6xl">
+          <motion.p variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="eyebrow mb-3 text-center">
+            Suporte pós-venda
+          </motion.p>
+          <motion.h2
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            className="mb-4 text-center text-3xl sm:text-4xl"
+          >
+            Faltou uma peça? A gente resolve.
+          </motion.h2>
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            className="mx-auto mb-14 max-w-2xl text-center text-sm"
+            style={{ color: 'var(--ink-muted)' }}
+          >
+            Somos os únicos com impressora 3D própria para produzir peças provisórias em tempo recorde. Conte pra
+            gente qual peça faltou no seu set e escolha como prefere recebê-la — sempre sem nenhum custo.
+          </motion.p>
+
+          <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
+            <PartRequestForm />
+          </motion.div>
+        </div>
       </section>
     </div>
   )
