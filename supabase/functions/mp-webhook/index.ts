@@ -33,9 +33,8 @@ function emailShell(title: string, bodyHtml: string): string {
   return `
   <div style="background:#060606;padding:32px 16px;font-family:Helvetica,Arial,sans-serif;">
     <div style="max-width:520px;margin:0 auto;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;">
-      <div style="padding:24px 28px;border-bottom:1px solid rgba(255,255,255,0.08);">
-        <span style="font-size:16px;font-weight:700;letter-spacing:0.15em;color:#f3f1ec;">STUDIO</span>
-        <span style="font-size:16px;font-weight:700;letter-spacing:0.15em;color:#cda44d;"> 18</span>
+      <div style="padding:20px 28px;border-bottom:1px solid rgba(255,255,255,0.08);">
+        <img src="${SITE_URL}/logo-studio18.png" alt="Studio 18" height="28" style="height:28px;width:auto;display:block;" />
       </div>
       <div style="padding:28px;">
         <h1 style="margin:0 0 16px;font-size:20px;color:#f3f1ec;">${title}</h1>
