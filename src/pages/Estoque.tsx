@@ -73,6 +73,8 @@ export function Estoque() {
         />
       </div>
 
+      <MarginComparison stock={stock} />
+
       {showProductForm && (
         <ProductForm
           onDone={() => {
@@ -184,6 +186,79 @@ export function Estoque() {
         </table>
       </Card>
     </div>
+  )
+}
+
+function MarginComparison({ stock }: { stock: ProductStock[] }) {
+  const { ranked, unpriced, maxMargin } = useMemo(() => {
+    const priced = stock.filter((p) => p.cost_price_brl > 0)
+    const unpriced = stock.filter((p) => p.cost_price_brl <= 0)
+    const ranked = priced
+      .map((p) => {
+        const marginBrl = p.sale_price_brl - p.cost_price_brl
+        const marginPct = p.sale_price_brl > 0 ? (marginBrl / p.sale_price_brl) * 100 : 0
+        return { ...p, marginBrl, marginPct }
+      })
+      .sort((a, b) => b.marginBrl - a.marginBrl)
+    return { ranked, unpriced, maxMargin: ranked[0]?.marginBrl ?? 0 }
+  }, [stock])
+
+  if (stock.length === 0) return null
+
+  return (
+    <Card className="mb-4">
+      <div className="mb-4">
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          Margem por SKU
+        </h2>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          Preço de venda menos custo unitário, do maior para o menor
+        </p>
+      </div>
+
+      {ranked.length === 0 ? (
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+          Cadastre o custo unitário dos produtos para calcular a margem.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          {ranked.map((p, i) => (
+            <div key={p.product_id} className="flex items-center gap-3">
+              <div className="w-6 shrink-0 text-right text-xs tabular" style={{ color: 'var(--text-muted)' }}>
+                {i + 1}
+              </div>
+              <div className="w-44 shrink-0 truncate text-sm" style={{ color: 'var(--text-primary)' }} title={`${p.sku} — ${p.name}`}>
+                {p.name}
+              </div>
+              <div className="flex-1 rounded-full" style={{ background: 'var(--gridline)' }}>
+                <div
+                  className="h-2 rounded-full transition-all"
+                  style={{
+                    width: `${maxMargin > 0 ? Math.max((p.marginBrl / maxMargin) * 100, 2) : 0}%`,
+                    background: p.marginBrl >= 0 ? 'var(--series-1)' : 'var(--status-critical)',
+                  }}
+                />
+              </div>
+              <div className="w-24 shrink-0 text-right text-sm font-medium tabular" style={{ color: 'var(--text-primary)' }}>
+                {formatBRL(p.marginBrl)}
+              </div>
+              <div className="w-14 shrink-0 text-right text-xs tabular" style={{ color: 'var(--text-muted)' }}>
+                {p.marginPct.toFixed(0)}%
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {unpriced.length > 0 && (
+        <div className="mt-4 border-t pt-3" style={{ borderColor: 'var(--gridline)' }}>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            {unpriced.length} SKU{unpriced.length > 1 ? 's' : ''} sem custo unitário cadastrado — a margem não pode ser
+            calculada até informar o custo em Estoque: {unpriced.map((p) => p.sku).join(', ')}
+          </p>
+        </div>
+      )}
+    </Card>
   )
 }
 
