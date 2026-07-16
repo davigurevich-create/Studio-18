@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useScroll } from 'framer-motion'
+import { Hand } from 'lucide-react'
 import { HeroCar } from '@/components/HeroCar'
 import { ProductCard } from '@/components/ProductCard'
 import { getCatalog } from '@/lib/api'
@@ -118,6 +119,13 @@ export function Home() {
 
         <div className="mt-[calc(-1*max(100svh,560px))]">
           <section className="relative z-10 flex h-[100svh] min-h-[560px] flex-col items-center justify-end pb-8 sm:pb-10">
+            <motion.div
+              className="mb-3"
+              animate={{ y: [0, 10, 0], opacity: [0.35, 1, 0.35] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <Hand size={22} style={{ color: 'var(--ink-muted)' }} strokeWidth={1.6} />
+            </motion.div>
             <motion.div
               className="text-xs tracking-[0.3em]"
               style={{ color: 'var(--ink-muted)' }}
