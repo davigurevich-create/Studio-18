@@ -22,10 +22,10 @@ select
   p.automotive_history,
   p.dimensions,
   p.spec_highlights,
+  greatest(coalesce(s.quantity_in_stock, 0), 0) as quantity_available,
   p.length_cm,
   p.height_cm,
-  p.width_cm,
-  greatest(coalesce(s.quantity_in_stock, 0), 0) as quantity_available
+  p.width_cm
 from products p
 left join product_stock s on s.product_id = p.id
 where p.active = true;
