@@ -112,6 +112,7 @@ export interface ProductStock {
   sku: string
   name: string
   category: ProductCategory
+  manufacturer: string | null
   min_stock_alert: number
   cost_price_brl: number
   sale_price_brl: number

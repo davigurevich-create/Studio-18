@@ -138,6 +138,7 @@ export function Estoque() {
             <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
               <th className="pb-2 font-medium">SKU</th>
               <th className="pb-2 font-medium">Produto</th>
+              <th className="pb-2 font-medium">Fabricante</th>
               <th className="pb-2 font-medium">Categoria</th>
               <th className="pb-2 font-medium">Em estoque</th>
               <th className="pb-2 font-medium">Custo unit. (clique p/ editar)</th>
@@ -148,7 +149,7 @@ export function Estoque() {
           <tbody>
             {filteredStock.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                <td colSpan={8} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
                   Nenhum produto encontrado com esses filtros.
                 </td>
               </tr>
@@ -162,6 +163,9 @@ export function Estoque() {
                   </td>
                   <td className="py-2.5 font-medium" style={{ color: 'var(--text-primary)' }}>
                     {p.name}
+                  </td>
+                  <td className="py-2.5" style={{ color: 'var(--text-secondary)' }}>
+                    {p.manufacturer ?? '—'}
                   </td>
                   <td className="py-2.5 capitalize" style={{ color: 'var(--text-secondary)' }}>
                     {p.category}
@@ -285,6 +289,7 @@ function ProductForm({ onDone }: { onDone: () => void }) {
     sku: '',
     name: '',
     category: 'carro' as Product['category'],
+    manufacturer: '',
     brand_model: '',
     scale: '1:8',
     piece_count: '',
@@ -299,6 +304,7 @@ function ProductForm({ onDone }: { onDone: () => void }) {
       sku: form.sku,
       name: form.name,
       category: form.category,
+      manufacturer: form.manufacturer || null,
       brand_model: form.brand_model || null,
       scale: form.scale,
       piece_count: form.piece_count ? Number(form.piece_count) : null,
@@ -326,6 +332,7 @@ function ProductForm({ onDone }: { onDone: () => void }) {
             { value: 'motor', label: 'Motor' },
           ]}
         />
+        <Field label="Fabricante" value={form.manufacturer} onChange={(v) => setForm({ ...form, manufacturer: v })} placeholder="Ex: CADA, GULY, REOBRIX, KBOX" />
         <Field label="Modelo" value={form.brand_model} onChange={(v) => setForm({ ...form, brand_model: v })} />
         <Field label="Peças" value={form.piece_count} onChange={(v) => setForm({ ...form, piece_count: v })} type="number" />
         <Field label="Custo (R$)" value={form.cost_price_brl} onChange={(v) => setForm({ ...form, cost_price_brl: v })} type="number" required />
@@ -465,6 +472,7 @@ function Field({
   type = 'text',
   required,
   className = '',
+  placeholder,
 }: {
   label: string
   value: string
@@ -472,6 +480,7 @@ function Field({
   type?: string
   required?: boolean
   className?: string
+  placeholder?: string
 }) {
   return (
     <div className={className}>
@@ -482,6 +491,7 @@ function Field({
         type={type}
         value={value}
         required={required}
+        placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-lg border px-3 py-2 text-sm"
         style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}

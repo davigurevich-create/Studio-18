@@ -136,6 +136,7 @@ export async function getStock(): Promise<ProductStock[]> {
       sku: p.sku,
       name: p.name,
       category: p.category,
+      manufacturer: p.manufacturer ?? null,
       min_stock_alert: p.min_stock_alert,
       cost_price_brl: p.cost_price_brl,
       sale_price_brl: p.sale_price_brl,
