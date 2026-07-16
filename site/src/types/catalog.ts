@@ -14,6 +14,9 @@ export interface CatalogProduct {
   automotive_history: string | null
   dimensions: string | null
   spec_highlights: string[] | null
+  length_cm: number | null
+  height_cm: number | null
+  width_cm: number | null
   quantity_available: number
 }
 

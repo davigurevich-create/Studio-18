@@ -65,7 +65,7 @@ export function Product() {
             <Info label="Fabricante" value={product.manufacturer ?? '—'} />
             <Info label="Escala" value={product.scale} />
             <Info label="Peças" value={product.piece_count?.toLocaleString('pt-BR') ?? '—'} />
-            <Info label="Dimensões" value={product.dimensions ?? 'Em breve'} />
+            <Info label="Dimensões" value={formatDimensions(product)} />
           </dl>
 
           <div className="mt-8">
@@ -158,6 +158,15 @@ export function Product() {
       </div>
     </div>
   )
+}
+
+function formatDimensions(product: CatalogProduct): string {
+  const { length_cm, height_cm, width_cm } = product
+  if (length_cm != null && height_cm != null && width_cm != null) {
+    const fmt = (n: number) => String(n).replace('.', ',')
+    return `${fmt(length_cm)} × ${fmt(height_cm)} × ${fmt(width_cm)} cm`
+  }
+  return product.dimensions ?? 'Em breve'
 }
 
 function Info({ label, value }: { label: string; value: string }) {
