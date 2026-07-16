@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Package, ShoppingCart, Wallet, Ship, Newspaper, Wrench, LogOut } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Wallet, Ship, Newspaper, Wrench, ScrollText, LogOut } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { getBlogPosts, getPartRequests } from '@/lib/api'
 
@@ -12,6 +12,7 @@ const navItems = [
   { to: '/financeiro', label: 'Financeiro', icon: Wallet },
   { to: '/containers', label: 'Containers', icon: Ship },
   { to: '/blog', label: 'Blog', icon: Newspaper },
+  { to: '/log-auditoria', label: 'Log de auditoria', icon: ScrollText },
 ]
 
 export function Layout() {

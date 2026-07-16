@@ -1,6 +1,7 @@
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import { makeTable, newId } from '@/lib/localStore'
 import {
+  seedAuditLog,
   seedBlogPosts,
   seedContainers,
   seedExpenses,
@@ -11,6 +12,8 @@ import {
   seedSales,
 } from '@/lib/mockData'
 import type {
+  AuditAction,
+  AuditLogEntry,
   BlogPost,
   Container,
   Expense,
@@ -31,9 +34,48 @@ const saleItemsTable = makeTable<SaleItem>('sale_items', seedSaleItems)
 const expensesTable = makeTable<Expense>('expenses', seedExpenses)
 const blogPostsTable = makeTable<BlogPost>('blog_posts', seedBlogPosts)
 const partRequestsTable = makeTable<PartRequest>('part_requests', seedPartRequests)
+const auditLogTable = makeTable<AuditLogEntry>('audit_log', seedAuditLog)
 
 /** True when reading from the local demo store instead of Supabase. */
 export const isDemoMode = !isSupabaseConfigured
+
+// ---------------------------------------------------------------------------
+// Log de auditoria — registra quem fez o quê e quando. Nunca derruba a
+// operação principal se o registro falhar (só loga o erro no console).
+// ---------------------------------------------------------------------------
+async function logAudit(action: AuditAction, entity: string, entityId: string | null, summary: string): Promise<void> {
+  try {
+    if (supabase) {
+      const { data } = await supabase.auth.getUser()
+      const actorEmail = data.user?.email ?? 'desconhecido'
+      const { error } = await supabase
+        .from('audit_log')
+        .insert({ actor_email: actorEmail, action, entity, entity_id: entityId, summary })
+      if (error) throw error
+      return
+    }
+    auditLogTable.insert({
+      id: newId(),
+      created_at: new Date().toISOString(),
+      actor_email: 'demo@studio18',
+      action,
+      entity,
+      entity_id: entityId,
+      summary,
+    })
+  } catch (err) {
+    console.error('Falha ao registrar log de auditoria:', err)
+  }
+}
+
+export async function getAuditLog(): Promise<AuditLogEntry[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('audit_log').select('*').order('created_at', { ascending: false })
+    if (error) throw error
+    return data as AuditLogEntry[]
+  }
+  return [...auditLogTable.all()].sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
 
 // ---------------------------------------------------------------------------
 // Products
@@ -48,21 +90,26 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export async function createProduct(input: Omit<Product, 'id' | 'created_at'>): Promise<Product> {
+  let created: Product
   if (supabase) {
     const { data, error } = await supabase.from('products').insert(input).select().single()
     if (error) throw error
-    return data as Product
+    created = data as Product
+  } else {
+    created = productsTable.insert({ ...input, id: newId(), created_at: new Date().toISOString() })
   }
-  return productsTable.insert({ ...input, id: newId(), created_at: new Date().toISOString() })
+  await logAudit('criar', 'produto', created.id, `Cadastrou o produto ${input.sku} — ${input.name}`)
+  return created
 }
 
-export async function updateProduct(id: string, patch: Partial<Product>): Promise<void> {
+export async function updateProduct(id: string, patch: Partial<Product>, summary: string): Promise<void> {
   if (supabase) {
     const { error } = await supabase.from('products').update(patch).eq('id', id)
     if (error) throw error
-    return
+  } else {
+    productsTable.update(id, patch)
   }
-  productsTable.update(id, patch)
+  await logAudit('editar', 'produto', id, summary)
 }
 
 // ---------------------------------------------------------------------------
@@ -110,12 +157,16 @@ export async function getContainers(): Promise<Container[]> {
 }
 
 export async function createContainer(input: Omit<Container, 'id' | 'created_at'>): Promise<Container> {
+  let created: Container
   if (supabase) {
     const { data, error } = await supabase.from('containers').insert(input).select().single()
     if (error) throw error
-    return data as Container
+    created = data as Container
+  } else {
+    created = containersTable.insert({ ...input, id: newId(), created_at: new Date().toISOString() })
   }
-  return containersTable.insert({ ...input, id: newId(), created_at: new Date().toISOString() })
+  await logAudit('criar', 'container', created.id, `Criou o container ${input.code} (origem: ${input.origin})`)
+  return created
 }
 
 // ---------------------------------------------------------------------------
@@ -135,13 +186,24 @@ export async function getMovements(): Promise<InventoryMovement[]> {
 
 export async function addMovement(
   input: Omit<InventoryMovement, 'id' | 'created_at'>,
+  productLabel: string,
 ): Promise<InventoryMovement> {
+  let created: InventoryMovement
   if (supabase) {
     const { data, error } = await supabase.from('inventory_movements').insert(input).select().single()
     if (error) throw error
-    return data as InventoryMovement
+    created = data as InventoryMovement
+  } else {
+    created = movementsTable.insert({ ...input, id: newId(), created_at: new Date().toISOString() })
   }
-  return movementsTable.insert({ ...input, id: newId(), created_at: new Date().toISOString() })
+  const typeLabel = input.type === 'entrada' ? 'Entrada' : input.type === 'saida' ? 'Saída' : 'Ajuste'
+  await logAudit(
+    'criar',
+    'movimentacao',
+    created.id,
+    `${typeLabel} de ${input.quantity} unidade(s) — ${productLabel}`,
+  )
+  return created
 }
 
 // ---------------------------------------------------------------------------
@@ -176,6 +238,20 @@ export async function getSaleItems(saleId?: string): Promise<SaleItem[]> {
 }
 
 export async function createSale(
+  sale: Omit<Sale, 'id' | 'created_at'>,
+  items: NewSaleItemInput[],
+): Promise<Sale> {
+  const created = await createSaleInternal(sale, items)
+  await logAudit(
+    'criar',
+    'venda',
+    created.id,
+    `Registrou venda pelo canal ${sale.channel} para ${sale.customer_name ?? 'cliente não informado'}`,
+  )
+  return created
+}
+
+async function createSaleInternal(
   sale: Omit<Sale, 'id' | 'created_at'>,
   items: NewSaleItemInput[],
 ): Promise<Sale> {
@@ -226,13 +302,14 @@ export async function createSale(
   return createdSale
 }
 
-export async function updateSaleStatus(id: string, status: Sale['status']): Promise<void> {
+export async function updateSaleStatus(id: string, status: Sale['status'], previousStatus: Sale['status']): Promise<void> {
   if (supabase) {
     const { error } = await supabase.from('sales').update({ status }).eq('id', id)
     if (error) throw error
-    return
+  } else {
+    salesTable.update(id, { status })
   }
-  salesTable.update(id, { status })
+  await logAudit('editar', 'venda', id, `Alterou status da venda de "${previousStatus}" para "${status}"`)
 }
 
 // ---------------------------------------------------------------------------
@@ -248,12 +325,21 @@ export async function getExpenses(): Promise<Expense[]> {
 }
 
 export async function addExpense(input: Omit<Expense, 'id' | 'created_at'>): Promise<Expense> {
+  let created: Expense
   if (supabase) {
     const { data, error } = await supabase.from('expenses').insert(input).select().single()
     if (error) throw error
-    return data as Expense
+    created = data as Expense
+  } else {
+    created = expensesTable.insert({ ...input, id: newId(), created_at: new Date().toISOString() })
   }
-  return expensesTable.insert({ ...input, id: newId(), created_at: new Date().toISOString() })
+  await logAudit(
+    'criar',
+    'despesa',
+    created.id,
+    `Registrou despesa de ${input.category}: R$ ${input.amount_brl.toFixed(2)} — ${input.description}`,
+  )
+  return created
 }
 
 // ---------------------------------------------------------------------------
@@ -272,31 +358,37 @@ export type NewBlogPostInput = Omit<BlogPost, 'id' | 'created_at' | 'updated_at'
 
 export async function createBlogPost(input: NewBlogPostInput): Promise<BlogPost> {
   const now = new Date().toISOString()
+  let created: BlogPost
   if (supabase) {
     const { data, error } = await supabase.from('blog_posts').insert(input).select().single()
     if (error) throw error
-    return data as BlogPost
+    created = data as BlogPost
+  } else {
+    created = blogPostsTable.insert({ ...input, id: newId(), created_at: now, updated_at: now })
   }
-  return blogPostsTable.insert({ ...input, id: newId(), created_at: now, updated_at: now })
+  await logAudit('criar', 'post_blog', created.id, `Criou o post "${input.title}"${input.published ? ' (publicado)' : ' (rascunho)'}`)
+  return created
 }
 
-export async function updateBlogPost(id: string, patch: Partial<NewBlogPostInput>): Promise<void> {
+export async function updateBlogPost(id: string, patch: Partial<NewBlogPostInput>, summary: string): Promise<void> {
   const payload = { ...patch, updated_at: new Date().toISOString() }
   if (supabase) {
     const { error } = await supabase.from('blog_posts').update(payload).eq('id', id)
     if (error) throw error
-    return
+  } else {
+    blogPostsTable.update(id, payload)
   }
-  blogPostsTable.update(id, payload)
+  await logAudit('editar', 'post_blog', id, summary)
 }
 
-export async function deleteBlogPost(id: string): Promise<void> {
+export async function deleteBlogPost(id: string, title: string): Promise<void> {
   if (supabase) {
     const { error } = await supabase.from('blog_posts').delete().eq('id', id)
     if (error) throw error
-    return
+  } else {
+    blogPostsTable.remove(id)
   }
-  blogPostsTable.remove(id)
+  await logAudit('excluir', 'post_blog', id, `Excluiu o post "${title}"`)
 }
 
 // ---------------------------------------------------------------------------
@@ -311,20 +403,31 @@ export async function getPartRequests(): Promise<PartRequest[]> {
   return [...partRequestsTable.all()].sort((a, b) => b.created_at.localeCompare(a.created_at))
 }
 
-export async function updatePartRequestStatus(id: string, status: PartRequestStatus): Promise<void> {
+export async function updatePartRequestStatus(
+  id: string,
+  status: PartRequestStatus,
+  previousStatus: PartRequestStatus,
+): Promise<void> {
   if (supabase) {
     const { error } = await supabase.from('part_requests').update({ status }).eq('id', id)
     if (error) throw error
-    return
+  } else {
+    partRequestsTable.update(id, { status })
   }
-  partRequestsTable.update(id, { status })
+  await logAudit(
+    'editar',
+    'solicitacao_peca',
+    id,
+    `Alterou status da solicitação de peça de "${previousStatus}" para "${status}"`,
+  )
 }
 
 export async function updatePartRequestNotes(id: string, admin_notes: string): Promise<void> {
   if (supabase) {
     const { error } = await supabase.from('part_requests').update({ admin_notes }).eq('id', id)
     if (error) throw error
-    return
+  } else {
+    partRequestsTable.update(id, { admin_notes })
   }
-  partRequestsTable.update(id, { admin_notes })
+  await logAudit('editar', 'solicitacao_peca', id, `Atualizou notas internas: "${admin_notes}"`)
 }

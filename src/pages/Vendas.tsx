@@ -40,8 +40,8 @@ export function Vendas() {
 
   useEffect(reload, [])
 
-  const changeStatus = async (id: string, status: SaleStatus) => {
-    await updateSaleStatus(id, status)
+  const changeStatus = async (id: string, status: SaleStatus, previousStatus: SaleStatus) => {
+    await updateSaleStatus(id, status, previousStatus)
     reload()
   }
 
@@ -215,7 +215,7 @@ export function Vendas() {
                   <td className="py-2.5">
                     <select
                       value={s.status}
-                      onChange={(e) => changeStatus(s.id, e.target.value as SaleStatus)}
+                      onChange={(e) => changeStatus(s.id, e.target.value as SaleStatus, s.status)}
                       className="rounded-md border-0 bg-transparent text-xs"
                       style={{ color: 'inherit' }}
                     >

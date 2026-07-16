@@ -172,13 +172,25 @@ export function Estoque() {
                   <td className="py-2.5">
                     <EditablePrice
                       value={p.cost_price_brl}
-                      onSave={(v) => updateProduct(p.product_id, { cost_price_brl: v }).then(reload)}
+                      onSave={(v) =>
+                        updateProduct(
+                          p.product_id,
+                          { cost_price_brl: v },
+                          `Editou custo unitário do SKU ${p.sku}: ${formatBRL(p.cost_price_brl)} → ${formatBRL(v)}`,
+                        ).then(reload)
+                      }
                     />
                   </td>
                   <td className="py-2.5">
                     <EditablePrice
                       value={p.sale_price_brl}
-                      onSave={(v) => updateProduct(p.product_id, { sale_price_brl: v }).then(reload)}
+                      onSave={(v) =>
+                        updateProduct(
+                          p.product_id,
+                          { sale_price_brl: v },
+                          `Editou preço de venda do SKU ${p.sku}: ${formatBRL(p.sale_price_brl)} → ${formatBRL(v)}`,
+                        ).then(reload)
+                      }
                     />
                   </td>
                   <td className="py-2.5">
@@ -347,16 +359,20 @@ function MovementForm({
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
-    await addMovement({
-      product_id: form.product_id,
-      type: form.type,
-      quantity: Number(form.quantity),
-      unit_cost_brl: form.unit_cost_brl ? Number(form.unit_cost_brl) : null,
-      container_id: form.container_id || null,
-      sale_id: null,
-      notes: form.notes || null,
-      moved_at: new Date().toISOString(),
-    })
+    const product = products.find((p) => p.id === form.product_id)
+    await addMovement(
+      {
+        product_id: form.product_id,
+        type: form.type,
+        quantity: Number(form.quantity),
+        unit_cost_brl: form.unit_cost_brl ? Number(form.unit_cost_brl) : null,
+        container_id: form.container_id || null,
+        sale_id: null,
+        notes: form.notes || null,
+        moved_at: new Date().toISOString(),
+      },
+      product ? `${product.sku} — ${product.name}` : form.product_id,
+    )
     onDone()
   }
 

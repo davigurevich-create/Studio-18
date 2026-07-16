@@ -30,8 +30,8 @@ export function PecasFaltantes() {
 
   useEffect(reload, [])
 
-  const changeStatus = async (id: string, status: PartRequestStatus) => {
-    await updatePartRequestStatus(id, status)
+  const changeStatus = async (id: string, status: PartRequestStatus, previousStatus: PartRequestStatus) => {
+    await updatePartRequestStatus(id, status, previousStatus)
     reload()
   }
 
@@ -146,7 +146,7 @@ export function PecasFaltantes() {
                   <td className="py-2.5">
                     <select
                       value={r.status}
-                      onChange={(e) => changeStatus(r.id, e.target.value as PartRequestStatus)}
+                      onChange={(e) => changeStatus(r.id, e.target.value as PartRequestStatus, r.status)}
                       className="rounded-md border-0 bg-transparent text-xs"
                       style={{ color: 'inherit' }}
                     >

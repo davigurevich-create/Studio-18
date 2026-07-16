@@ -138,6 +138,18 @@ export interface PartRequest {
   admin_notes: string | null
 }
 
+export type AuditAction = 'criar' | 'editar' | 'excluir'
+
+export interface AuditLogEntry {
+  id: string
+  created_at: string
+  actor_email: string
+  action: AuditAction
+  entity: string
+  entity_id: string | null
+  summary: string
+}
+
 export interface BlogPost {
   id: string
   slug: string

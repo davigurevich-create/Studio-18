@@ -38,16 +38,20 @@ export function Blog() {
   }
 
   const togglePublished = async (post: BlogPost) => {
-    await updateBlogPost(post.id, {
-      published: !post.published,
-      published_at: !post.published ? new Date().toISOString() : post.published_at,
-    })
+    await updateBlogPost(
+      post.id,
+      {
+        published: !post.published,
+        published_at: !post.published ? new Date().toISOString() : post.published_at,
+      },
+      `${!post.published ? 'Publicou' : 'Despublicou'} o post "${post.title}"`,
+    )
     reload()
   }
 
   const remove = async (post: BlogPost) => {
     if (!confirm(`Excluir o artigo "${post.title}"? Essa ação não pode ser desfeita.`)) return
-    await deleteBlogPost(post.id)
+    await deleteBlogPost(post.id, post.title)
     reload()
   }
 
@@ -191,7 +195,7 @@ function BlogPostForm({
         ai_generated: post?.ai_generated ?? false,
       }
       if (post) {
-        await updateBlogPost(post.id, payload)
+        await updateBlogPost(post.id, payload, `Editou o post "${payload.title}"`)
       } else {
         await createBlogPost(payload)
       }
