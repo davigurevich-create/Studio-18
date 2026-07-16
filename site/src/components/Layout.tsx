@@ -52,7 +52,7 @@ export function Layout() {
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center">
-            <img src="/logo-studio18.png" alt="Studio 18" className="h-12 w-auto sm:h-16" />
+            <img src="/logo-studio18.png" alt="Studio 18" className="h-14 w-auto sm:h-20" />
           </Link>
           <div className="flex items-center gap-6">
             <nav className="hidden gap-8 text-sm tracking-wide sm:flex" style={{ color: 'var(--ink-secondary)' }}>
