@@ -25,8 +25,8 @@ export function Login() {
         className="w-full max-w-sm rounded-xl border p-6"
         style={{ background: 'var(--surface-1)', borderColor: 'var(--border-hairline)' }}
       >
-        <div className="mb-3 inline-flex rounded-lg px-3 py-2" style={{ background: '#060606' }}>
-          <img src="/logo-studio18.png" alt="Studio 18" className="h-7 w-auto" />
+        <div className="mb-3 inline-flex rounded-lg px-4 py-3" style={{ background: '#060606' }}>
+          <img src="/logo-studio18.png" alt="Studio 18" className="h-14 w-auto" />
         </div>
         <p className="mb-5 text-sm" style={{ color: 'var(--text-secondary)' }}>
           Painel de gestão — entre com sua conta

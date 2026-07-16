@@ -35,8 +35,8 @@ export function Layout() {
         style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)' }}
       >
         <div className="mb-6 px-2">
-          <div className="mb-2 inline-flex rounded-lg px-3 py-2" style={{ background: '#060606' }}>
-            <img src="/logo-studio18.png" alt="Studio 18" className="h-6 w-auto" />
+          <div className="mb-2 inline-flex rounded-lg px-3 py-2.5" style={{ background: '#060606' }}>
+            <img src="/logo-studio18.png" alt="Studio 18" className="h-11 w-auto" />
           </div>
           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
             Painel de gestão
