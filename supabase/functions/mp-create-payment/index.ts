@@ -13,6 +13,49 @@ const MP_ACCESS_TOKEN = Deno.env.get('MP_ACCESS_TOKEN')!
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
+// --- E-mail transacional (Resend) ------------------------------------------
+// Envia a confirmação de pedido ao cliente. Nunca derruba o checkout se
+// falhar — erro de e-mail só fica registrado no log da function.
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+const EMAIL_FROM = Deno.env.get('EMAIL_FROM') ?? 'Studio 18 <onboarding@resend.dev>'
+const SITE_URL = Deno.env.get('SITE_URL') ?? 'https://studio18.vercel.app'
+
+async function sendEmail(to: string, subject: string, html: string): Promise<void> {
+  if (!RESEND_API_KEY) {
+    console.error('RESEND_API_KEY não configurada — e-mail não enviado.')
+    return
+  }
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: EMAIL_FROM, to, subject, html }),
+    })
+    if (!res.ok) console.error('Falha ao enviar e-mail:', await res.text())
+  } catch (err) {
+    console.error('Erro ao enviar e-mail:', err)
+  }
+}
+
+function emailShell(title: string, bodyHtml: string): string {
+  return `
+  <div style="background:#060606;padding:32px 16px;font-family:Helvetica,Arial,sans-serif;">
+    <div style="max-width:520px;margin:0 auto;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;">
+      <div style="padding:24px 28px;border-bottom:1px solid rgba(255,255,255,0.08);">
+        <span style="font-size:16px;font-weight:700;letter-spacing:0.15em;color:#f3f1ec;">STUDIO</span>
+        <span style="font-size:16px;font-weight:700;letter-spacing:0.15em;color:#cda44d;"> 18</span>
+      </div>
+      <div style="padding:28px;">
+        <h1 style="margin:0 0 16px;font-size:20px;color:#f3f1ec;">${title}</h1>
+        <div style="font-size:14px;line-height:1.6;color:#b7b3a9;">${bodyHtml}</div>
+      </div>
+      <div style="padding:20px 28px;border-top:1px solid rgba(255,255,255,0.08);font-size:12px;color:#7a766d;">
+        Studio 18 — Do nosso Studio ao seu.
+      </div>
+    </div>
+  </div>`
+}
+
 type PaymentMethod = 'pix' | 'cartao' | 'boleto'
 
 interface Address {
@@ -202,14 +245,56 @@ Deno.serve(async (req) => {
       return json({ error: payment.message ?? 'Falha ao criar pagamento no Mercado Pago.' }, 502)
     }
 
+    const finalStatus = mapStatus(payment.status)
     await supabase
       .from('sales')
       .update({
         provider_payment_id: String(payment.id),
         provider_status: payment.status,
-        status: mapStatus(payment.status),
+        status: finalStatus,
       })
       .eq('id', sale.id)
+
+    const itemsListHtml = lineItems
+      .map(
+        (li) =>
+          `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+            <span>${li.quantity}x ${li.product.name}</span>
+            <span>R$ ${(Number(li.product.sale_price_brl) * li.quantity).toFixed(2).replace('.', ',')}</span>
+          </div>`,
+      )
+      .join('')
+
+    let paymentBlockHtml = ''
+    if (paymentMethod === 'pix') {
+      paymentBlockHtml =
+        '<p>Pague com o PIX Copia e Cola ou o QR Code que enviamos na tela de confirmação. Assim que o pagamento for identificado, você recebe um novo e-mail confirmando.</p>'
+    } else if (paymentMethod === 'boleto') {
+      paymentBlockHtml = `<p>Seu boleto foi gerado. <a href="${payment.transaction_details?.external_resource_url ?? '#'}" style="color:#e6c778;">Clique aqui para visualizar e pagar</a>. A compensação pode levar até 3 dias úteis.</p>`
+    } else {
+      paymentBlockHtml =
+        finalStatus === 'pago'
+          ? '<p style="color:#8fce8f;">Pagamento aprovado! Seu pedido já está confirmado.</p>'
+          : '<p>Estamos processando o pagamento do seu cartão.</p>'
+    }
+
+    await sendEmail(
+      customerEmail,
+      `Pedido recebido — Studio 18 #${sale.id.slice(0, 8)}`,
+      emailShell(
+        'Recebemos seu pedido!',
+        `<p>Olá, ${customerName.split(' ')[0]}! Seu pedido <strong>#${sale.id.slice(0, 8)}</strong> foi registrado com sucesso.</p>
+         <div style="margin:16px 0;">${itemsListHtml}</div>
+         <div style="display:flex;justify-content:space-between;padding:10px 0;font-weight:700;color:#f3f1ec;">
+           <span>Total</span><span>R$ ${totalAmount.toFixed(2).replace('.', ',')}</span>
+         </div>
+         ${paymentBlockHtml}
+         <p style="margin-top:20px;">Entrega para: ${address.streetName}, ${address.streetNumber} — ${address.neighborhood}, ${address.city}/${address.federalUnit}</p>
+         <p style="margin-top:24px;">
+           <a href="${SITE_URL}/rastreio" style="color:#e6c778;">Acompanhe seu pedido a qualquer momento em ${SITE_URL}/rastreio</a>
+         </p>`,
+      ),
+    )
 
     return json({
       orderId: sale.id,
