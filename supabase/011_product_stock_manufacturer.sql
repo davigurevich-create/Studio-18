@@ -1,8 +1,14 @@
 -- Studio 18 — expõe o fabricante na view product_stock, usada pela aba
 -- Estoque do painel de gestão.
 -- Rode no SQL Editor do Supabase.
+--
+-- Precisa de DROP + CREATE (em vez de CREATE OR REPLACE) porque o Postgres
+-- não permite inserir uma coluna no meio da lista de colunas de uma view
+-- já existente — só no final.
 
-create or replace view product_stock as
+drop view if exists product_stock;
+
+create view product_stock as
 select
   p.id as product_id,
   p.sku,
