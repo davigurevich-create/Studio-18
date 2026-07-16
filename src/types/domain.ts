@@ -18,6 +18,9 @@ export interface Product {
   automotive_history?: string | null
   dimensions?: string | null
   spec_highlights?: string[] | null
+  length_cm?: number | null
+  height_cm?: number | null
+  width_cm?: number | null
   active: boolean
   created_at: string
 }
@@ -116,6 +119,9 @@ export interface ProductStock {
   min_stock_alert: number
   cost_price_brl: number
   sale_price_brl: number
+  length_cm: number | null
+  height_cm: number | null
+  width_cm: number | null
   quantity_in_stock: number
 }
 

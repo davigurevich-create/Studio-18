@@ -140,6 +140,9 @@ export async function getStock(): Promise<ProductStock[]> {
       min_stock_alert: p.min_stock_alert,
       cost_price_brl: p.cost_price_brl,
       sale_price_brl: p.sale_price_brl,
+      length_cm: p.length_cm ?? null,
+      height_cm: p.height_cm ?? null,
+      width_cm: p.width_cm ?? null,
       quantity_in_stock: qty,
     }
   })

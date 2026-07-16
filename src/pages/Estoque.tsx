@@ -136,20 +136,23 @@ export function Estoque() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
-              <th className="pb-2 font-medium">SKU</th>
-              <th className="pb-2 font-medium">Produto</th>
-              <th className="pb-2 font-medium">Fabricante</th>
-              <th className="pb-2 font-medium">Categoria</th>
-              <th className="pb-2 font-medium">Em estoque</th>
-              <th className="pb-2 font-medium">Custo unit. (clique p/ editar)</th>
-              <th className="pb-2 font-medium">Preço venda (clique p/ editar)</th>
-              <th className="pb-2 font-medium">Status</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">SKU</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Produto</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Fabricante</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Categoria</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Em estoque</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Custo unit. (clique p/ editar)</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Preço venda (clique p/ editar)</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Compr. (clique p/ editar)</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Altura (clique p/ editar)</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Largura (clique p/ editar)</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Status</th>
             </tr>
           </thead>
           <tbody>
             {filteredStock.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                <td colSpan={11} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
                   Nenhum produto encontrado com esses filtros.
                 </td>
               </tr>
@@ -158,22 +161,22 @@ export function Estoque() {
               const low = p.quantity_in_stock <= p.min_stock_alert
               return (
                 <tr key={p.product_id} className="border-t" style={{ borderColor: 'var(--gridline)' }}>
-                  <td className="py-2.5" style={{ color: 'var(--text-secondary)' }}>
+                  <td className="py-2.5 pr-4" style={{ color: 'var(--text-secondary)' }}>
                     {p.sku}
                   </td>
-                  <td className="py-2.5 font-medium" style={{ color: 'var(--text-primary)' }}>
+                  <td className="py-2.5 pr-4 font-medium" style={{ color: 'var(--text-primary)' }}>
                     {p.name}
                   </td>
-                  <td className="py-2.5" style={{ color: 'var(--text-secondary)' }}>
+                  <td className="py-2.5 pr-4" style={{ color: 'var(--text-secondary)' }}>
                     {p.manufacturer ?? '—'}
                   </td>
-                  <td className="py-2.5 capitalize" style={{ color: 'var(--text-secondary)' }}>
+                  <td className="py-2.5 pr-4 capitalize" style={{ color: 'var(--text-secondary)' }}>
                     {p.category}
                   </td>
-                  <td className="tabular py-2.5" style={{ color: 'var(--text-primary)' }}>
+                  <td className="tabular py-2.5 pr-4" style={{ color: 'var(--text-primary)' }}>
                     {p.quantity_in_stock}
                   </td>
-                  <td className="py-2.5">
+                  <td className="py-2.5 pr-4">
                     <EditablePrice
                       value={p.cost_price_brl}
                       onSave={(v) =>
@@ -185,7 +188,7 @@ export function Estoque() {
                       }
                     />
                   </td>
-                  <td className="py-2.5">
+                  <td className="py-2.5 pr-4">
                     <EditablePrice
                       value={p.sale_price_brl}
                       onSave={(v) =>
@@ -197,7 +200,43 @@ export function Estoque() {
                       }
                     />
                   </td>
-                  <td className="py-2.5">
+                  <td className="py-2.5 pr-4">
+                    <EditableDimension
+                      value={p.length_cm}
+                      onSave={(v) =>
+                        updateProduct(
+                          p.product_id,
+                          { length_cm: v },
+                          `Editou comprimento do SKU ${p.sku}: ${p.length_cm ?? '—'} → ${v} cm`,
+                        ).then(reload)
+                      }
+                    />
+                  </td>
+                  <td className="py-2.5 pr-4">
+                    <EditableDimension
+                      value={p.height_cm}
+                      onSave={(v) =>
+                        updateProduct(
+                          p.product_id,
+                          { height_cm: v },
+                          `Editou altura do SKU ${p.sku}: ${p.height_cm ?? '—'} → ${v} cm`,
+                        ).then(reload)
+                      }
+                    />
+                  </td>
+                  <td className="py-2.5 pr-4">
+                    <EditableDimension
+                      value={p.width_cm}
+                      onSave={(v) =>
+                        updateProduct(
+                          p.product_id,
+                          { width_cm: v },
+                          `Editou largura do SKU ${p.sku}: ${p.width_cm ?? '—'} → ${v} cm`,
+                        ).then(reload)
+                      }
+                    />
+                  </td>
+                  <td className="py-2.5 pr-4">
                     {low ? <Badge tone="warning">Estoque baixo</Badge> : <Badge tone="good">OK</Badge>}
                   </td>
                 </tr>
@@ -296,6 +335,9 @@ function ProductForm({ onDone }: { onDone: () => void }) {
     cost_price_brl: '',
     sale_price_brl: '',
     min_stock_alert: '5',
+    length_cm: '',
+    height_cm: '',
+    width_cm: '',
   })
 
   const submit = async (e: FormEvent) => {
@@ -311,6 +353,9 @@ function ProductForm({ onDone }: { onDone: () => void }) {
       cost_price_brl: Number(form.cost_price_brl),
       sale_price_brl: Number(form.sale_price_brl),
       min_stock_alert: Number(form.min_stock_alert),
+      length_cm: form.length_cm ? Number(form.length_cm) : null,
+      height_cm: form.height_cm ? Number(form.height_cm) : null,
+      width_cm: form.width_cm ? Number(form.width_cm) : null,
       image_url: null,
       active: true,
     })
@@ -338,6 +383,9 @@ function ProductForm({ onDone }: { onDone: () => void }) {
         <Field label="Custo (R$)" value={form.cost_price_brl} onChange={(v) => setForm({ ...form, cost_price_brl: v })} type="number" required />
         <Field label="Preço venda (R$)" value={form.sale_price_brl} onChange={(v) => setForm({ ...form, sale_price_brl: v })} type="number" required />
         <Field label="Alerta estoque mín." value={form.min_stock_alert} onChange={(v) => setForm({ ...form, min_stock_alert: v })} type="number" />
+        <Field label="Comprimento (cm)" value={form.length_cm} onChange={(v) => setForm({ ...form, length_cm: v })} type="number" />
+        <Field label="Altura (cm)" value={form.height_cm} onChange={(v) => setForm({ ...form, height_cm: v })} type="number" />
+        <Field label="Largura (cm)" value={form.width_cm} onChange={(v) => setForm({ ...form, width_cm: v })} type="number" />
         <div className="col-span-full flex justify-end gap-2">
           <Button type="submit">Salvar produto</Button>
         </div>
@@ -460,6 +508,51 @@ function EditablePrice({ value, onSave }: { value: number; onSave: (value: numbe
         if (e.key === 'Escape') setEditing(false)
       }}
       className="tabular w-24 rounded-md border px-2 py-1 text-sm"
+      style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
+    />
+  )
+}
+
+function EditableDimension({ value, onSave }: { value: number | null; onSave: (value: number) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(String(value ?? ''))
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setDraft(String(value ?? ''))
+          setEditing(true)
+        }}
+        className="tabular text-left"
+        style={{ color: 'var(--text-secondary)' }}
+        title="Clique para editar"
+      >
+        {value != null ? `${value} cm` : '—'}
+      </button>
+    )
+  }
+
+  const commit = () => {
+    setEditing(false)
+    const parsed = Number(draft)
+    if (!Number.isNaN(parsed) && parsed !== value) onSave(parsed)
+  }
+
+  return (
+    <input
+      autoFocus
+      type="number"
+      step="0.1"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur()
+        if (e.key === 'Escape') setEditing(false)
+      }}
+      className="tabular w-20 rounded-md border px-2 py-1 text-sm"
       style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
     />
   )
