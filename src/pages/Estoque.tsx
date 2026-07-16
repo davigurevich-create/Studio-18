@@ -73,8 +73,6 @@ export function Estoque() {
         />
       </div>
 
-      <MarginComparison stock={stock} />
-
       {showProductForm && (
         <ProductForm
           onDone={() => {
@@ -94,6 +92,8 @@ export function Estoque() {
           }}
         />
       )}
+
+      <MarginComparison stock={stock} />
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <input
