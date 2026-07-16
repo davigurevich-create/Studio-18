@@ -56,6 +56,15 @@ export async function createProduct(input: Omit<Product, 'id' | 'created_at'>): 
   return productsTable.insert({ ...input, id: newId(), created_at: new Date().toISOString() })
 }
 
+export async function updateProduct(id: string, patch: Partial<Product>): Promise<void> {
+  if (supabase) {
+    const { error } = await supabase.from('products').update(patch).eq('id', id)
+    if (error) throw error
+    return
+  }
+  productsTable.update(id, patch)
+}
+
 // ---------------------------------------------------------------------------
 // Stock (derived: entradas - saidas por produto)
 // ---------------------------------------------------------------------------

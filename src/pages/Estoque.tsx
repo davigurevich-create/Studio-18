@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { addMovement, createProduct, getContainers, getProducts, getStock } from '@/lib/api'
+import { addMovement, createProduct, getContainers, getProducts, getStock, updateProduct } from '@/lib/api'
 import { Badge, Button, Card, PageHeader, StatTile, formatBRL } from '@/components/ui'
 import type { Container, MovementType, Product, ProductStock } from '@/types/domain'
 
@@ -140,8 +140,8 @@ export function Estoque() {
               <th className="pb-2 font-medium">Produto</th>
               <th className="pb-2 font-medium">Categoria</th>
               <th className="pb-2 font-medium">Em estoque</th>
-              <th className="pb-2 font-medium">Custo unit.</th>
-              <th className="pb-2 font-medium">Preço venda</th>
+              <th className="pb-2 font-medium">Custo unit. (clique p/ editar)</th>
+              <th className="pb-2 font-medium">Preço venda (clique p/ editar)</th>
               <th className="pb-2 font-medium">Status</th>
             </tr>
           </thead>
@@ -169,11 +169,17 @@ export function Estoque() {
                   <td className="tabular py-2.5" style={{ color: 'var(--text-primary)' }}>
                     {p.quantity_in_stock}
                   </td>
-                  <td className="tabular py-2.5" style={{ color: 'var(--text-secondary)' }}>
-                    {formatBRL(p.cost_price_brl)}
+                  <td className="py-2.5">
+                    <EditablePrice
+                      value={p.cost_price_brl}
+                      onSave={(v) => updateProduct(p.product_id, { cost_price_brl: v }).then(reload)}
+                    />
                   </td>
-                  <td className="tabular py-2.5" style={{ color: 'var(--text-secondary)' }}>
-                    {formatBRL(p.sale_price_brl)}
+                  <td className="py-2.5">
+                    <EditablePrice
+                      value={p.sale_price_brl}
+                      onSave={(v) => updateProduct(p.product_id, { sale_price_brl: v }).then(reload)}
+                    />
                   </td>
                   <td className="py-2.5">
                     {low ? <Badge tone="warning">Estoque baixo</Badge> : <Badge tone="good">OK</Badge>}
@@ -388,6 +394,51 @@ function MovementForm({
         </div>
       </form>
     </Card>
+  )
+}
+
+function EditablePrice({ value, onSave }: { value: number; onSave: (value: number) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(String(value))
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setDraft(String(value))
+          setEditing(true)
+        }}
+        className="tabular text-left"
+        style={{ color: 'var(--text-secondary)' }}
+        title="Clique para editar"
+      >
+        {formatBRL(value)}
+      </button>
+    )
+  }
+
+  const commit = () => {
+    setEditing(false)
+    const parsed = Number(draft)
+    if (!Number.isNaN(parsed) && parsed !== value) onSave(parsed)
+  }
+
+  return (
+    <input
+      autoFocus
+      type="number"
+      step="0.01"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur()
+        if (e.key === 'Escape') setEditing(false)
+      }}
+      className="tabular w-24 rounded-md border px-2 py-1 text-sm"
+      style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
+    />
   )
 }
 
