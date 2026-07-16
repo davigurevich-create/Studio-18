@@ -291,8 +291,8 @@ export function Home() {
           Uma curadoria inicial de 17 modelos para você
         </motion.h2>
         <p className="mx-auto mb-14 max-w-xl text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
-          Reserve o seu — cada set é uma peça de coleção em escala 1:8, com pronta entrega assim que o
-          container desembarcar no Brasil.
+          Dê o seu primeiro passo nesse universo. Colecione. Presenteie parentes e amigos. Faça parte da
+          comunidade Studio 18.
         </p>
 
         {loading ? (
