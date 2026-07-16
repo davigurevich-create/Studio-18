@@ -32,6 +32,13 @@ export function Checkout() {
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<CreatePaymentResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [copiedField, setCopiedField] = useState<'order' | 'pix' | null>(null)
+
+  const copyToClipboard = useCallback((field: 'order' | 'pix', text: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedField(field)
+    setTimeout(() => setCopiedField((current) => (current === field ? null : current)), 2000)
+  }, [])
 
   useEffect(() => {
     getCatalog().then(setCatalog)
@@ -183,11 +190,14 @@ export function Checkout() {
                 <code style={{ color: 'var(--gold-bright)' }}>{result.orderId}</code>
                 <button
                   type="button"
-                  onClick={() => navigator.clipboard.writeText(result.orderId)}
-                  className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium"
-                  style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+                  onClick={() => copyToClipboard('order', result.orderId)}
+                  className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium transition-colors"
+                  style={{
+                    background: copiedField === 'order' ? '#3f7f4f' : 'var(--gold)',
+                    color: copiedField === 'order' ? '#f3f1ec' : '#0a0a0a',
+                  }}
                 >
-                  Copiar
+                  {copiedField === 'order' ? '✓ Copiado!' : 'Copiar'}
                 </button>
               </div>
 
@@ -207,11 +217,14 @@ export function Checkout() {
                     </code>
                     <button
                       type="button"
-                      onClick={() => navigator.clipboard.writeText(result.pix?.qrCode ?? '')}
-                      className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium"
-                      style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+                      onClick={() => copyToClipboard('pix', result.pix?.qrCode ?? '')}
+                      className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium transition-colors"
+                      style={{
+                        background: copiedField === 'pix' ? '#3f7f4f' : 'var(--gold)',
+                        color: copiedField === 'pix' ? '#f3f1ec' : '#0a0a0a',
+                      }}
                     >
-                      Copiar
+                      {copiedField === 'pix' ? '✓ Copiado!' : 'Copiar'}
                     </button>
                   </div>
                 </div>
