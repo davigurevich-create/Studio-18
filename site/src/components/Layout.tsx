@@ -30,9 +30,26 @@ export function Layout() {
   }, [])
 
   useEffect(() => {
-    window.scrollTo(0, 0)
     setMenuOpen(false)
-  }, [location.pathname])
+
+    if (location.hash) {
+      // A seção alvo só existe no DOM depois que a nova rota termina de
+      // renderizar (ex: vindo do /blog para "/"), então esperamos um
+      // instante antes de rolar até ela — sem isso o navegador tenta rolar
+      // cedo demais, não encontra o elemento e fica preso na hero.
+      const timer = window.setTimeout(() => {
+        const el = document.getElementById(location.hash.slice(1))
+        if (el) {
+          const headerOffset = 96
+          const top = el.getBoundingClientRect().top + window.scrollY - headerOffset
+          window.scrollTo({ top, behavior: 'smooth' })
+        }
+      }, 80)
+      return () => window.clearTimeout(timer)
+    }
+
+    window.scrollTo(0, 0)
+  }, [location.pathname, location.hash])
 
   // Paginas de leitura de artigo tem fundo branco — o cabecalho precisa
   // ficar sempre escuro ali, senao fica ilegivel (texto claro sobre branco)
@@ -56,17 +73,11 @@ export function Layout() {
           </Link>
           <div className="flex items-center gap-6">
             <nav className="hidden gap-8 text-sm tracking-wide sm:flex" style={{ color: 'var(--ink-secondary)' }}>
-              {navLinks.map((l) =>
-                l.href.startsWith('/#') ? (
-                  <a key={l.href} href={l.href} className="hover:text-[var(--gold)]">
-                    {l.label}
-                  </a>
-                ) : (
-                  <Link key={l.href} to={l.href} className="hover:text-[var(--gold)]">
-                    {l.label}
-                  </Link>
-                ),
-              )}
+              {navLinks.map((l) => (
+                <Link key={l.href} to={l.href} className="hover:text-[var(--gold)]">
+                  {l.label}
+                </Link>
+              ))}
             </nav>
 
             <button
@@ -126,17 +137,11 @@ export function Layout() {
               style={{ borderTop: '1px solid var(--hairline)' }}
             >
               <div className="flex flex-col px-6 py-2 text-base" style={{ color: 'var(--ink-secondary)' }}>
-                {navLinks.map((l) =>
-                  l.href.startsWith('/#') ? (
-                    <a key={l.href} href={l.href} className="border-b py-3" style={{ borderColor: 'var(--hairline)' }}>
-                      {l.label}
-                    </a>
-                  ) : (
-                    <Link key={l.href} to={l.href} className="border-b py-3" style={{ borderColor: 'var(--hairline)' }}>
-                      {l.label}
-                    </Link>
-                  ),
-                )}
+                {navLinks.map((l) => (
+                  <Link key={l.href} to={l.href} className="border-b py-3" style={{ borderColor: 'var(--hairline)' }}>
+                    {l.label}
+                  </Link>
+                ))}
               </div>
             </motion.nav>
           )}
