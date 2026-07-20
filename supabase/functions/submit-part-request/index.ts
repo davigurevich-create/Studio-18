@@ -62,6 +62,7 @@ interface RequestBody {
   productModel: string
   partDescription: string
   replacementType: ReplacementType
+  photoUrl?: string
 }
 
 Deno.serve(async (req) => {
@@ -71,7 +72,7 @@ Deno.serve(async (req) => {
 
   try {
     const body: RequestBody = await req.json()
-    const { customerName, customerEmail, orderReference, productModel, partDescription, replacementType } = body
+    const { customerName, customerEmail, orderReference, productModel, partDescription, replacementType, photoUrl } = body
 
     if (
       !customerName ||
@@ -95,6 +96,7 @@ Deno.serve(async (req) => {
         product_model: productModel,
         part_description: partDescription,
         replacement_type: replacementType,
+        photo_url: photoUrl || null,
         status: 'pendente',
       })
       .select()
@@ -118,6 +120,7 @@ Deno.serve(async (req) => {
          <p style="margin:12px 0;padding:12px;border-radius:8px;background:rgba(255,255,255,0.04);">
            <strong>${productModel}</strong><br />${partDescription}
          </p>
+         ${photoUrl ? `<img src="${photoUrl}" alt="Foto da peça" style="max-width:100%;border-radius:8px;margin-bottom:16px;" />` : ''}
          ${replacementBlockHtml}
          <p style="margin-top:20px;">Número do pedido original: ${orderReference}</p>
          <p style="margin-top:24px;">

@@ -1,8 +1,10 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { Factory, Printer } from 'lucide-react'
-import { getCatalog, submitPartRequest, type PartRequestInput } from '@/lib/api'
+import { Factory, ImagePlus, Printer, X } from 'lucide-react'
+import { getCatalog, submitPartRequest, uploadPartRequestPhoto, type PartRequestInput } from '@/lib/api'
 import type { CatalogProduct } from '@/types/catalog'
+
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024
 
 const replacementOptions: {
   id: PartRequestInput['replacementType']
@@ -32,19 +34,53 @@ export function PartRequestForm() {
   const [productModel, setProductModel] = useState('')
   const [partDescription, setPartDescription] = useState('')
   const [replacementType, setReplacementType] = useState<PartRequestInput['replacementType']>('impressao_3d')
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     getCatalog().then(setCatalog)
   }, [])
+
+  useEffect(() => {
+    // Revoga a URL local anterior sempre que a foto muda, para não vazar
+    // memória com blobs esquecidos no navegador.
+    return () => {
+      if (photoPreview) URL.revokeObjectURL(photoPreview)
+    }
+  }, [photoPreview])
+
+  const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setError('Anexe apenas arquivos de imagem.')
+      return
+    }
+    if (file.size > MAX_PHOTO_BYTES) {
+      setError('A imagem deve ter no máximo 5 MB.')
+      return
+    }
+    setError(null)
+    setPhotoFile(file)
+    setPhotoPreview(URL.createObjectURL(file))
+  }
+
+  const removePhoto = () => {
+    setPhotoFile(null)
+    setPhotoPreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
     setSubmitting(true)
     try {
+      const photoUrl = photoFile ? await uploadPartRequestPhoto(photoFile) : undefined
       await submitPartRequest({
         customerName,
         customerEmail,
@@ -52,6 +88,7 @@ export function PartRequestForm() {
         productModel,
         partDescription,
         replacementType,
+        photoUrl,
       })
       setDone(true)
     } catch {
@@ -129,6 +166,43 @@ export function PartRequestForm() {
           className="w-full resize-none rounded-lg border bg-transparent px-4 py-3 text-sm outline-none"
           style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
         />
+      </div>
+
+      <div>
+        <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+          FOTO DA PEÇA (OPCIONAL)
+        </label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handlePhotoChange}
+          className="hidden"
+        />
+        {photoPreview ? (
+          <div className="flex items-center gap-3">
+            <img src={photoPreview} alt="Prévia da foto anexada" className="h-20 w-20 rounded-lg object-cover" />
+            <button
+              type="button"
+              onClick={removePhoto}
+              className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs"
+              style={{ borderColor: 'var(--hairline)', color: 'var(--ink-muted)' }}
+            >
+              <X size={14} />
+              Remover
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 rounded-lg border border-dashed px-4 py-3 text-sm"
+            style={{ borderColor: 'var(--hairline)', color: 'var(--ink-muted)' }}
+          >
+            <ImagePlus size={18} strokeWidth={1.75} />
+            Anexar uma foto que ajude a identificar a peça
+          </button>
+        )}
       </div>
 
       <div>

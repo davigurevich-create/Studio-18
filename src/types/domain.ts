@@ -144,6 +144,7 @@ export interface PartRequest {
   replacement_type: ReplacementType
   status: PartRequestStatus
   admin_notes: string | null
+  photo_url: string | null
 }
 
 export type AuditAction = 'criar' | 'editar' | 'excluir'

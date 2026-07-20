@@ -76,6 +76,25 @@ export interface PartRequestInput {
   productModel: string
   partDescription: string
   replacementType: 'impressao_3d' | 'original_fabricante'
+  photoUrl?: string
+}
+
+/**
+ * Envia a foto da peça faltante direto para o Storage do Supabase (bucket
+ * publico "part-request-photos") e devolve a URL publica para ser salva
+ * junto da solicitacao. Em modo demo, nao ha upload real.
+ */
+export async function uploadPartRequestPhoto(file: File): Promise<string> {
+  if (!supabase) {
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    return URL.createObjectURL(file)
+  }
+  const ext = file.name.split('.').pop() ?? 'jpg'
+  const path = `${crypto.randomUUID()}.${ext}`
+  const { error } = await supabase.storage.from('part-request-photos').upload(path, file)
+  if (error) throw error
+  const { data } = supabase.storage.from('part-request-photos').getPublicUrl(path)
+  return data.publicUrl
 }
 
 /**

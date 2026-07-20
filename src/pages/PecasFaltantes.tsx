@@ -104,6 +104,7 @@ export function PecasFaltantes() {
               <th className="pb-2 font-medium">Cliente</th>
               <th className="pb-2 font-medium">Pedido</th>
               <th className="pb-2 font-medium">Peça</th>
+              <th className="pb-2 font-medium">Foto</th>
               <th className="pb-2 font-medium">Tipo de reposição</th>
               <th className="pb-2 font-medium">Notas internas</th>
               <th className="pb-2 font-medium">Status</th>
@@ -112,7 +113,7 @@ export function PecasFaltantes() {
           <tbody>
             {filteredRequests.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                <td colSpan={8} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
                   Nenhuma solicitação encontrada com esses filtros.
                 </td>
               </tr>
@@ -136,6 +137,20 @@ export function PecasFaltantes() {
                       {r.product_model}
                     </div>
                     <div className="text-xs">{r.part_description}</div>
+                  </td>
+                  <td className="py-2.5">
+                    {r.photo_url ? (
+                      <a href={r.photo_url} target="_blank" rel="noreferrer">
+                        <img
+                          src={r.photo_url}
+                          alt={`Foto da peça — ${r.product_model}`}
+                          className="h-12 w-12 rounded-md object-cover"
+                          style={{ border: '1px solid var(--border-hairline)' }}
+                        />
+                      </a>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)' }}>—</span>
+                    )}
                   </td>
                   <td className="py-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
                     {replacementLabel[r.replacement_type]}
