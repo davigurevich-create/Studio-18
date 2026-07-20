@@ -28,8 +28,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     if (!supabase) return null
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return error ? error.message : null
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (!error) return null
+
+      const msg = error.message.toLowerCase()
+      if (msg.includes('invalid login credentials')) return 'E-mail ou senha incorretos.'
+      if (msg.includes('email not confirmed')) return 'E-mail ainda não confirmado. Verifique sua caixa de entrada.'
+      if (msg.includes('too many requests')) return 'Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo.'
+      return error.message
+    } catch {
+      // Falha de rede/conexão com o Supabase — sem isso, o erro ficaria
+      // silencioso e a tela de login parecia simplesmente não fazer nada.
+      return 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.'
+    }
   }
 
   const signOut = async () => {

@@ -1,21 +1,43 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/lib/auth'
 import { Button } from '@/components/ui'
 
 export function Login() {
-  const { signIn } = useAuth()
+  const { signIn, session } = useAuth()
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  // Cobre tanto o redirecionamento logo após o login quanto o caso de o
+  // usuário já estar autenticado e cair nesta tela (ex: botão "voltar").
+  useEffect(() => {
+    if (session) navigate('/', { replace: true })
+  }, [session, navigate])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    const err = await signIn(email, password)
-    setLoading(false)
-    if (err) setError(err)
+    setSuccess(false)
+    try {
+      const err = await signIn(email, password)
+      if (err) {
+        setError(err)
+        setLoading(false)
+        return
+      }
+      setSuccess(true)
+      // O useEffect acima já redireciona assim que a sessão chegar — este
+      // timeout só garante a mensagem de sucesso ficando visível um instante.
+      setTimeout(() => navigate('/', { replace: true }), 400)
+    } catch {
+      setError('Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.')
+      setLoading(false)
+    }
   }
 
   return (
@@ -56,14 +78,20 @@ export function Login() {
           style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
         />
 
+        {success && (
+          <div className="mb-3 rounded-lg px-3 py-2 text-sm" style={{ background: 'rgba(63,127,79,0.12)', color: '#3f7f4f' }}>
+            ✓ Login realizado! Entrando no painel...
+          </div>
+        )}
+
         {error && (
           <div className="mb-3 rounded-lg px-3 py-2 text-sm" style={{ background: 'rgba(208,59,59,0.1)', color: 'var(--status-critical)' }}>
             {error}
           </div>
         )}
 
-        <Button type="submit" disabled={loading}>
-          {loading ? 'Entrando...' : 'Entrar'}
+        <Button type="submit" disabled={loading || success}>
+          {success ? 'Entrando no painel...' : loading ? 'Verificando...' : 'Entrar'}
         </Button>
       </form>
     </div>
