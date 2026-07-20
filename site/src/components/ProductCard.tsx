@@ -1,5 +1,7 @@
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowUpRight, ShoppingBag } from 'lucide-react'
 import { ProductArt } from '@/components/ProductArt'
 import { formatBRL } from '@/lib/format'
 import { pixPrice } from '@/lib/pricing'
@@ -8,6 +10,8 @@ import type { CatalogProduct } from '@/types/catalog'
 
 export function ProductCard({ product, index = 0 }: { product: CatalogProduct; index?: number }) {
   const { addItem } = useCart()
+  const navigate = useNavigate()
+  const [justAdded, setJustAdded] = useState(false)
 
   return (
     <motion.div
@@ -33,6 +37,13 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
               {product.collection_tag.toUpperCase()}
             </span>
           )}
+          <span
+            className="absolute right-3 top-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide opacity-90 transition-opacity group-hover:opacity-100"
+            style={{ background: 'rgba(6,6,6,0.7)', color: 'var(--ink-secondary)', border: '1px solid var(--hairline)' }}
+          >
+            Mais detalhes
+            <ArrowUpRight size={11} strokeWidth={2} />
+          </span>
         </div>
 
         <div className="p-4">
@@ -49,7 +60,7 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
             <span className="tabular">{product.piece_count?.toLocaleString('pt-BR')} peças</span>
           </div>
 
-          <div className="mt-4 flex items-center justify-between border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
+          <div className="mt-4 flex items-center justify-between gap-2 border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
             <div>
               <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
                 À VISTA NO PIX
@@ -69,13 +80,40 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
                 e.preventDefault()
                 e.stopPropagation()
                 addItem(product.id, 1, product.name)
+                setJustAdded(true)
               }}
-              className="shrink-0 rounded-full px-3 py-2 text-xs font-medium"
+              className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium"
               style={{ background: 'var(--gold)', color: '#0a0a0a' }}
             >
+              <ShoppingBag size={13} strokeWidth={2} />
               + Carrinho
             </button>
           </div>
+
+          <AnimatePresence>
+            {justAdded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    navigate('/checkout')
+                  }}
+                  className="w-full rounded-full border py-2.5 text-xs font-semibold tracking-wide"
+                  style={{ borderColor: 'var(--gold)', color: 'var(--gold-bright)', background: 'var(--gold-wash)' }}
+                >
+                  Finalizar compra →
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </Link>
     </motion.div>
