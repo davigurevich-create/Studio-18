@@ -6,3 +6,17 @@ export const PIX_DISCOUNT = 0.1
 export function pixPrice(fullPrice: number): number {
   return Math.round(fullPrice * (1 - PIX_DISCOUNT) * 100) / 100
 }
+
+// Máximo de parcelas oferecido no cartão no checkout — a taxa de juros real
+// (se houver, a partir de qual parcela) é decidida pelo Mercado Pago
+// conforme o cartão do cliente, então mostramos só o valor de referência
+// nas vitrines, sem prometer "sem juros".
+export const MAX_INSTALLMENTS = 12
+
+export function installmentPrice(fullPrice: number, installments = MAX_INSTALLMENTS): number {
+  return Math.round((fullPrice / installments) * 100) / 100
+}
+
+// Nível de estoque considerado baixo o suficiente para mostrar um aviso de
+// urgência na vitrine ("restam poucas unidades").
+export const LOW_STOCK_THRESHOLD = 5

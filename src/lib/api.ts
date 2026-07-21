@@ -8,6 +8,7 @@ import {
   seedMovements,
   seedPartRequests,
   seedProducts,
+  seedRestockWaitlist,
   seedSaleItems,
   seedSales,
 } from '@/lib/mockData'
@@ -22,6 +23,7 @@ import type {
   PartRequestStatus,
   Product,
   ProductStock,
+  RestockWaitlistEntry,
   Sale,
   SaleItem,
 } from '@/types/domain'
@@ -34,6 +36,7 @@ const saleItemsTable = makeTable<SaleItem>('sale_items', seedSaleItems)
 const expensesTable = makeTable<Expense>('expenses', seedExpenses)
 const blogPostsTable = makeTable<BlogPost>('blog_posts', seedBlogPosts)
 const partRequestsTable = makeTable<PartRequest>('part_requests', seedPartRequests)
+const restockWaitlistTable = makeTable<RestockWaitlistEntry>('restock_waitlist', seedRestockWaitlist)
 const auditLogTable = makeTable<AuditLogEntry>('audit_log', seedAuditLog)
 
 /** True when reading from the local demo store instead of Supabase. */
@@ -453,4 +456,31 @@ export async function updatePartRequestNotes(id: string, admin_notes: string): P
     partRequestsTable.update(id, { admin_notes })
   }
   await logAudit('editar', 'solicitacao_peca', id, `Atualizou notas internas: "${admin_notes}"`)
+}
+
+// ---------------------------------------------------------------------------
+// Lista de espera de reposição — o site grava direto (sem Edge Function),
+// o painel só le e marca como avisado quando o time contata o cliente.
+// ---------------------------------------------------------------------------
+export async function getRestockWaitlist(): Promise<RestockWaitlistEntry[]> {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('restock_waitlist')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data as RestockWaitlistEntry[]
+  }
+  return [...restockWaitlistTable.all()].sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+export async function markRestockWaitlistNotified(id: string, notified: boolean): Promise<void> {
+  const patch = { notified, notified_at: notified ? new Date().toISOString() : null }
+  if (supabase) {
+    const { error } = await supabase.from('restock_waitlist').update(patch).eq('id', id)
+    if (error) throw error
+  } else {
+    restockWaitlistTable.update(id, patch)
+  }
+  await logAudit('editar', 'lista_espera', id, notified ? 'Marcou cliente como avisado da reposição' : 'Desmarcou aviso de reposição')
 }

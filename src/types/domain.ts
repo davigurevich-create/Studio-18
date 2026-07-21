@@ -147,6 +147,16 @@ export interface PartRequest {
   photo_url: string | null
 }
 
+export interface RestockWaitlistEntry {
+  id: string
+  created_at: string
+  product_id: string
+  customer_name: string | null
+  customer_email: string
+  notified: boolean
+  notified_at: string | null
+}
+
 export type AuditAction = 'criar' | 'editar' | 'excluir'
 
 export interface AuditLogEntry {

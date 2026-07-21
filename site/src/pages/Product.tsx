@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ProductArt } from '@/components/ProductArt'
+import { RestockWaitlistForm } from '@/components/RestockWaitlistForm'
 import { getProduct } from '@/lib/api'
 import { formatBRL } from '@/lib/format'
-import { pixPrice } from '@/lib/pricing'
+import { installmentPrice, LOW_STOCK_THRESHOLD, MAX_INSTALLMENTS, pixPrice } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import type { CatalogProduct } from '@/types/catalog'
 
@@ -96,6 +97,12 @@ export function Product() {
           )}
 
           <div className="mt-10 border-t pt-6" style={{ borderColor: 'var(--hairline)' }}>
+            {product.quantity_available > 0 && product.quantity_available <= LOW_STOCK_THRESHOLD && (
+              <div className="mb-3 text-sm font-medium" style={{ color: '#e2a33f' }}>
+                Restam só {product.quantity_available} unidades neste lote
+              </div>
+            )}
+
             <div className="flex items-end justify-between">
               <div>
                 <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
@@ -110,58 +117,69 @@ export function Product() {
                   </span>
                 </div>
                 <div className="mt-1 text-xs" style={{ color: 'var(--ink-muted)' }}>
-                  ou {formatBRL(product.sale_price_brl)} no cartão ou boleto
+                  ou {MAX_INSTALLMENTS}x de {formatBRL(installmentPrice(product.sale_price_brl))} no cartão, ou boleto
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 rounded-full border px-2 py-1.5" style={{ borderColor: 'var(--hairline)' }}>
-                <button
-                  type="button"
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-sm"
-                  style={{ color: 'var(--ink)' }}
-                >
-                  −
-                </button>
-                <span className="tabular w-5 text-center text-sm" style={{ color: 'var(--ink)' }}>
-                  {quantity}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setQuantity((q) => q + 1)}
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-sm"
-                  style={{ color: 'var(--ink)' }}
-                >
-                  +
-                </button>
-              </div>
+              {product.quantity_available > 0 && (
+                <div className="flex items-center gap-2 rounded-full border px-2 py-1.5" style={{ borderColor: 'var(--hairline)' }}>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-sm"
+                    style={{ color: 'var(--ink)' }}
+                  >
+                    −
+                  </button>
+                  <span className="tabular w-5 text-center text-sm" style={{ color: 'var(--ink)' }}>
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => q + 1)}
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-sm"
+                    style={{ color: 'var(--ink)' }}
+                  >
+                    +
+                  </button>
+                </div>
+              )}
             </div>
 
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <button
-                type="button"
-                onClick={() => {
-                  addItem(product.id, quantity, product.name)
-                  setAdded(true)
-                  setTimeout(() => setAdded(false), 2000)
-                }}
-                className="flex-1 rounded-full border px-8 py-3 text-sm font-medium tracking-wide"
-                style={{ borderColor: 'var(--gold)', color: 'var(--gold-bright)' }}
-              >
-                {added ? 'Adicionado ✓' : 'Adicionar ao carrinho'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  addItem(product.id, quantity)
-                  navigate('/checkout')
-                }}
-                className="flex-1 rounded-full px-8 py-3 text-sm font-medium tracking-wide"
-                style={{ background: 'var(--gold)', color: '#0a0a0a' }}
-              >
-                Comprar agora
-              </button>
-            </div>
+            {product.quantity_available > 0 ? (
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => {
+                    addItem(product.id, quantity, product.name)
+                    setAdded(true)
+                    setTimeout(() => setAdded(false), 2000)
+                  }}
+                  className="flex-1 rounded-full border px-8 py-3 text-sm font-medium tracking-wide"
+                  style={{ borderColor: 'var(--gold)', color: 'var(--gold-bright)' }}
+                >
+                  {added ? 'Adicionado ✓' : 'Adicionar ao carrinho'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    addItem(product.id, quantity)
+                    navigate('/checkout')
+                  }}
+                  className="flex-1 rounded-full px-8 py-3 text-sm font-medium tracking-wide"
+                  style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+                >
+                  Comprar agora
+                </button>
+              </div>
+            ) : (
+              <div className="mt-5 rounded-xl border p-4" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)' }}>
+                <p className="mb-3 text-sm font-medium" style={{ color: 'var(--ink)' }}>
+                  Esgotado no lote atual
+                </p>
+                <RestockWaitlistForm productId={product.id} />
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

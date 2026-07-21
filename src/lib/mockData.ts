@@ -6,6 +6,7 @@ import type {
   InventoryMovement,
   PartRequest,
   Product,
+  RestockWaitlistEntry,
   Sale,
   SaleItem,
 } from '@/types/domain'
@@ -39,6 +40,8 @@ export const seedSaleItems: SaleItem[] = []
 export const seedBlogPosts: BlogPost[] = []
 
 export const seedPartRequests: PartRequest[] = []
+
+export const seedRestockWaitlist: RestockWaitlistEntry[] = []
 
 export const seedAuditLog: AuditLogEntry[] = []
 

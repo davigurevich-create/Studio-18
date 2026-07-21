@@ -115,6 +115,31 @@ export async function submitPartRequest(input: PartRequestInput): Promise<{ requ
   return { requestId: `demo-${Date.now()}` }
 }
 
+/**
+ * Cadastra o cliente na lista de espera de reposição de um SKU esgotado.
+ * Grava direto na tabela (sem Edge Function) — a policy de insert é aberta
+ * para qualquer visitante, e o painel de gestão é quem consulta e avisa o
+ * cliente manualmente quando o estoque volta.
+ */
+export async function joinRestockWaitlist(input: {
+  productId: string
+  customerName?: string
+  customerEmail: string
+}): Promise<void> {
+  if (!supabase) {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return
+  }
+  const { error } = await supabase.from('restock_waitlist').insert({
+    product_id: input.productId,
+    customer_name: input.customerName || null,
+    customer_email: input.customerEmail,
+  })
+  // Já estar na lista (violação da constraint unique) não é um erro para o
+  // usuário — ele só confirma que já está cadastrado.
+  if (error && error.code !== '23505') throw error
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string

@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowUpRight, ShoppingBag } from 'lucide-react'
 import { ProductArt } from '@/components/ProductArt'
 import { formatBRL } from '@/lib/format'
-import { pixPrice } from '@/lib/pricing'
+import { installmentPrice, LOW_STOCK_THRESHOLD, MAX_INSTALLMENTS, pixPrice } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import type { CatalogProduct } from '@/types/catalog'
 
@@ -12,6 +12,8 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
   const { addItem } = useCart()
   const navigate = useNavigate()
   const [justAdded, setJustAdded] = useState(false)
+  const outOfStock = product.quantity_available <= 0
+  const lowStock = !outOfStock && product.quantity_available <= LOW_STOCK_THRESHOLD
 
   return (
     <motion.div
@@ -60,6 +62,17 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
             <span className="tabular">{product.piece_count?.toLocaleString('pt-BR')} peças</span>
           </div>
 
+          {lowStock && (
+            <div className="mt-2 text-xs font-medium" style={{ color: '#e2a33f' }}>
+              Restam só {product.quantity_available} unidades
+            </div>
+          )}
+          {outOfStock && (
+            <div className="mt-2 text-xs font-medium" style={{ color: 'var(--ink-muted)' }}>
+              Esgotado no lote atual
+            </div>
+          )}
+
           <div className="mt-4 flex items-center justify-between gap-2 border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
             <div>
               <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
@@ -73,21 +86,33 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
                   {formatBRL(product.sale_price_brl)}
                 </span>
               </div>
+              <div className="tabular text-[11px]" style={{ color: 'var(--ink-muted)' }}>
+                ou {MAX_INSTALLMENTS}x de {formatBRL(installmentPrice(product.sale_price_brl))} no cartão
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                addItem(product.id, 1, product.name)
-                setJustAdded(true)
-              }}
-              className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium"
-              style={{ background: 'var(--gold)', color: '#0a0a0a' }}
-            >
-              <ShoppingBag size={13} strokeWidth={2} />
-              + Carrinho
-            </button>
+            {outOfStock ? (
+              <span
+                className="shrink-0 rounded-full px-3 py-2 text-xs font-medium"
+                style={{ border: '1px solid var(--gold-dim)', color: 'var(--gold-bright)' }}
+              >
+                Avise-me →
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  addItem(product.id, 1, product.name)
+                  setJustAdded(true)
+                }}
+                className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium"
+                style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+              >
+                <ShoppingBag size={13} strokeWidth={2} />
+                + Carrinho
+              </button>
+            )}
           </div>
 
           <AnimatePresence>
