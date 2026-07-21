@@ -33,6 +33,11 @@ Seu trabalho tem duas etapas:
 - Mencione a Studio 18 de forma natural em pelo menos um parágrafo (nunca como propaganda excessiva), reforçando pronta entrega no Brasil e curadoria própria.
 - NÃO use links, markdown de imagem, ou qualquer sintaxe além de "##" (subtítulo), "**texto**" (negrito) e "- " (item de lista).
 - Separe parágrafos e blocos com uma linha em branco.
+
+3. IMAGEM DE CAPA — Depois de escrever o artigo, escreva também uma sugestão de prompt (em inglês, já que geradores de imagem por IA respondem melhor em inglês) para gerar a imagem de capa em uma ferramenta externa (Midjourney, DALL-E, etc). O prompt deve:
+- Descrever uma cena ou still-life fotográfico ligado ao tema do artigo, sempre coerente com a identidade visual da Studio 18: sets técnicos de blocos de montar (não carros reais) em escala 1:8, fotografia de estúdio, iluminação dramática e quente, paleta preta/carbono com dourado, estética premium e "automotiva".
+- Ser objetivo e visual, no formato de prompt (frases curtas separadas por vírgula, sem floreios), pronto para colar direto na ferramenta de geração.
+- Incluir sugestão de proporção 16:9, adequada a uma imagem de capa de blog.
 `.trim()
 
 const tools = [
@@ -51,8 +56,13 @@ const tools = [
         slug: { type: 'string', description: 'Slug em minúsculas, com hífens, sem acentos, curto (ex: guia-carros-blocos-montar)' },
         excerpt: { type: 'string', description: 'Resumo de 1-2 frases para a listagem do blog e meta-descrição' },
         content: { type: 'string', description: 'Conteúdo completo do artigo, seguindo as regras de formatação' },
+        cover_image_prompt: {
+          type: 'string',
+          description:
+            'Prompt em inglês para gerar a imagem de capa em uma ferramenta externa de IA, seguindo as regras descritas nas instruções (estética Studio 18, proporção 16:9).',
+        },
       },
-      required: ['chosen_candidate_topic', 'title', 'slug', 'excerpt', 'content'],
+      required: ['chosen_candidate_topic', 'title', 'slug', 'excerpt', 'content', 'cover_image_prompt'],
     },
   },
 ]
@@ -121,6 +131,7 @@ Siga o processo de curadoria descrito nas suas instruções: escolha o primeiro 
       slug: string
       excerpt: string
       content: string
+      cover_image_prompt: string
     }
     const slug = article.slug
       .toLowerCase()
@@ -136,6 +147,7 @@ Siga o processo de curadoria descrito nas suas instruções: escolha o primeiro 
         slug,
         excerpt: article.excerpt,
         content: article.content,
+        cover_image_prompt: article.cover_image_prompt,
         author: 'Studio 18',
         published: false,
         ai_generated: true,

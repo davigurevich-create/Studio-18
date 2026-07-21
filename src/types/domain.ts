@@ -165,6 +165,7 @@ export interface BlogPost {
   title: string
   excerpt: string | null
   cover_image_url: string | null
+  cover_image_prompt: string | null
   content: string
   author: string
   published: boolean

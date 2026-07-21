@@ -169,10 +169,19 @@ function BlogPostForm({
   const [slugTouched, setSlugTouched] = useState(Boolean(post))
   const [excerpt, setExcerpt] = useState(post?.excerpt ?? '')
   const [coverImageUrl, setCoverImageUrl] = useState(post?.cover_image_url ?? '')
+  const [coverImagePrompt, setCoverImagePrompt] = useState(post?.cover_image_prompt ?? '')
   const [content, setContent] = useState(post?.content ?? '')
   const [author, setAuthor] = useState(post?.author ?? 'Studio 18')
   const [published, setPublished] = useState(post?.published ?? false)
   const [saving, setSaving] = useState(false)
+  const [promptCopied, setPromptCopied] = useState(false)
+
+  const copyPrompt = () => {
+    if (!coverImagePrompt) return
+    navigator.clipboard.writeText(coverImagePrompt)
+    setPromptCopied(true)
+    setTimeout(() => setPromptCopied(false), 2000)
+  }
 
   const handleTitleChange = (v: string) => {
     setTitle(v)
@@ -188,6 +197,7 @@ function BlogPostForm({
         slug: slugify(slug),
         excerpt: excerpt || null,
         cover_image_url: coverImageUrl || null,
+        cover_image_prompt: coverImagePrompt || null,
         content,
         author,
         published,
@@ -234,6 +244,39 @@ function BlogPostForm({
           onChange={setCoverImageUrl}
           placeholder="https://..."
         />
+        <div>
+          <div className="mb-1 flex items-center justify-between">
+            <label className="block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+              Sugestão de prompt para gerar a imagem de capa (IA)
+            </label>
+            {coverImagePrompt && (
+              <button
+                type="button"
+                onClick={copyPrompt}
+                className="rounded-md px-2 py-1 text-[11px] font-medium"
+                style={{
+                  background: promptCopied ? 'var(--status-good)' : 'var(--surface-1)',
+                  color: promptCopied ? '#fff' : 'var(--text-secondary)',
+                  border: '1px solid var(--border-hairline)',
+                }}
+              >
+                {promptCopied ? '✓ Copiado!' : 'Copiar'}
+              </button>
+            )}
+          </div>
+          <textarea
+            value={coverImagePrompt}
+            onChange={(e) => setCoverImagePrompt(e.target.value)}
+            rows={3}
+            placeholder="Ex: cinematic studio photo of a black and gold 1:8 scale technic supercar model kit, dramatic warm lighting, carbon fiber background, premium automotive aesthetic, 16:9"
+            className="w-full rounded-lg border px-3 py-2 text-sm"
+            style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
+          />
+          <p className="mt-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            Cole esse prompt em um gerador de imagem por IA (Midjourney, DALL-E, etc), gere a imagem, faça o upload em
+            algum host de imagens e cole a URL resultante no campo acima.
+          </p>
+        </div>
         <Field
           label="Conteúdo do artigo"
           value={content}
