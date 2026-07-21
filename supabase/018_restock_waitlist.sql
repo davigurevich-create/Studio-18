@@ -18,14 +18,17 @@ alter table restock_waitlist enable row level security;
 -- Qualquer visitante do site pode entrar na lista (formulário público, sem
 -- login) — mas só a equipe autenticada no painel consegue ver ou atualizar
 -- os registros.
+drop policy if exists "public can join waitlist" on restock_waitlist;
 create policy "public can join waitlist" on restock_waitlist
   for insert
   with check (true);
 
+drop policy if exists "authenticated can view waitlist" on restock_waitlist;
 create policy "authenticated can view waitlist" on restock_waitlist
   for select
   using (auth.role() = 'authenticated');
 
+drop policy if exists "authenticated can update waitlist" on restock_waitlist;
 create policy "authenticated can update waitlist" on restock_waitlist
   for update
   using (auth.role() = 'authenticated')
