@@ -1,12 +1,25 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { addMovement, createProduct, getContainers, getProducts, getStock, updateProduct } from '@/lib/api'
+import {
+  addMovement,
+  createProduct,
+  getContainers,
+  getProducts,
+  getRestockWaitlist,
+  getSaleItems,
+  getSales,
+  getStock,
+  updateProduct,
+} from '@/lib/api'
 import { Badge, Button, Card, PageHeader, StatTile, formatBRL } from '@/components/ui'
-import type { Container, MovementType, Product, ProductStock } from '@/types/domain'
+import type { Container, MovementType, Product, ProductStock, RestockWaitlistEntry, Sale, SaleItem } from '@/types/domain'
 
 export function Estoque() {
   const [stock, setStock] = useState<ProductStock[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [containers, setContainers] = useState<Container[]>([])
+  const [sales, setSales] = useState<Sale[]>([])
+  const [saleItems, setSaleItems] = useState<SaleItem[]>([])
+  const [waitlist, setWaitlist] = useState<RestockWaitlistEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [showMovementForm, setShowMovementForm] = useState(false)
   const [showProductForm, setShowProductForm] = useState(false)
@@ -15,12 +28,17 @@ export function Estoque() {
   const [statusFilter, setStatusFilter] = useState<'todos' | 'baixo' | 'ok'>('todos')
 
   const reload = () => {
-    Promise.all([getStock(), getProducts(), getContainers()]).then(([s, p, c]) => {
-      setStock(s)
-      setProducts(p)
-      setContainers(c)
-      setLoading(false)
-    })
+    Promise.all([getStock(), getProducts(), getContainers(), getSales(), getSaleItems(), getRestockWaitlist()]).then(
+      ([s, p, c, sa, si, w]) => {
+        setStock(s)
+        setProducts(p)
+        setContainers(c)
+        setSales(sa)
+        setSaleItems(si)
+        setWaitlist(w)
+        setLoading(false)
+      },
+    )
   }
 
   useEffect(reload, [])
@@ -94,6 +112,8 @@ export function Estoque() {
       )}
 
       <MarginComparison stock={stock} />
+
+      <ReorderSuggestions stock={stock} sales={sales} saleItems={saleItems} waitlist={waitlist} />
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <input
@@ -334,6 +354,150 @@ function MarginComparison({ stock }: { stock: ProductStock[] }) {
           </p>
         </div>
       )}
+    </Card>
+  )
+}
+
+// Prazo médio estimado entre decidir comprar um novo container e ele estar
+// liberado e pronto para venda (compra + trânsito + desembaraço aduaneiro),
+// mais uma margem de segurança — usados para calcular quanto pedir do
+// próximo lote com base na velocidade real de venda de cada SKU.
+const LEAD_TIME_DAYS = 75
+const SAFETY_BUFFER_DAYS = 30
+const VELOCITY_LOOKBACK_DAYS = 90
+const SOLD_STATUSES = new Set(['pago', 'enviado', 'entregue'])
+
+interface ReorderRow extends ProductStock {
+  soldUnitsInWindow: number
+  velocityPerWeek: number
+  daysOfStockLeft: number
+  pendingWaitlist: number
+  suggestedQty: number
+}
+
+function ReorderSuggestions({
+  stock,
+  sales,
+  saleItems,
+  waitlist,
+}: {
+  stock: ProductStock[]
+  sales: Sale[]
+  saleItems: SaleItem[]
+  waitlist: RestockWaitlistEntry[]
+}) {
+  const { rows, windowDays } = useMemo(() => {
+    const now = Date.now()
+    const cutoff = now - VELOCITY_LOOKBACK_DAYS * 86400000
+
+    const validSales = sales.filter((s) => SOLD_STATUSES.has(s.status) && new Date(s.sale_date).getTime() >= cutoff)
+    const validSaleIds = new Set(validSales.map((s) => s.id))
+
+    const oldestValidSaleTime = validSales.reduce(
+      (min, s) => Math.min(min, new Date(s.sale_date).getTime()),
+      now,
+    )
+    const windowDays = Math.max(7, Math.min(VELOCITY_LOOKBACK_DAYS, Math.ceil((now - oldestValidSaleTime) / 86400000)))
+
+    const soldByProduct = new Map<string, number>()
+    for (const item of saleItems) {
+      if (!validSaleIds.has(item.sale_id)) continue
+      soldByProduct.set(item.product_id, (soldByProduct.get(item.product_id) ?? 0) + item.quantity)
+    }
+
+    const waitlistByProduct = new Map<string, number>()
+    for (const w of waitlist) {
+      if (w.notified) continue
+      waitlistByProduct.set(w.product_id, (waitlistByProduct.get(w.product_id) ?? 0) + 1)
+    }
+
+    const rows: ReorderRow[] = stock
+      .map((p) => {
+        const soldUnitsInWindow = soldByProduct.get(p.product_id) ?? 0
+        const velocityPerDay = soldUnitsInWindow / windowDays
+        const daysOfStockLeft = velocityPerDay > 0 ? p.quantity_in_stock / velocityPerDay : Infinity
+        const pendingWaitlist = waitlistByProduct.get(p.product_id) ?? 0
+        const targetUnits = velocityPerDay * (LEAD_TIME_DAYS + SAFETY_BUFFER_DAYS)
+        const suggestedQty = Math.max(0, Math.ceil(targetUnits - p.quantity_in_stock + pendingWaitlist))
+        return {
+          ...p,
+          soldUnitsInWindow,
+          velocityPerWeek: velocityPerDay * 7,
+          daysOfStockLeft,
+          pendingWaitlist,
+          suggestedQty,
+        }
+      })
+      .filter((r) => r.suggestedQty > 0)
+      .sort((a, b) => a.daysOfStockLeft - b.daysOfStockLeft)
+
+    return { rows, windowDays }
+  }, [stock, sales, saleItems, waitlist])
+
+  if (rows.length === 0) return null
+
+  return (
+    <Card className="mb-4">
+      <div className="mb-4">
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          Sugestão de reposição por velocidade de venda
+        </h2>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          Baseado nos últimos {windowDays} dias de vendas confirmadas e num prazo de importação estimado de{' '}
+          {LEAD_TIME_DAYS + SAFETY_BUFFER_DAYS} dias (trânsito + margem de segurança). Quanto menos dias de estoque
+          restam, mais urgente é repor.
+        </p>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">SKU</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Produto</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Vendas/semana</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Estoque atual</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Dias de estoque</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Lista de espera</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">Sugestão de compra</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => {
+              const critical = r.daysOfStockLeft < LEAD_TIME_DAYS
+              return (
+                <tr key={r.product_id} className="border-t" style={{ borderColor: 'var(--gridline)' }}>
+                  <td className="py-2.5 pr-4" style={{ color: 'var(--text-secondary)' }}>
+                    {r.sku}
+                  </td>
+                  <td className="py-2.5 pr-4 font-medium" style={{ color: 'var(--text-primary)' }}>
+                    {r.name}
+                  </td>
+                  <td className="tabular py-2.5 pr-4" style={{ color: 'var(--text-secondary)' }}>
+                    {r.velocityPerWeek.toFixed(1)}
+                  </td>
+                  <td className="tabular py-2.5 pr-4" style={{ color: 'var(--text-secondary)' }}>
+                    {r.quantity_in_stock}
+                  </td>
+                  <td className="py-2.5 pr-4">
+                    {Number.isFinite(r.daysOfStockLeft) ? (
+                      <Badge tone={critical ? 'critical' : 'warning'}>{Math.floor(r.daysOfStockLeft)} dias</Badge>
+                    ) : (
+                      <Badge tone="muted">sem giro no período</Badge>
+                    )}
+                  </td>
+                  <td className="tabular py-2.5 pr-4" style={{ color: 'var(--text-secondary)' }}>
+                    {r.pendingWaitlist > 0 ? `${r.pendingWaitlist} aguardando` : '—'}
+                  </td>
+                  <td className="tabular py-2.5 pr-4 font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    {r.suggestedQty} unidades
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
     </Card>
   )
 }
