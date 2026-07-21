@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { createBlogPost, deleteBlogPost, getBlogPosts, updateBlogPost } from '@/lib/api'
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { createBlogPost, deleteBlogPost, getBlogPosts, updateBlogPost, uploadBlogCoverImage } from '@/lib/api'
 import { Badge, Button, Card, PageHeader } from '@/components/ui'
 import type { BlogPost } from '@/types/domain'
 
@@ -175,12 +175,31 @@ function BlogPostForm({
   const [published, setPublished] = useState(post?.published ?? false)
   const [saving, setSaving] = useState(false)
   const [promptCopied, setPromptCopied] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const copyPrompt = () => {
     if (!coverImagePrompt) return
     navigator.clipboard.writeText(coverImagePrompt)
     setPromptCopied(true)
     setTimeout(() => setPromptCopied(false), 2000)
+  }
+
+  const handleCoverFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadError(null)
+    setUploading(true)
+    try {
+      const url = await uploadBlogCoverImage(file)
+      setCoverImageUrl(url)
+    } catch {
+      setUploadError('Não foi possível enviar a imagem. Tente novamente.')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
   }
 
   const handleTitleChange = (v: string) => {
@@ -238,12 +257,44 @@ function BlogPostForm({
           textarea
           rows={2}
         />
-        <Field
-          label="Imagem de capa (URL)"
-          value={coverImageUrl}
-          onChange={setCoverImageUrl}
-          placeholder="https://..."
-        />
+        <div>
+          <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            Imagem de capa
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="text"
+              value={coverImageUrl}
+              onChange={(e) => setCoverImageUrl(e.target.value)}
+              placeholder="https://... (ou envie um arquivo)"
+              className="min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm"
+              style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
+            />
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleCoverFileChange} className="hidden" />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="shrink-0 rounded-lg border px-3 py-2 text-sm font-medium disabled:opacity-60"
+              style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
+            >
+              {uploading ? 'Enviando...' : 'Enviar arquivo'}
+            </button>
+          </div>
+          {uploadError && (
+            <p className="mt-1 text-[11px]" style={{ color: 'var(--status-critical)' }}>
+              {uploadError}
+            </p>
+          )}
+          {coverImageUrl && (
+            <img
+              src={coverImageUrl}
+              alt="Prévia da imagem de capa"
+              className="mt-2 h-28 w-auto rounded-lg object-cover"
+              style={{ border: '1px solid var(--border-hairline)' }}
+            />
+          )}
+        </div>
         <div>
           <div className="mb-1 flex items-center justify-between">
             <label className="block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
@@ -273,8 +324,8 @@ function BlogPostForm({
             style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
           />
           <p className="mt-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Cole esse prompt em um gerador de imagem por IA (Midjourney, DALL-E, etc), gere a imagem, faça o upload em
-            algum host de imagens e cole a URL resultante no campo acima.
+            Cole esse prompt em um gerador de imagem por IA (Midjourney, DALL-E, etc), baixe a imagem gerada e use o
+            botão "Enviar arquivo" no campo de imagem de capa acima.
           </p>
         </div>
         <Field

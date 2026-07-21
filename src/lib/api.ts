@@ -350,6 +350,24 @@ export async function addExpense(input: Omit<Expense, 'id' | 'created_at'>): Pro
 // ---------------------------------------------------------------------------
 // Blog
 // ---------------------------------------------------------------------------
+/**
+ * Envia a imagem de capa direto para o Storage do Supabase (bucket público
+ * "blog-covers") e devolve a URL pública — evita depender de um host de
+ * imagens externo. Em modo demo, usa uma URL local temporária.
+ */
+export async function uploadBlogCoverImage(file: File): Promise<string> {
+  if (!supabase) {
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    return URL.createObjectURL(file)
+  }
+  const ext = file.name.split('.').pop() ?? 'jpg'
+  const path = `${crypto.randomUUID()}.${ext}`
+  const { error } = await supabase.storage.from('blog-covers').upload(path, file)
+  if (error) throw error
+  const { data } = supabase.storage.from('blog-covers').getPublicUrl(path)
+  return data.publicUrl
+}
+
 export async function getBlogPosts(): Promise<BlogPost[]> {
   if (supabase) {
     const { data, error } = await supabase.from('blog_posts').select('*').order('created_at', { ascending: false })
