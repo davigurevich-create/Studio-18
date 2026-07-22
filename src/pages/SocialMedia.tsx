@@ -194,56 +194,100 @@ export function SocialMedia() {
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {filteredIdeas.map((idea) => (
-            <Card key={idea.id}>
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <Badge tone="info">{idea.format}</Badge>
-                <Badge tone="muted">{pillarLabels[idea.pillar] ?? idea.pillar}</Badge>
-                <select
-                  value={idea.status}
-                  onChange={(e) => changeStatus(idea, e.target.value as SocialContentStatus)}
-                  className="ml-auto rounded-full border-0 px-2.5 py-0.5 text-xs font-medium"
-                  style={{ background: statusColors[idea.status].bg, color: statusColors[idea.status].fg }}
-                >
-                  {(['sugerido', 'em_producao', 'publicado'] as SocialContentStatus[]).map((s) => (
-                    <option key={s} value={s}>
-                      {statusLabels[s]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <h3 className="mb-2 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {idea.title}
-              </h3>
-
-              <p className="mb-2 whitespace-pre-line text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                {idea.script}
-              </p>
-
-              {idea.hashtags && (
-                <p className="mb-2 text-xs" style={{ color: 'var(--series-1)' }}>
-                  {idea.hashtags}
-                </p>
-              )}
-
-              {idea.cta && (
-                <p className="mb-3 text-xs italic" style={{ color: 'var(--text-muted)' }}>
-                  CTA: {idea.cta}
-                </p>
-              )}
-
-              <button
-                onClick={() => remove(idea)}
-                className="text-xs"
-                style={{ color: 'var(--status-critical)' }}
-              >
-                Excluir
-              </button>
-            </Card>
+            <IdeaCard key={idea.id} idea={idea} onChangeStatus={changeStatus} onRemove={remove} />
           ))}
         </div>
       )}
     </div>
+  )
+}
+
+function IdeaCard({
+  idea,
+  onChangeStatus,
+  onRemove,
+}: {
+  idea: SocialContentIdea
+  onChangeStatus: (idea: SocialContentIdea, status: SocialContentStatus) => void
+  onRemove: (idea: SocialContentIdea) => void
+}) {
+  const [copied, setCopied] = useState(false)
+
+  const copyPrompt = () => {
+    if (!idea.visual_prompt) return
+    navigator.clipboard.writeText(idea.visual_prompt)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <Card>
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <Badge tone="info">{idea.format}</Badge>
+        <Badge tone="muted">{pillarLabels[idea.pillar] ?? idea.pillar}</Badge>
+        <select
+          value={idea.status}
+          onChange={(e) => onChangeStatus(idea, e.target.value as SocialContentStatus)}
+          className="ml-auto rounded-full border-0 px-2.5 py-0.5 text-xs font-medium"
+          style={{ background: statusColors[idea.status].bg, color: statusColors[idea.status].fg }}
+        >
+          {(['sugerido', 'em_producao', 'publicado'] as SocialContentStatus[]).map((s) => (
+            <option key={s} value={s}>
+              {statusLabels[s]}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <h3 className="mb-2 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+        {idea.title}
+      </h3>
+
+      <p className="mb-2 whitespace-pre-line text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+        {idea.script}
+      </p>
+
+      {idea.hashtags && (
+        <p className="mb-2 text-xs" style={{ color: 'var(--series-1)' }}>
+          {idea.hashtags}
+        </p>
+      )}
+
+      {idea.cta && (
+        <p className="mb-3 text-xs italic" style={{ color: 'var(--text-muted)' }}>
+          CTA: {idea.cta}
+        </p>
+      )}
+
+      {idea.visual_prompt && (
+        <div className="mb-3 rounded-lg border p-3" style={{ borderColor: 'var(--border-hairline)', background: 'var(--page-plane)' }}>
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold tracking-wide" style={{ color: 'var(--text-muted)' }}>
+              PROMPT PARA IA (imagem/vídeo)
+            </span>
+            <button
+              type="button"
+              onClick={copyPrompt}
+              className="rounded-md px-2 py-1 text-[11px] font-medium"
+              style={{
+                background: copied ? 'var(--status-good)' : 'var(--surface-1)',
+                color: copied ? '#fff' : 'var(--text-secondary)',
+                border: '1px solid var(--border-hairline)',
+              }}
+            >
+              {copied ? '✓ Copiado!' : 'Copiar'}
+            </button>
+          </div>
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            {idea.visual_prompt}
+          </p>
+        </div>
+      )}
+
+      <button onClick={() => onRemove(idea)} className="text-xs" style={{ color: 'var(--status-critical)' }}>
+        Excluir
+      </button>
+    </Card>
   )
 }
 
@@ -263,6 +307,7 @@ function IdeaForm({
     script: '',
     hashtags: '',
     cta: '',
+    visual_prompt: '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -278,6 +323,7 @@ function IdeaForm({
         script: form.script,
         hashtags: form.hashtags || null,
         cta: form.cta || null,
+        visual_prompt: form.visual_prompt || null,
         status: 'sugerido',
       })
       onDone()
@@ -316,6 +362,14 @@ function IdeaForm({
         <Field label="Roteiro / legenda" value={form.script} onChange={(v) => setForm({ ...form, script: v })} textarea rows={5} required />
         <Field label="Hashtags" value={form.hashtags} onChange={(v) => setForm({ ...form, hashtags: v })} placeholder="#studio18 #legotechnic ..." />
         <Field label="CTA (chamada para ação)" value={form.cta} onChange={(v) => setForm({ ...form, cta: v })} />
+        <Field
+          label="Prompt para IA (imagem/vídeo)"
+          value={form.visual_prompt}
+          onChange={(v) => setForm({ ...form, visual_prompt: v })}
+          textarea
+          rows={3}
+          placeholder="Ex: cinematic studio photo of a black and gold 1:8 scale technic supercar model kit, dramatic warm lighting, 9:16 aspect ratio"
+        />
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onCancel}>
             Cancelar

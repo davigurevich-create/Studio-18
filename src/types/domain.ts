@@ -182,6 +182,7 @@ export interface SocialContentIdea {
   script: string
   hashtags: string | null
   cta: string | null
+  visual_prompt: string | null
   status: SocialContentStatus
 }
 
