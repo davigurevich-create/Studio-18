@@ -169,6 +169,22 @@ export interface AuditLogEntry {
   summary: string
 }
 
+export type SocialPlatform = 'instagram' | 'tiktok'
+export type SocialContentStatus = 'sugerido' | 'em_producao' | 'publicado'
+
+export interface SocialContentIdea {
+  id: string
+  created_at: string
+  platform: SocialPlatform
+  format: string
+  pillar: string
+  title: string
+  script: string
+  hashtags: string | null
+  cta: string | null
+  status: SocialContentStatus
+}
+
 export interface BlogPost {
   id: string
   slug: string

@@ -10,6 +10,7 @@ import { Containers } from '@/pages/Containers'
 import { Blog } from '@/pages/Blog'
 import { PecasFaltantes } from '@/pages/PecasFaltantes'
 import { ListaEspera } from '@/pages/ListaEspera'
+import { SocialMedia } from '@/pages/SocialMedia'
 import { AuditLog } from '@/pages/AuditLog'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -41,6 +42,7 @@ function App() {
             <Route path="/blog" element={<Blog />} />
             <Route path="/pecas-faltantes" element={<PecasFaltantes />} />
             <Route path="/lista-espera" element={<ListaEspera />} />
+            <Route path="/social-media" element={<SocialMedia />} />
             <Route path="/log-auditoria" element={<AuditLog />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

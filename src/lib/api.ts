@@ -11,6 +11,7 @@ import {
   seedRestockWaitlist,
   seedSaleItems,
   seedSales,
+  seedSocialContentIdeas,
 } from '@/lib/mockData'
 import type {
   AuditAction,
@@ -26,6 +27,8 @@ import type {
   RestockWaitlistEntry,
   Sale,
   SaleItem,
+  SocialContentIdea,
+  SocialContentStatus,
 } from '@/types/domain'
 
 const productsTable = makeTable<Product>('products', seedProducts)
@@ -37,6 +40,7 @@ const expensesTable = makeTable<Expense>('expenses', seedExpenses)
 const blogPostsTable = makeTable<BlogPost>('blog_posts', seedBlogPosts)
 const partRequestsTable = makeTable<PartRequest>('part_requests', seedPartRequests)
 const restockWaitlistTable = makeTable<RestockWaitlistEntry>('restock_waitlist', seedRestockWaitlist)
+const socialContentIdeasTable = makeTable<SocialContentIdea>('social_content_ideas', seedSocialContentIdeas)
 const auditLogTable = makeTable<AuditLogEntry>('audit_log', seedAuditLog)
 
 /** True when reading from the local demo store instead of Supabase. */
@@ -483,4 +487,59 @@ export async function markRestockWaitlistNotified(id: string, notified: boolean)
     restockWaitlistTable.update(id, patch)
   }
   await logAudit('editar', 'lista_espera', id, notified ? 'Marcou cliente como avisado da reposição' : 'Desmarcou aviso de reposição')
+}
+
+// ---------------------------------------------------------------------------
+// Social Media — motor de conteúdo (sugestões de posts/vídeos para
+// Instagram e TikTok), uso interno da equipe apenas.
+// ---------------------------------------------------------------------------
+export async function getSocialContentIdeas(): Promise<SocialContentIdea[]> {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('social_content_ideas')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data as SocialContentIdea[]
+  }
+  return [...socialContentIdeasTable.all()].sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+export type NewSocialContentIdeaInput = Omit<SocialContentIdea, 'id' | 'created_at'>
+
+export async function createSocialContentIdea(input: NewSocialContentIdeaInput): Promise<SocialContentIdea> {
+  let created: SocialContentIdea
+  if (supabase) {
+    const { data, error } = await supabase.from('social_content_ideas').insert(input).select().single()
+    if (error) throw error
+    created = data as SocialContentIdea
+  } else {
+    created = socialContentIdeasTable.insert({ ...input, id: newId(), created_at: new Date().toISOString() })
+  }
+  await logAudit('criar', 'conteudo_social', created.id, `Criou sugestão de conteúdo (${input.platform}): "${input.title}"`)
+  return created
+}
+
+export async function updateSocialContentIdeaStatus(
+  id: string,
+  status: SocialContentStatus,
+  title: string,
+): Promise<void> {
+  if (supabase) {
+    const { error } = await supabase.from('social_content_ideas').update({ status }).eq('id', id)
+    if (error) throw error
+  } else {
+    socialContentIdeasTable.update(id, { status })
+  }
+  await logAudit('editar', 'conteudo_social', id, `Alterou status de "${title}" para "${status}"`)
+}
+
+export async function deleteSocialContentIdea(id: string, title: string): Promise<void> {
+  if (supabase) {
+    const { error } = await supabase.from('social_content_ideas').delete().eq('id', id)
+    if (error) throw error
+  } else {
+    socialContentIdeasTable.remove(id)
+  }
+  await logAudit('excluir', 'conteudo_social', id, `Excluiu sugestão de conteúdo: "${title}"`)
 }
