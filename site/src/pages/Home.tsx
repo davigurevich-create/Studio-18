@@ -25,8 +25,8 @@ const fadeUp = {
 const diferenciais = [
   {
     icon: Warehouse,
-    title: 'Único com estoque físico no Brasil',
-    text: 'Somos o único importador de sets técnicos em escala 1:8 com estoque físico em território nacional — fruto de uma importação oficial direto dos maiores fabricantes do mundo. Nada de esperar um container do outro lado do oceano: o seu já está aqui.',
+    title: 'Grande estoque físico no Brasil',
+    text: 'Somos importadores oficiais de sets técnicos em escala 1:8 direto dos maiores fabricantes do mundo, com grande estoque físico em território nacional. Nada de esperar um container do outro lado do oceano: o seu já está aqui.',
   },
   {
     icon: BadgePercent,
