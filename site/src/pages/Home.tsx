@@ -164,9 +164,9 @@ export function Home() {
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
-          <p className="eyebrow mb-4" style={{ fontSize: '15px', fontWeight: 700 }}>
-            Importamos os mais sofisticados sets técnicos de blocos de montar em escala 1:8, e entregamos a pronta
-            entrega no Brasil.
+          <p className="eyebrow mb-4" style={{ fontSize: '15px', fontWeight: 700, textTransform: 'none' }}>
+            Importamos os mais sofisticados sets técnicos de blocos de montar em escala 1:8. Possuímos grande
+            estoque e fazemos pronta entrega para todo o Brasil.
           </p>
           <p className="mx-auto max-w-xl text-base sm:text-lg" style={{ color: 'var(--ink-secondary)' }}>
             Carros, motos e motores que se tornam esculturas de engenharia, pelas suas próprias mãos.
