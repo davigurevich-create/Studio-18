@@ -354,6 +354,16 @@ export async function addExpense(input: Omit<Expense, 'id' | 'created_at'>): Pro
   return created
 }
 
+export async function deleteExpense(id: string, description: string): Promise<void> {
+  if (supabase) {
+    const { error } = await supabase.from('expenses').delete().eq('id', id)
+    if (error) throw error
+  } else {
+    expensesTable.remove(id)
+  }
+  await logAudit('excluir', 'despesa', id, `Excluiu a despesa: "${description}"`)
+}
+
 // ---------------------------------------------------------------------------
 // Blog
 // ---------------------------------------------------------------------------

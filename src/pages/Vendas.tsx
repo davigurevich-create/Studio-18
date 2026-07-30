@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { createSale, getProducts, getSaleItems, getSales, updateSaleStatus } from '@/lib/api'
+import { createSale, getProducts, getSaleItems, getSales, getStock, updateSaleStatus } from '@/lib/api'
 import { Badge, Button, Card, PageHeader, formatBRL } from '@/components/ui'
 import type { NewSaleItemInput } from '@/lib/api'
-import type { Product, Sale, SaleItem, SaleStatus } from '@/types/domain'
+import type { Product, ProductStock, Sale, SaleItem, SaleStatus } from '@/types/domain'
 
 const statusTone: Record<SaleStatus, 'muted' | 'good' | 'warning' | 'critical' | 'info'> = {
   pendente: 'warning',
@@ -16,6 +16,7 @@ export function Vendas() {
   const [sales, setSales] = useState<Sale[]>([])
   const [saleItems, setSaleItems] = useState<SaleItem[]>([])
   const [products, setProducts] = useState<Product[]>([])
+  const [stock, setStock] = useState<ProductStock[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
@@ -30,10 +31,11 @@ export function Vendas() {
   }
 
   const reload = () => {
-    Promise.all([getSales(), getSaleItems(), getProducts()]).then(([s, si, p]) => {
+    Promise.all([getSales(), getSaleItems(), getProducts(), getStock()]).then(([s, si, p, st]) => {
       setSales(s)
       setSaleItems(si)
       setProducts(p)
+      setStock(st)
       setLoading(false)
     })
   }
@@ -49,6 +51,22 @@ export function Vendas() {
     const present = new Set(sales.map((s) => s.channel))
     return Array.from(present).sort()
   }, [sales])
+
+  // Faturamento já realizado (vendas não canceladas, pelo preço de venda
+  // registrado em cada item) vs. o potencial de faturamento ainda "parado"
+  // no estoque atual, pelo preço de venda de tabela de cada SKU.
+  const revenuePotential = useMemo(() => {
+    const realized = sales
+      .filter((s) => s.status !== 'cancelado')
+      .reduce((sum, s) => {
+        const items = saleItems.filter((i) => i.sale_id === s.id)
+        return sum + items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0)
+      }, 0)
+    const remainingStockPotential = stock.reduce((sum, p) => sum + p.quantity_in_stock * p.sale_price_brl, 0)
+    const maxPotential = realized + remainingStockPotential
+    const pct = maxPotential > 0 ? (realized / maxPotential) * 100 : 0
+    return { realized, remainingStockPotential, maxPotential, pct }
+  }, [sales, saleItems, stock])
 
   const filteredSales = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -87,6 +105,35 @@ export function Vendas() {
           }}
         />
       )}
+
+      <Card className="mb-4">
+        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+            Faturamento realizado vs. potencial do estoque atual
+          </h2>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            {revenuePotential.pct.toFixed(1)}% do potencial já faturado
+          </span>
+        </div>
+        <div className="h-3 w-full overflow-hidden rounded-full" style={{ background: 'var(--gridline)' }}>
+          <div
+            className="h-full rounded-full transition-all"
+            style={{ width: `${Math.min(100, Math.max(revenuePotential.pct, revenuePotential.pct > 0 ? 1.5 : 0))}%`, background: 'var(--series-1)' }}
+          />
+        </div>
+        <div className="mt-2 flex flex-wrap justify-between gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+          <span>
+            <strong style={{ color: 'var(--text-primary)' }}>{formatBRL(revenuePotential.realized)}</strong> já faturado
+          </span>
+          <span>
+            <strong style={{ color: 'var(--text-primary)' }}>{formatBRL(revenuePotential.remainingStockPotential)}</strong> ainda em
+            estoque (potencial)
+          </span>
+          <span>
+            <strong style={{ color: 'var(--text-primary)' }}>{formatBRL(revenuePotential.maxPotential)}</strong> máximo possível
+          </span>
+        </div>
+      </Card>
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <input

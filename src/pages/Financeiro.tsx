@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { addExpense, getExpenses, getSaleItems, getSales } from '@/lib/api'
+import { Bar, BarChart, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { addExpense, deleteExpense, getExpenses, getSaleItems, getSales } from '@/lib/api'
 import { Button, Card, PageHeader, StatTile, formatBRL } from '@/components/ui'
 import type { Expense, ExpenseCategory, Sale, SaleItem } from '@/types/domain'
+
+const paidByOptions = ['Davi', 'Rubens', 'Iwan']
 
 const categoryLabels: Record<ExpenseCategory, string> = {
   importacao: 'Importação',
@@ -51,6 +53,23 @@ export function Financeiro() {
   }
 
   useEffect(reload, [])
+
+  const removeExpense = async (expense: Expense) => {
+    if (!confirm(`Excluir a despesa "${expense.description}"? Essa ação não pode ser desfeita.`)) return
+    await deleteExpense(expense.id, expense.description)
+    reload()
+  }
+
+  const expensesByResponsible = useMemo(() => {
+    const totals = new Map<string, number>()
+    for (const e of expenses) {
+      const key = e.paid_by || 'Não informado'
+      totals.set(key, (totals.get(key) ?? 0) + e.amount_brl)
+    }
+    return Array.from(totals.entries())
+      .map(([name, total]) => ({ name, total }))
+      .sort((a, b) => b.total - a.total)
+  }, [expenses])
 
   const start = useMemo(() => periodStart(period), [period])
   const periodSales = useMemo(
@@ -295,7 +314,9 @@ export function Financeiro() {
                 <th className="pb-2 pr-3 font-medium">Data</th>
                 <th className="pb-2 pr-3 font-medium">Categoria</th>
                 <th className="pb-2 pr-3 font-medium">Descrição</th>
-                <th className="pb-2 font-medium">Valor</th>
+                <th className="pb-2 pr-3 font-medium">Responsável</th>
+                <th className="pb-2 pr-3 font-medium">Valor</th>
+                <th className="pb-2 font-medium"></th>
               </tr>
             </thead>
             <tbody>
@@ -310,8 +331,21 @@ export function Financeiro() {
                   <td className="py-2 pr-3" style={{ color: 'var(--text-primary)' }}>
                     {e.description}
                   </td>
-                  <td className="tabular py-2 font-medium whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
+                  <td className="py-2 pr-3 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
+                    {e.paid_by || '—'}
+                  </td>
+                  <td className="tabular py-2 pr-3 font-medium whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
                     {formatBRL(e.amount_brl)}
+                  </td>
+                  <td className="py-2 whitespace-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => removeExpense(e)}
+                      className="text-xs"
+                      style={{ color: 'var(--status-critical)' }}
+                    >
+                      Excluir
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -319,6 +353,39 @@ export function Financeiro() {
           </table>
         </Card>
       </div>
+
+      <Card className="mt-4">
+        <h2 className="mb-1 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          Gastos por responsável
+        </h2>
+        <p className="mb-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+          Total pago por cada sócio, considerando todo o histórico de despesas.
+        </p>
+        {expensesByResponsible.length === 0 ? (
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            Nenhuma despesa registrada ainda.
+          </p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={expensesByResponsible} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
+              <CartesianGrid stroke="var(--gridline)" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={{ stroke: 'var(--baseline)' }} tickLine={false} />
+              <YAxis
+                tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
+                axisLine={false}
+                tickLine={false}
+                width={52}
+                tickFormatter={(v) => `R$${Math.round(v / 100) / 10}k`}
+              />
+              <Tooltip
+                formatter={(v) => [formatBRL(Number(v)), 'Total pago']}
+                contentStyle={{ background: 'var(--surface-1)', border: '1px solid var(--border-hairline)', borderRadius: 8, fontSize: 12 }}
+              />
+              <Bar dataKey="total" fill="var(--series-1)" radius={[4, 4, 0, 0]} maxBarSize={64} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </Card>
     </div>
   )
 }
@@ -363,6 +430,7 @@ function ExpenseForm({ onDone }: { onDone: () => void }) {
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [paidBy, setPaidBy] = useState('')
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -372,6 +440,7 @@ function ExpenseForm({ onDone }: { onDone: () => void }) {
       description,
       amount_brl: Number(amount),
       container_id: null,
+      paid_by: paidBy || null,
     })
     onDone()
   }
@@ -432,6 +501,24 @@ function ExpenseForm({ onDone }: { onDone: () => void }) {
             className="w-full rounded-lg border px-3 py-2 text-sm"
             style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
           />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            Responsável pelo pagamento
+          </label>
+          <input
+            list="paid-by-options"
+            value={paidBy}
+            onChange={(e) => setPaidBy(e.target.value)}
+            placeholder="Davi, Rubens, Iwan..."
+            className="w-full rounded-lg border px-3 py-2 text-sm"
+            style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
+          />
+          <datalist id="paid-by-options">
+            {paidByOptions.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
         </div>
         <div className="col-span-full flex justify-end gap-2">
           <Button type="submit">Registrar despesa</Button>

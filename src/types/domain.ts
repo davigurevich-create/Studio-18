@@ -107,6 +107,7 @@ export interface Expense {
   description: string
   amount_brl: number
   container_id: string | null
+  paid_by: string | null
   created_at: string
 }
 
