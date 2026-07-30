@@ -267,7 +267,7 @@ export function Vendas() {
                       style={{ color: 'inherit' }}
                     >
                       {(['pendente', 'pago', 'enviado', 'entregue', 'cancelado'] as SaleStatus[]).map((st) => (
-                        <option key={st} value={st}>
+                        <option key={st} value={st} style={{ background: 'var(--surface-1)', color: 'var(--text-primary)' }}>
                           {st}
                         </option>
                       ))}

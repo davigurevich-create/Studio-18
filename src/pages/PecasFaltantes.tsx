@@ -166,7 +166,7 @@ export function PecasFaltantes() {
                       style={{ color: 'inherit' }}
                     >
                       {(['pendente', 'em_producao', 'enviado', 'concluido'] as PartRequestStatus[]).map((st) => (
-                        <option key={st} value={st}>
+                        <option key={st} value={st} style={{ background: 'var(--surface-1)', color: 'var(--text-primary)' }}>
                           {st.replace('_', ' ')}
                         </option>
                       ))}
