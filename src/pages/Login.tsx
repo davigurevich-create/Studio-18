@@ -41,10 +41,13 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--page-plane)' }}>
+    <div
+      className="flex min-h-screen items-center justify-center bg-cover bg-center"
+      style={{ backgroundImage: 'url(/login-background.jpg)' }}
+    >
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-xl border p-6"
+        className="w-full max-w-sm rounded-xl border p-6 shadow-2xl"
         style={{ background: 'var(--surface-1)', borderColor: 'var(--border-hairline)' }}
       >
         <div className="mb-3 inline-flex rounded-lg px-3 py-2" style={{ background: '#0c0c0c' }}>
