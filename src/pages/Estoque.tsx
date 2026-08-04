@@ -153,7 +153,7 @@ export function Estoque() {
       </div>
 
       <Card className="mt-4 overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[1080px] text-sm">
           <thead>
             <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
               <th className="pb-2 pr-4 font-medium whitespace-nowrap">SKU</th>
@@ -450,7 +450,7 @@ function ReorderSuggestions({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
               <th className="pb-2 pr-4 font-medium whitespace-nowrap">SKU</th>

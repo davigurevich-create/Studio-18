@@ -308,7 +308,7 @@ export function Financeiro() {
           <h2 className="mb-4 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
             Últimas despesas
           </h2>
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
                 <th className="pb-2 pr-3 font-medium">Data</th>

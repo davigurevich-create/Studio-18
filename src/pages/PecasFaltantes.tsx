@@ -97,7 +97,7 @@ export function PecasFaltantes() {
       </div>
 
       <Card className="mt-4 overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[900px] text-sm">
           <thead>
             <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
               <th className="pb-2 font-medium">Data</th>
