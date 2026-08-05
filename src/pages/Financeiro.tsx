@@ -6,6 +6,10 @@ import type { Expense, ExpenseCategory, ExpenseRecurrence, Sale, SaleItem } from
 
 const paidByOptions = ['Davi', 'Rubens', 'Iwan']
 
+// Quantos meses futuros o fluxo de caixa projeta com base nas despesas
+// recorrentes já cadastradas.
+const PROJECTION_MONTHS = 6
+
 const categoryLabels: Record<ExpenseCategory, string> = {
   importacao: 'Importação',
   marketing: 'Marketing',
@@ -140,11 +144,17 @@ export function Financeiro() {
     const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     const monthLabel = (d: Date) => d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
 
-    const months: { key: string; label: string; inflow: number; outflow: number }[] = []
+    const months: { key: string; label: string; date: Date; inflow: number; outflow: number; projected: boolean }[] = []
     const now = new Date()
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      months.push({ key: monthKey(d), label: monthLabel(d), inflow: 0, outflow: 0 })
+      months.push({ key: monthKey(d), label: monthLabel(d), date: d, inflow: 0, outflow: 0, projected: false })
+    }
+    // Meses futuros — projeção baseada só nas despesas recorrentes já
+    // cadastradas (não estima vendas futuras, por isso inflow fica zerado).
+    for (let i = 1; i <= PROJECTION_MONTHS; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
+      months.push({ key: monthKey(d), label: monthLabel(d), date: d, inflow: 0, outflow: 0, projected: true })
     }
 
     const receivedStatuses = new Set(['pago', 'enviado', 'entregue'])
@@ -163,6 +173,22 @@ export function Financeiro() {
       bucket.outflow += e.amount_brl
     }
 
+    // Projeta as despesas recorrentes (mensais entram em todo mês futuro a
+    // partir da data original; anuais só no mês em que "fazem aniversário").
+    const recurringExpenses = expenses.filter((e) => e.recurrence !== 'pontual')
+    for (const month of months) {
+      if (!month.projected) continue
+      for (const e of recurringExpenses) {
+        const start = new Date(e.expense_date)
+        if (start > month.date) continue
+        if (e.recurrence === 'mensal') {
+          month.outflow += e.amount_brl
+        } else if (e.recurrence === 'anual' && start.getMonth() === month.date.getMonth()) {
+          month.outflow += e.amount_brl
+        }
+      }
+    }
+
     // saldo acumulado considerando TODO o historico (nao so os 6 meses
     // exibidos), para o numero de "caixa atual" ser real.
     const allTimeInflow = sales
@@ -174,23 +200,39 @@ export function Financeiro() {
     const allTimeOutflow = expenses.reduce((sum, e) => sum + e.amount_brl, 0)
     const currentBalance = allTimeInflow - allTimeOutflow
 
-    // saldo acumulado ponto-a-ponto dos ULTIMOS 6 meses exibidos, partindo
-    // do saldo que já existia antes do primeiro mês do grafico.
-    const balanceBeforeChart = currentBalance - months.reduce((t, m) => t + (m.inflow - m.outflow), 0)
+    // saldo acumulado ponto-a-ponto começando pelo saldo que já existia
+    // antes do primeiro mês histórico do gráfico, e seguindo para os meses
+    // projetados (nesse trecho o saldo já reflete a projeção, não o real).
+    const historicalMonths = months.filter((m) => !m.projected)
+    const balanceBeforeChart = currentBalance - historicalMonths.reduce((t, m) => t + (m.inflow - m.outflow), 0)
     let running = balanceBeforeChart
     const series = months.map((m) => {
       running += m.inflow - m.outflow
-      return { ...m, balance: running }
+      return {
+        key: m.key,
+        label: m.label,
+        projected: m.projected,
+        // Chaves separadas para o gráfico poder estilizar diferente o que é
+        // histórico real do que é projeção.
+        inflow: m.projected ? 0 : m.inflow,
+        outflow: m.projected ? 0 : m.outflow,
+        projectedOutflow: m.projected ? m.outflow : 0,
+        balance: running,
+      }
     })
 
     const thisMonthKey = monthKey(now)
     const thisMonth = months.find((m) => m.key === thisMonthKey)
+    const monthlyRecurringTotal = expenses
+      .filter((e) => e.recurrence === 'mensal')
+      .reduce((sum, e) => sum + e.amount_brl, 0)
 
     return {
       series,
       currentBalance,
       monthInflow: thisMonth?.inflow ?? 0,
       monthOutflow: thisMonth?.outflow ?? 0,
+      monthlyRecurringTotal,
     }
   }, [sales, saleItems, expenses])
 
@@ -219,7 +261,7 @@ export function Financeiro() {
           Fluxo de caixa
         </h2>
       </div>
-      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-4">
         <StatTile
           label="Saldo de caixa atual"
           value={formatBRL(cashFlow.currentBalance)}
@@ -227,14 +269,20 @@ export function Financeiro() {
         />
         <StatTile label="Entradas do mês" value={formatBRL(cashFlow.monthInflow)} />
         <StatTile label="Saídas do mês" value={formatBRL(cashFlow.monthOutflow)} />
+        <StatTile
+          label="Compromissos fixos mensais"
+          value={formatBRL(cashFlow.monthlyRecurringTotal)}
+          sub="Soma das despesas recorrentes mensais"
+        />
       </div>
 
       <Card className="mb-6">
         <h3 className="mb-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-          Entradas x saídas — últimos 6 meses
+          Entradas x saídas — últimos 6 meses + projeção de {PROJECTION_MONTHS} meses
         </h3>
         <p className="mb-4 text-xs" style={{ color: 'var(--text-muted)' }}>
-          Barras: entradas (recebido) e saídas (pago). Linha: saldo acumulado de caixa.
+          Barras sólidas: histórico real. Barras claras/tracejadas: projeção baseada só nas despesas recorrentes já
+          cadastradas — não estima vendas futuras. Linha: saldo acumulado de caixa (também projetado nos meses futuros).
         </p>
         <ResponsiveContainer width="100%" height={260}>
           <ComposedChart data={cashFlow.series} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
@@ -250,13 +298,36 @@ export function Financeiro() {
             <Tooltip
               formatter={(v, name) => [
                 formatBRL(Number(v)),
-                name === 'inflow' ? 'Entradas' : name === 'outflow' ? 'Saídas' : 'Saldo acumulado',
+                name === 'inflow'
+                  ? 'Entradas'
+                  : name === 'outflow'
+                    ? 'Saídas'
+                    : name === 'projectedOutflow'
+                      ? 'Saídas projetadas (recorrentes)'
+                      : 'Saldo acumulado',
               ]}
               contentStyle={{ background: 'var(--surface-1)', border: '1px solid var(--border-hairline)', borderRadius: 8, fontSize: 12 }}
             />
             <Bar dataKey="inflow" fill="var(--status-good)" radius={[4, 4, 0, 0]} maxBarSize={28} />
             <Bar dataKey="outflow" fill="var(--status-critical)" radius={[4, 4, 0, 0]} maxBarSize={28} />
-            <Line type="monotone" dataKey="balance" stroke="var(--series-1)" strokeWidth={2} dot={{ r: 3 }} />
+            <Bar dataKey="projectedOutflow" fill="var(--status-critical)" fillOpacity={0.35} radius={[4, 4, 0, 0]} maxBarSize={28} />
+            <Line
+              type="monotone"
+              dataKey="balance"
+              stroke="var(--series-1)"
+              strokeWidth={2}
+              dot={(props: { cx?: number; cy?: number; payload?: { projected: boolean } }) => (
+                <circle
+                  key={`dot-${props.cx}-${props.cy}`}
+                  cx={props.cx ?? 0}
+                  cy={props.cy ?? 0}
+                  r={3}
+                  fill={props.payload?.projected ? 'var(--surface-1)' : 'var(--series-1)'}
+                  stroke="var(--series-1)"
+                  strokeWidth={2}
+                />
+              )}
+            />
           </ComposedChart>
         </ResponsiveContainer>
       </Card>
