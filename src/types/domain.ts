@@ -100,6 +100,8 @@ export type ExpenseCategory =
   | 'taxas'
   | 'outros'
 
+export type ExpenseRecurrence = 'pontual' | 'mensal' | 'anual'
+
 export interface Expense {
   id: string
   expense_date: string
@@ -108,6 +110,7 @@ export interface Expense {
   amount_brl: number
   container_id: string | null
   paid_by: string | null
+  recurrence: ExpenseRecurrence
   created_at: string
 }
 

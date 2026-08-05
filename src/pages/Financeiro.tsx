@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Bar, BarChart, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { addExpense, deleteExpense, getExpenses, getSaleItems, getSales } from '@/lib/api'
-import { Button, Card, PageHeader, StatTile, formatBRL } from '@/components/ui'
-import type { Expense, ExpenseCategory, Sale, SaleItem } from '@/types/domain'
+import { Badge, Button, Card, PageHeader, StatTile, formatBRL } from '@/components/ui'
+import type { Expense, ExpenseCategory, ExpenseRecurrence, Sale, SaleItem } from '@/types/domain'
 
 const paidByOptions = ['Davi', 'Rubens', 'Iwan']
 
@@ -13,6 +13,18 @@ const categoryLabels: Record<ExpenseCategory, string> = {
   frete: 'Frete',
   taxas: 'Taxas',
   outros: 'Outros',
+}
+
+const recurrenceLabels: Record<ExpenseRecurrence, string> = {
+  pontual: 'Pontual',
+  mensal: 'Mensal',
+  anual: 'Anual',
+}
+
+const recurrenceTone: Record<ExpenseRecurrence, 'muted' | 'info'> = {
+  pontual: 'muted',
+  mensal: 'info',
+  anual: 'info',
 }
 
 type Period = 'mes' | '30d' | 'tudo'
@@ -308,13 +320,14 @@ export function Financeiro() {
           <h2 className="mb-4 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
             Últimas despesas
           </h2>
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
                 <th className="pb-2 pr-3 font-medium">Data</th>
                 <th className="pb-2 pr-3 font-medium">Categoria</th>
                 <th className="pb-2 pr-3 font-medium">Descrição</th>
                 <th className="pb-2 pr-3 font-medium">Responsável</th>
+                <th className="pb-2 pr-3 font-medium">Recorrência</th>
                 <th className="pb-2 pr-3 font-medium">Valor</th>
                 <th className="pb-2 font-medium"></th>
               </tr>
@@ -333,6 +346,9 @@ export function Financeiro() {
                   </td>
                   <td className="py-2 pr-3 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
                     {e.paid_by || '—'}
+                  </td>
+                  <td className="py-2 pr-3 whitespace-nowrap">
+                    <Badge tone={recurrenceTone[e.recurrence]}>{recurrenceLabels[e.recurrence]}</Badge>
                   </td>
                   <td className="tabular py-2 pr-3 font-medium whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
                     {formatBRL(e.amount_brl)}
@@ -431,6 +447,7 @@ function ExpenseForm({ onDone }: { onDone: () => void }) {
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [paidBy, setPaidBy] = useState('')
+  const [recurrence, setRecurrence] = useState<ExpenseRecurrence>('pontual')
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -441,6 +458,7 @@ function ExpenseForm({ onDone }: { onDone: () => void }) {
       amount_brl: Number(amount),
       container_id: null,
       paid_by: paidBy || null,
+      recurrence,
     })
     onDone()
   }
@@ -519,6 +537,23 @@ function ExpenseForm({ onDone }: { onDone: () => void }) {
               <option key={name} value={name} />
             ))}
           </datalist>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            Recorrência
+          </label>
+          <select
+            value={recurrence}
+            onChange={(e) => setRecurrence(e.target.value as ExpenseRecurrence)}
+            className="w-full rounded-lg border px-3 py-2 text-sm"
+            style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
+          >
+            {(Object.entries(recurrenceLabels) as [ExpenseRecurrence, string][]).map(([value, label]) => (
+              <option key={value} value={value} style={{ background: 'var(--surface-1)', color: 'var(--text-primary)' }}>
+                {label}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="col-span-full flex justify-end gap-2">
           <Button type="submit">Registrar despesa</Button>

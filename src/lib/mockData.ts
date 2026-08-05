@@ -218,8 +218,8 @@ export const seedSocialContentIdeas: SocialContentIdea[] = [
 export const seedAuditLog: AuditLogEntry[] = []
 
 export const seedExpenses: Expense[] = [
-  { id: 'e1', expense_date: daysAgo(15), category: 'importacao', description: 'Compra do primeiro lote (fornecedor China)', amount_brl: 48000, container_id: 'c1', paid_by: 'Davi', created_at: daysAgo(15) },
-  { id: 'e2', expense_date: daysAgo(15), category: 'frete', description: 'Frete maritimo container CONT-2026-01', amount_brl: 18000, container_id: 'c1', paid_by: 'Rubens', created_at: daysAgo(15) },
-  { id: 'e3', expense_date: daysAgo(7), category: 'marketing', description: 'Criacao de site (Lovable) + trafego pago inicial', amount_brl: 3200, container_id: null, paid_by: 'Iwan', created_at: daysAgo(7) },
-  { id: 'e4', expense_date: daysAgo(3), category: 'operacional', description: 'Embalagens e etiquetas', amount_brl: 850, container_id: null, paid_by: 'Davi', created_at: daysAgo(3) },
+  { id: 'e1', expense_date: daysAgo(15), category: 'importacao', description: 'Compra do primeiro lote (fornecedor China)', amount_brl: 48000, container_id: 'c1', paid_by: 'Davi', recurrence: 'pontual', created_at: daysAgo(15) },
+  { id: 'e2', expense_date: daysAgo(15), category: 'frete', description: 'Frete maritimo container CONT-2026-01', amount_brl: 18000, container_id: 'c1', paid_by: 'Rubens', recurrence: 'pontual', created_at: daysAgo(15) },
+  { id: 'e3', expense_date: daysAgo(7), category: 'marketing', description: 'Criacao de site (Lovable) + trafego pago inicial', amount_brl: 3200, container_id: null, paid_by: 'Iwan', recurrence: 'mensal', created_at: daysAgo(7) },
+  { id: 'e4', expense_date: daysAgo(3), category: 'operacional', description: 'Embalagens e etiquetas', amount_brl: 850, container_id: null, paid_by: 'Davi', recurrence: 'pontual', created_at: daysAgo(3) },
 ]
