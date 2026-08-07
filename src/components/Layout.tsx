@@ -49,8 +49,9 @@ export function Layout() {
         className="fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b px-4 py-2.5 sm:hidden"
         style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)' }}
       >
-        <div className="inline-flex rounded-lg px-2 py-1" style={{ background: '#0c0c0c' }}>
-          <img src="/logo-studio18.png" alt="Studio 18" className="h-8 w-auto" />
+        <div className="inline-flex px-2 py-1">
+          <img src="/logo-studio18-light.png" alt="Studio 18" className="brand-logo-light h-8 w-auto" />
+          <img src="/logo-studio18-dark.png" alt="Studio 18" className="brand-logo-dark h-8 w-auto" />
         </div>
         <button
           type="button"
@@ -79,8 +80,9 @@ export function Layout() {
         style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)' }}
       >
         <div className="mb-6 px-2">
-          <div className="mb-2 inline-flex rounded-lg px-2 py-1.5" style={{ background: '#0c0c0c' }}>
-            <img src="/logo-studio18.png" alt="Studio 18" className="h-14 w-auto" />
+          <div className="mb-2 inline-flex px-2 py-1.5">
+            <img src="/logo-studio18-light.png" alt="Studio 18" className="brand-logo-light h-14 w-auto" />
+            <img src="/logo-studio18-dark.png" alt="Studio 18" className="brand-logo-dark h-14 w-auto" />
           </div>
           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
             Painel de gestão

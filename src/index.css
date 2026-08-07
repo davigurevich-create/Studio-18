@@ -28,6 +28,22 @@
   font: 15px/145% system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
+.brand-logo-light {
+  display: block;
+}
+.brand-logo-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .brand-logo-light {
+    display: none;
+  }
+  .brand-logo-dark {
+    display: block;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --surface-1: #1a1a19;
