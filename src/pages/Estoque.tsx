@@ -11,7 +11,7 @@ import {
   updateProduct,
 } from '@/lib/api'
 import { Badge, Button, Card, PageHeader, StatTile, formatBRL } from '@/components/ui'
-import type { Container, MovementType, Product, ProductStock, RestockWaitlistEntry, Sale, SaleItem } from '@/types/domain'
+import type { Container, MovementReason, MovementType, Product, ProductStock, RestockWaitlistEntry, Sale, SaleItem } from '@/types/domain'
 
 export function Estoque() {
   const [stock, setStock] = useState<ProductStock[]>([])
@@ -589,7 +589,11 @@ function MovementForm({
     unit_cost_brl: '',
     container_id: '',
     notes: '',
+    reason: '' as '' | MovementReason,
+    influencer_name: '',
   })
+
+  const isInfluencerInvestment = form.type === 'saida' && form.reason === 'investimento_influencer'
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -602,7 +606,9 @@ function MovementForm({
         unit_cost_brl: form.unit_cost_brl ? Number(form.unit_cost_brl) : null,
         container_id: form.container_id || null,
         sale_id: null,
-        notes: form.notes || null,
+        notes: form.notes || (isInfluencerInvestment ? `Set enviado para ${form.influencer_name} (parceria de conteúdo)` : null),
+        reason: isInfluencerInvestment ? 'investimento_influencer' : null,
+        influencer_name: isInfluencerInvestment ? form.influencer_name : null,
         moved_at: new Date().toISOString(),
       },
       product ? `${product.sku} — ${product.name}` : form.product_id,
@@ -638,7 +644,33 @@ function MovementForm({
           onChange={(v) => setForm({ ...form, container_id: v })}
           options={[{ value: '', label: '—' }, ...containers.map((c) => ({ value: c.id, label: c.code }))]}
         />
-        <Field label="Notas" value={form.notes} onChange={(v) => setForm({ ...form, notes: v })} className="md:col-span-2" />
+        {form.type === 'saida' && (
+          <SelectField
+            label="Motivo da saída"
+            value={form.reason}
+            onChange={(v) => setForm({ ...form, reason: v as '' | MovementReason })}
+            options={[
+              { value: '', label: 'Venda / baixa manual' },
+              { value: 'investimento_influencer', label: 'Investimento com influencer' },
+            ]}
+          />
+        )}
+        {isInfluencerInvestment && (
+          <Field
+            label="Influenciador"
+            value={form.influencer_name}
+            onChange={(v) => setForm({ ...form, influencer_name: v })}
+            placeholder="Nome do perfil/parceria"
+            required
+          />
+        )}
+        <Field
+          label="Notas"
+          value={form.notes}
+          onChange={(v) => setForm({ ...form, notes: v })}
+          placeholder={isInfluencerInvestment ? `Set enviado para ${form.influencer_name || '...'} (parceria de conteúdo)` : undefined}
+          className="md:col-span-2"
+        />
         <div className="col-span-full flex justify-end gap-2">
           <Button type="submit">Registrar movimentação</Button>
         </div>

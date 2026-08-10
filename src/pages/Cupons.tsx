@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { addCoupon, deleteCoupon, getCoupons, setCouponActive } from '@/lib/api'
-import { Badge, Button, Card, PageHeader } from '@/components/ui'
-import type { Coupon } from '@/types/domain'
+import { addCoupon, deleteCoupon, getCoupons, getMovements, getProducts, setCouponActive } from '@/lib/api'
+import { Badge, Button, Card, PageHeader, StatTile, formatBRL } from '@/components/ui'
+import type { Coupon, InventoryMovement, Product } from '@/types/domain'
 
 function couponState(c: Coupon): { label: string; tone: 'good' | 'warning' | 'critical' | 'muted' } {
   if (!c.active) return { label: 'Inativo', tone: 'muted' }
@@ -12,12 +12,16 @@ function couponState(c: Coupon): { label: string; tone: 'good' | 'warning' | 'cr
 
 export function Cupons() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
+  const [movements, setMovements] = useState<InventoryMovement[]>([])
+  const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
 
   const reload = () => {
-    getCoupons().then((c) => {
+    Promise.all([getCoupons(), getMovements(), getProducts()]).then(([c, m, p]) => {
       setCoupons(c)
+      setMovements(m)
+      setProducts(p)
       setLoading(false)
     })
   }
@@ -25,6 +29,30 @@ export function Cupons() {
   useEffect(reload, [])
 
   const activeCount = useMemo(() => coupons.filter((c) => couponState(c).tone === 'good').length, [coupons])
+
+  const influencerInvestments = useMemo(
+    () => movements.filter((m) => m.reason === 'investimento_influencer'),
+    [movements],
+  )
+
+  const investmentByInfluencer = useMemo(() => {
+    const map = new Map<string, { units: number; costValue: number }>()
+    for (const m of influencerInvestments) {
+      const key = m.influencer_name || 'Não informado'
+      const product = products.find((p) => p.id === m.product_id)
+      const unitCost = m.unit_cost_brl ?? product?.cost_price_brl ?? 0
+      const entry = map.get(key) ?? { units: 0, costValue: 0 }
+      entry.units += m.quantity
+      entry.costValue += unitCost * m.quantity
+      map.set(key, entry)
+    }
+    return Array.from(map.entries())
+      .map(([influencer, v]) => ({ influencer, ...v }))
+      .sort((a, b) => b.costValue - a.costValue)
+  }, [influencerInvestments, products])
+
+  const totalUnits = influencerInvestments.reduce((t, m) => t + m.quantity, 0)
+  const totalCostValue = investmentByInfluencer.reduce((t, i) => t + i.costValue, 0)
 
   const toggleActive = async (c: Coupon) => {
     await setCouponActive(c.id, c.code, !c.active)
@@ -129,6 +157,50 @@ export function Cupons() {
           </tbody>
         </table>
       </Card>
+
+      <div className="mb-3 mt-8 flex items-center justify-between">
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          Investimento em produto (envios para influenciadores)
+        </h2>
+      </div>
+      <p className="mb-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+        Sets entregues como parceria de conteúdo (não são vendas) — registrados em Estoque como uma saída com motivo
+        "Investimento com influencer".
+      </p>
+
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <StatTile label="Unidades enviadas" value={String(totalUnits)} />
+        <StatTile label="Valor em custo investido" value={formatBRL(totalCostValue)} sub="Soma do custo dos produtos enviados, não é uma despesa financeira" />
+      </div>
+
+      {investmentByInfluencer.length > 0 && (
+        <Card className="overflow-x-auto">
+          <table className="w-full min-w-[500px] text-sm">
+            <thead>
+              <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
+                <th className="pb-2 font-medium">Influenciador</th>
+                <th className="pb-2 font-medium">Unidades</th>
+                <th className="pb-2 font-medium">Valor em custo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {investmentByInfluencer.map((i) => (
+                <tr key={i.influencer} className="border-t" style={{ borderColor: 'var(--gridline)' }}>
+                  <td className="py-2.5" style={{ color: 'var(--text-primary)' }}>
+                    {i.influencer}
+                  </td>
+                  <td className="py-2.5" style={{ color: 'var(--text-secondary)' }}>
+                    {i.units}
+                  </td>
+                  <td className="py-2.5" style={{ color: 'var(--text-secondary)' }}>
+                    {formatBRL(i.costValue)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
     </div>
   )
 }

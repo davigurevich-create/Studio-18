@@ -42,6 +42,10 @@ export interface Container {
 
 export type MovementType = 'entrada' | 'saida' | 'ajuste'
 
+// Só se aplica a saídas que não são venda: por enquanto, só o envio de um
+// set para um influenciador em troca de conteúdo nas redes.
+export type MovementReason = 'investimento_influencer'
+
 export interface InventoryMovement {
   id: string
   product_id: string
@@ -51,6 +55,8 @@ export interface InventoryMovement {
   container_id: string | null
   sale_id: string | null
   notes: string | null
+  reason: MovementReason | null
+  influencer_name: string | null
   moved_at: string
   created_at: string
 }

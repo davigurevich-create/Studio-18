@@ -212,11 +212,15 @@ export async function addMovement(
     created = movementsTable.insert({ ...input, id: newId(), created_at: new Date().toISOString() })
   }
   const typeLabel = input.type === 'entrada' ? 'Entrada' : input.type === 'saida' ? 'Saída' : 'Ajuste'
+  const reasonSuffix =
+    input.reason === 'investimento_influencer'
+      ? ` — investimento com influencer${input.influencer_name ? ` (${input.influencer_name})` : ''}`
+      : ''
   await logAudit(
     'criar',
     'movimentacao',
     created.id,
-    `${typeLabel} de ${input.quantity} unidade(s) — ${productLabel}`,
+    `${typeLabel} de ${input.quantity} unidade(s) — ${productLabel}${reasonSuffix}`,
   )
   return created
 }
@@ -310,6 +314,8 @@ async function createSaleInternal(
       container_id: null,
       sale_id: createdSale.id,
       notes: 'Baixa automatica por venda',
+      reason: null,
+      influencer_name: null,
       moved_at: sale.sale_date,
       created_at: new Date().toISOString(),
     })
