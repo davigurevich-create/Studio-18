@@ -6,6 +6,7 @@ import { Overview } from '@/pages/Overview'
 import { Estoque } from '@/pages/Estoque'
 import { Vendas } from '@/pages/Vendas'
 import { Financeiro } from '@/pages/Financeiro'
+import { Cupons } from '@/pages/Cupons'
 import { Containers } from '@/pages/Containers'
 import { Blog } from '@/pages/Blog'
 import { PecasFaltantes } from '@/pages/PecasFaltantes'
@@ -38,6 +39,7 @@ function App() {
             <Route path="/estoque" element={<Estoque />} />
             <Route path="/vendas" element={<Vendas />} />
             <Route path="/financeiro" element={<Financeiro />} />
+            <Route path="/cupons" element={<Cupons />} />
             <Route path="/containers" element={<Containers />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/pecas-faltantes" element={<PecasFaltantes />} />

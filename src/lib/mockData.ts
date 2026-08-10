@@ -2,6 +2,7 @@ import type {
   AuditLogEntry,
   BlogPost,
   Container,
+  Coupon,
   Expense,
   InventoryMovement,
   PartRequest,
@@ -222,4 +223,10 @@ export const seedExpenses: Expense[] = [
   { id: 'e2', expense_date: daysAgo(15), category: 'frete', description: 'Frete maritimo container CONT-2026-01', amount_brl: 18000, container_id: 'c1', paid_by: 'Rubens', recurrence: 'pontual', created_at: daysAgo(15) },
   { id: 'e3', expense_date: daysAgo(7), category: 'marketing', description: 'Criacao de site (Lovable) + trafego pago inicial', amount_brl: 3200, container_id: null, paid_by: 'Iwan', recurrence: 'mensal', created_at: daysAgo(7) },
   { id: 'e4', expense_date: daysAgo(3), category: 'operacional', description: 'Embalagens e etiquetas', amount_brl: 850, container_id: null, paid_by: 'Davi', recurrence: 'pontual', created_at: daysAgo(3) },
+]
+
+export const seedCoupons: Coupon[] = [
+  { id: 'cp1', code: 'GARAGEM8', discount_pct: 8, influencer_name: 'Garagem RC (Instagram)', active: true, max_uses: null, uses_count: 12, expires_at: null, created_at: daysAgo(20) },
+  { id: 'cp2', code: 'BLOCOS8', discount_pct: 8, influencer_name: 'Blocos & Motores (TikTok)', active: true, max_uses: 200, uses_count: 47, expires_at: null, created_at: daysAgo(10) },
+  { id: 'cp3', code: 'LANCADO18', discount_pct: 8, influencer_name: 'Campanha de lançamento (interno)', active: false, max_uses: 50, uses_count: 50, expires_at: daysAgo(1), created_at: daysAgo(40) },
 ]

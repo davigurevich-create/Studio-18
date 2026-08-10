@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CardPayment } from '@mercadopago/sdk-react'
-import { createPayment, getCatalog, isDemoMode, type CreatePaymentResult } from '@/lib/api'
+import { createPayment, getCatalog, isDemoMode, validateCoupon, type CreatePaymentResult } from '@/lib/api'
 import { ensureMercadoPagoInit, isMercadoPagoConfigured } from '@/lib/mercadopago'
 import { formatBRL } from '@/lib/format'
 import { pixPrice } from '@/lib/pricing'
@@ -35,6 +35,9 @@ export function Checkout() {
   const [result, setResult] = useState<CreatePaymentResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copiedField, setCopiedField] = useState<'order' | 'pix' | null>(null)
+  const [couponInput, setCouponInput] = useState('')
+  const [couponStatus, setCouponStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle')
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPct: number } | null>(null)
 
   const copyToClipboard = useCallback((field: 'order' | 'pix', text: string) => {
     navigator.clipboard.writeText(text)
@@ -59,7 +62,35 @@ export function Checkout() {
   )
 
   const subtotal = items.reduce((t, i) => t + i.product.sale_price_brl * i.line.quantity, 0)
-  const total = method === 'pix' ? pixPrice(subtotal) : subtotal
+  const priceBeforeCoupon = method === 'pix' ? pixPrice(subtotal) : subtotal
+  const total = appliedCoupon
+    ? Math.round(priceBeforeCoupon * (1 - appliedCoupon.discountPct / 100) * 100) / 100
+    : priceBeforeCoupon
+
+  const applyCoupon = useCallback(async () => {
+    const code = couponInput.trim()
+    if (!code) return
+    setCouponStatus('checking')
+    try {
+      const res = await validateCoupon(code)
+      if (res.valid) {
+        setAppliedCoupon({ code: code.toUpperCase(), discountPct: res.discountPct })
+        setCouponStatus('valid')
+      } else {
+        setAppliedCoupon(null)
+        setCouponStatus('invalid')
+      }
+    } catch {
+      setAppliedCoupon(null)
+      setCouponStatus('invalid')
+    }
+  }, [couponInput])
+
+  const removeCoupon = useCallback(() => {
+    setAppliedCoupon(null)
+    setCouponStatus('idle')
+    setCouponInput('')
+  }, [])
 
   const checkoutItems = useMemo(
     () => items.map((i) => ({ productId: i.product.id, quantity: i.line.quantity })),
@@ -93,6 +124,7 @@ export function Checkout() {
         customerCpf: cpf,
         paymentMethod: method,
         address: { zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit },
+        couponCode: appliedCoupon?.code,
       })
       setResult(res)
       setStep('done')
@@ -118,6 +150,7 @@ export function Checkout() {
           cardPaymentMethodId: formData.payment_method_id,
           installments: formData.installments,
           address: { zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit },
+          couponCode: appliedCoupon?.code,
         })
         setResult(res)
         setStep('done')
@@ -127,14 +160,14 @@ export function Checkout() {
         throw new Error('payment_failed')
       }
     },
-    [checkoutItems, name, email, cpf, zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit, clear],
+    [checkoutItems, name, email, cpf, zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit, clear, appliedCoupon],
   )
 
   const handleCardError = useCallback(() => {
     setError('Não foi possível validar os dados do cartão.')
   }, [])
 
-  const cardInitialization = useMemo(() => ({ amount: subtotal }), [subtotal])
+  const cardInitialization = useMemo(() => ({ amount: total }), [total])
 
   if (catalog === undefined) {
     return <div className="px-6 py-40 text-center" style={{ color: 'var(--ink-muted)' }}>Carregando...</div>
@@ -303,12 +336,58 @@ export function Checkout() {
             </div>
           </div>
         ))}
+        <div className="border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
+          <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+            CUPOM DE DESCONTO
+          </label>
+          {appliedCoupon ? (
+            <div
+              className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs"
+              style={{ background: 'rgba(143,206,143,0.1)', border: '1px solid rgba(143,206,143,0.3)', color: '#8fce8f' }}
+            >
+              <span>
+                ✓ Cupom <strong>{appliedCoupon.code}</strong> aplicado — {appliedCoupon.discountPct}% de desconto
+              </span>
+              <button type="button" onClick={removeCoupon} className="underline" style={{ color: '#8fce8f' }}>
+                Remover
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                value={couponInput}
+                onChange={(e) => {
+                  setCouponInput(e.target.value.toUpperCase())
+                  if (couponStatus === 'invalid') setCouponStatus('idle')
+                }}
+                placeholder="Ex: GARAGEM8"
+                className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm uppercase outline-none"
+                style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+              />
+              <button
+                type="button"
+                onClick={applyCoupon}
+                disabled={couponStatus === 'checking' || !couponInput.trim()}
+                className="shrink-0 rounded-lg border px-4 py-2 text-xs font-medium disabled:opacity-50"
+                style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+              >
+                {couponStatus === 'checking' ? 'Validando...' : 'Aplicar'}
+              </button>
+            </div>
+          )}
+          {couponStatus === 'invalid' && (
+            <p className="mt-2 text-xs" style={{ color: '#e88b8b' }}>
+              Cupom inválido, expirado ou esgotado.
+            </p>
+          )}
+        </div>
+
         <div className="flex items-center justify-between border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
           <span className="text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
             {method === 'pix' ? 'TOTAL À VISTA NO PIX' : 'TOTAL'}
           </span>
           <div className="flex items-baseline gap-2">
-            {method === 'pix' && (
+            {(method === 'pix' || appliedCoupon) && (
               <span className="tabular text-xs line-through" style={{ color: 'var(--ink-muted)' }}>
                 {formatBRL(subtotal)}
               </span>

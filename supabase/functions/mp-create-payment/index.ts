@@ -94,6 +94,9 @@ interface RequestBody {
   // sempre obrigatório — usado como endereço de entrega em toda venda, e
   // também exigido pelo Mercado Pago para gerar boleto registrado
   address: Address
+  // código de cupom de desconto (parcerias com influenciadores) — sempre
+  // reconferido aqui, nunca confiamos no desconto calculado no navegador
+  couponCode?: string
 }
 
 function mapStatus(mpStatus: string): string {
@@ -119,6 +122,7 @@ Deno.serve(async (req) => {
       cardPaymentMethodId,
       installments,
       address,
+      couponCode,
     } = body
 
     if (!items?.length || !customerName || !customerEmail || !customerCpf || !paymentMethod || !address) {
@@ -142,8 +146,34 @@ Deno.serve(async (req) => {
       return { product, quantity: i.quantity, unitPrice, fullUnitPrice }
     })
 
-    const totalAmount = lineItems.reduce((t, li) => t + li.unitPrice * li.quantity, 0)
+    // Cupom de desconto (parcerias com influenciadores) — nunca confiamos no
+    // desconto calculado no navegador, revalidamos aqui contra a tabela
+    // coupons antes de aplicar qualquer coisa na cobrança de verdade.
+    let appliedCoupon: { id: string; code: string; uses_count: number } | null = null
+    let couponDiscountPct = 0
+    if (couponCode) {
+      const { data: coupon } = await supabase
+        .from('coupons')
+        .select('id, code, discount_pct, active, max_uses, uses_count, expires_at')
+        .ilike('code', couponCode)
+        .maybeSingle()
+      const isValid =
+        coupon &&
+        coupon.active &&
+        (coupon.expires_at === null || new Date(coupon.expires_at) > new Date()) &&
+        (coupon.max_uses === null || coupon.uses_count < coupon.max_uses)
+      if (isValid) {
+        appliedCoupon = { id: coupon.id, code: coupon.code, uses_count: coupon.uses_count }
+        couponDiscountPct = Number(coupon.discount_pct)
+      }
+    }
+
     const fullTotalAmount = lineItems.reduce((t, li) => t + li.fullUnitPrice * li.quantity, 0)
+    const pixAdjustedTotal = lineItems.reduce((t, li) => t + li.unitPrice * li.quantity, 0)
+    const totalAmount =
+      couponDiscountPct > 0
+        ? Math.round(pixAdjustedTotal * (1 - couponDiscountPct / 100) * 100) / 100
+        : pixAdjustedTotal
     const discountAmount = Math.round((fullTotalAmount - totalAmount) * 100) / 100
     const description =
       lineItems.length === 1
@@ -170,11 +200,16 @@ Deno.serve(async (req) => {
         shipping_neighborhood: address.neighborhood,
         shipping_city: address.city,
         shipping_federal_unit: address.federalUnit,
+        coupon_code: appliedCoupon?.code ?? null,
       })
       .select()
       .single()
     if (saleError || !sale) {
       return json({ error: 'Não foi possível registrar o pedido.' }, 500)
+    }
+
+    if (appliedCoupon) {
+      await supabase.from('coupons').update({ uses_count: appliedCoupon.uses_count + 1 }).eq('id', appliedCoupon.id)
     }
 
     await supabase.from('sale_items').insert(
@@ -278,10 +313,16 @@ Deno.serve(async (req) => {
       )
       .join('')
 
+    const discountLabel = [
+      paymentMethod === 'pix' ? 'à vista no PIX (10%)' : null,
+      appliedCoupon ? `cupom ${appliedCoupon.code} (${couponDiscountPct}%)` : null,
+    ]
+      .filter(Boolean)
+      .join(' + ')
     const discountRowHtml =
       discountAmount > 0
         ? `<div style="display:flex;justify-content:space-between;padding:6px 0;color:#8fce8f;">
-            <span>Desconto à vista no PIX (10%)</span><span>-R$ ${discountAmount.toFixed(2).replace('.', ',')}</span>
+            <span>Desconto ${discountLabel}</span><span>-R$ ${discountAmount.toFixed(2).replace('.', ',')}</span>
           </div>`
         : ''
 

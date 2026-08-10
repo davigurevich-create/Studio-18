@@ -190,6 +190,18 @@ export interface SocialContentIdea {
   status: SocialContentStatus
 }
 
+export interface Coupon {
+  id: string
+  code: string
+  discount_pct: number
+  influencer_name: string | null
+  active: boolean
+  max_uses: number | null
+  uses_count: number
+  expires_at: string | null
+  created_at: string
+}
+
 export interface BlogPost {
   id: string
   slug: string

@@ -47,6 +47,7 @@ export interface CheckoutInput {
   cardPaymentMethodId?: string
   installments?: number
   address: CheckoutAddress
+  couponCode?: string
 }
 
 export interface BlogPost {

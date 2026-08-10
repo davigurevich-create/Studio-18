@@ -45,6 +45,32 @@ export async function createPayment(input: CheckoutInput): Promise<CreatePayment
   return { orderId: `demo-${Date.now()}`, status: 'pendente' }
 }
 
+export interface CouponValidation {
+  valid: boolean
+  discountPct: number
+}
+
+/**
+ * Valida um cupom de desconto (parcerias com influenciadores) direto no
+ * Postgres via função security definer — não expõe a lista de cupons
+ * cadastrados, só se o código informado está válido agora e qual o
+ * desconto. A cobrança real (Edge Function mp-create-payment) reconfere o
+ * cupom no servidor antes de aplicar o desconto de verdade.
+ */
+export async function validateCoupon(code: string): Promise<CouponValidation> {
+  if (!supabase) {
+    // Modo demonstração: qualquer código de 4+ caracteres é aceito como
+    // exemplo, para dar para testar a experiência sem backend.
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    if (code.trim().length >= 4) return { valid: true, discountPct: 8 }
+    return { valid: false, discountPct: 0 }
+  }
+  const { data, error } = await supabase.rpc('validate_coupon', { coupon_code: code })
+  if (error || !data || data.length === 0) return { valid: false, discountPct: 0 }
+  const row = data[0] as { valid: boolean; discount_pct: number | null }
+  return { valid: row.valid, discountPct: row.valid ? Number(row.discount_pct) : 0 }
+}
+
 export interface OrderStatus {
   id: string
   sale_date: string

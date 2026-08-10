@@ -4,6 +4,7 @@ import {
   seedAuditLog,
   seedBlogPosts,
   seedContainers,
+  seedCoupons,
   seedExpenses,
   seedMovements,
   seedPartRequests,
@@ -18,6 +19,7 @@ import type {
   AuditLogEntry,
   BlogPost,
   Container,
+  Coupon,
   Expense,
   InventoryMovement,
   PartRequest,
@@ -37,6 +39,7 @@ const movementsTable = makeTable<InventoryMovement>('movements', seedMovements)
 const salesTable = makeTable<Sale>('sales', seedSales)
 const saleItemsTable = makeTable<SaleItem>('sale_items', seedSaleItems)
 const expensesTable = makeTable<Expense>('expenses', seedExpenses)
+const couponsTable = makeTable<Coupon>('coupons', seedCoupons)
 const blogPostsTable = makeTable<BlogPost>('blog_posts', seedBlogPosts)
 const partRequestsTable = makeTable<PartRequest>('part_requests', seedPartRequests)
 const restockWaitlistTable = makeTable<RestockWaitlistEntry>('restock_waitlist', seedRestockWaitlist)
@@ -362,6 +365,62 @@ export async function deleteExpense(id: string, description: string): Promise<vo
     expensesTable.remove(id)
   }
   await logAudit('excluir', 'despesa', id, `Excluiu a despesa: "${description}"`)
+}
+
+// ---------------------------------------------------------------------------
+// Coupons — cupons de desconto para parcerias com influenciadores. A
+// validação real no checkout do site passa pela função Postgres
+// validate_coupon (e é reconferida no servidor ao fechar o pedido); aqui é
+// só o CRUD usado pelo painel de gestão.
+// ---------------------------------------------------------------------------
+export async function getCoupons(): Promise<Coupon[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('coupons').select('*').order('created_at', { ascending: false })
+    if (error) throw error
+    return data as Coupon[]
+  }
+  return [...couponsTable.all()].sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+export async function addCoupon(
+  input: Omit<Coupon, 'id' | 'created_at' | 'uses_count'>,
+): Promise<Coupon> {
+  let created: Coupon
+  const payload = { ...input, code: input.code.trim().toUpperCase() }
+  if (supabase) {
+    const { data, error } = await supabase.from('coupons').insert({ ...payload, uses_count: 0 }).select().single()
+    if (error) throw error
+    created = data as Coupon
+  } else {
+    created = couponsTable.insert({ ...payload, uses_count: 0, id: newId(), created_at: new Date().toISOString() })
+  }
+  await logAudit(
+    'criar',
+    'cupom',
+    created.id,
+    `Criou o cupom "${created.code}" (${created.discount_pct}% de desconto)${created.influencer_name ? ` — ${created.influencer_name}` : ''}`,
+  )
+  return created
+}
+
+export async function setCouponActive(id: string, code: string, active: boolean): Promise<void> {
+  if (supabase) {
+    const { error } = await supabase.from('coupons').update({ active }).eq('id', id)
+    if (error) throw error
+  } else {
+    couponsTable.update(id, { active })
+  }
+  await logAudit('editar', 'cupom', id, `${active ? 'Reativou' : 'Desativou'} o cupom "${code}"`)
+}
+
+export async function deleteCoupon(id: string, code: string): Promise<void> {
+  if (supabase) {
+    const { error } = await supabase.from('coupons').delete().eq('id', id)
+    if (error) throw error
+  } else {
+    couponsTable.remove(id)
+  }
+  await logAudit('excluir', 'cupom', id, `Excluiu o cupom "${code}"`)
 }
 
 // ---------------------------------------------------------------------------
