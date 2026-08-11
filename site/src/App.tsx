@@ -11,6 +11,7 @@ import { Blog } from '@/pages/Blog'
 import { BlogPost } from '@/pages/BlogPost'
 import { QuemSomos } from '@/pages/QuemSomos'
 import { Diferenciais } from '@/pages/Diferenciais'
+import { Manifesto } from '@/pages/Manifesto'
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
             <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/quem-somos" element={<QuemSomos />} />
             <Route path="/diferenciais" element={<Diferenciais />} />
+            <Route path="/manifesto" element={<Manifesto />} />
           </Route>
         </Routes>
       </BrowserRouter>

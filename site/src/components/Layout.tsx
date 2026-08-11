@@ -6,9 +6,10 @@ import { CartDrawer } from '@/components/CartDrawer'
 import { useCart } from '@/lib/cart'
 
 const navLinks = [
-  { href: '/quem-somos', label: 'Quem Somos' },
-  { href: '/diferenciais', label: 'Diferenciais' },
   { href: '/#colecao', label: 'Coleção' },
+  { href: '/quem-somos', label: 'Quem Somos' },
+  { href: '/manifesto', label: 'Manifesto' },
+  { href: '/diferenciais', label: 'Diferenciais' },
   { href: '/#pecas-faltantes', label: 'Peças faltantes' },
   { href: '/blog', label: 'Blog' },
   { href: '/rastreio', label: 'Rastreio' },
