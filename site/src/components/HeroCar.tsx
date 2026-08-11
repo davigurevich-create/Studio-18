@@ -71,7 +71,7 @@ export function HeroCar({ darken }: { darken: MotionValue<number> }) {
         className="pointer-events-none absolute inset-0"
         style={{ background: 'radial-gradient(ellipse 78% 65% at 50% 46%, transparent, var(--carbon-0) 100%)' }}
       />
-      {/* Escurecimento progressivo conforme o scroll — chega a 100% preto ao fim do manifesto */}
+      {/* Escurecimento progressivo conforme o scroll — chega a 100% preto ao fim da hero */}
       <motion.div className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: darken }} />
     </div>
   )

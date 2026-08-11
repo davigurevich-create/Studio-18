@@ -2,6 +2,19 @@ import { useRef } from 'react'
 import { motion, useMotionTemplate, useScroll, useTransform } from 'framer-motion'
 import { Camera } from 'lucide-react'
 
+const fadeUp = {
+  hidden: { opacity: 0, y: 28 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+}
+
+const manifestoParagraphs = [
+  'Somos Studio 18.',
+  'Acreditamos que algumas experiências não podem ser apressadas. Cada peça encontra seu lugar com precisão. Cada encaixe desperta os sentidos. Cada etapa transforma a montagem em um ritual de contemplação, criatividade e propósito.',
+  'Carros, motos e motores deixam de ser apenas máquinas. Tornam-se esculturas da engenharia, construídas pelas suas próprias mãos.',
+  'Criamos o Studio 18 para tornar esse universo mais acessível, sem abrir mão da sofisticação, do design e da excelência em cada detalhe.',
+  'Porque construir é mais do que montar. É dedicar tempo ao que inspira. É transformar precisão em arte. É fazer parte de uma comunidade que compartilha a mesma paixão por engenharia, design e experiências memoráveis.',
+]
+
 interface Word {
   text: string
   gold?: boolean
@@ -64,6 +77,73 @@ export function QuemSomos() {
             <RevealLine key={i} words={line} index={i} />
           ))}
         </div>
+      </section>
+
+      {/* MANIFESTO */}
+      <div className="relative" style={{ background: 'var(--carbon-0)' }}>
+        <section id="manifesto" className="relative z-10 mx-auto max-w-3xl px-6 py-28 sm:py-36">
+          <motion.p variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="eyebrow mb-8 text-center">
+            Manifesto
+          </motion.p>
+          <div className="flex flex-col gap-8">
+            {manifestoParagraphs.map((p, i) => (
+              <motion.p
+                key={i}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, margin: '-80px' }}
+                transition={{ duration: 0.6, delay: i * 0.05 }}
+                className={i === 0 ? 'text-center text-2xl font-medium sm:text-3xl' : 'text-center text-lg sm:text-xl'}
+                style={{ color: i === 0 ? 'var(--gold-bright)' : 'var(--ink-secondary)', lineHeight: 1.6 }}
+              >
+                {p}
+              </motion.p>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* FLOW — verbete de dicionário para o conceito por trás do ritual de
+          montagem: o estado de imersão que o Studio 18 vende junto com cada set. */}
+      <section
+        className="relative border-t px-6 py-28 sm:py-36"
+        style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)' }}
+      >
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: '-80px' }}
+          className="mx-auto max-w-2xl"
+        >
+          <p className="eyebrow mb-8 text-center">Conceito</p>
+
+          <div className="mb-2 flex flex-wrap items-baseline justify-center gap-x-4 gap-y-1">
+            <h2 className="text-4xl font-medium sm:text-5xl" style={{ color: 'var(--gold-bright)' }}>
+              flow
+            </h2>
+            <span className="text-sm" style={{ color: 'var(--ink-muted)' }}>
+              /flou/ · substantivo
+            </span>
+          </div>
+
+          <p className="mb-10 text-center text-lg sm:text-xl" style={{ color: 'var(--ink-secondary)', lineHeight: 1.6 }}>
+            Estado mental de imersão completa em uma atividade, no qual a percepção do tempo se dissolve e ação e
+            consciência se fundem.
+          </p>
+
+          <div className="flex flex-col gap-6 text-center text-base sm:text-lg" style={{ color: 'var(--ink-secondary)', lineHeight: 1.7 }}>
+            <p>
+              É exatamente essa a experiência de montar um set Studio 18 — um ritual de desconexão do ruído do dia a
+              dia. Cada peça encaixada silencia uma notificação.
+            </p>
+            <p>
+              Cada hora investida desenvolve clareza, presença e a satisfação rara de construir algo com as
+              próprias mãos.
+            </p>
+          </div>
+        </motion.div>
       </section>
     </div>
   )

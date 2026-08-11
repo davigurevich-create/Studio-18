@@ -10,6 +10,7 @@ import { PoliticaDevolucao } from '@/pages/PoliticaDevolucao'
 import { Blog } from '@/pages/Blog'
 import { BlogPost } from '@/pages/BlogPost'
 import { QuemSomos } from '@/pages/QuemSomos'
+import { Diferenciais } from '@/pages/Diferenciais'
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/quem-somos" element={<QuemSomos />} />
+            <Route path="/diferenciais" element={<Diferenciais />} />
           </Route>
         </Routes>
       </BrowserRouter>
