@@ -96,9 +96,7 @@ export async function getOrderStatus(orderId: string, email: string): Promise<Or
 }
 
 export interface PartRequestInput {
-  customerName: string
-  customerEmail: string
-  orderReference: string
+  orderId: string
   productModel: string
   partDescription: string
   replacementType: 'impressao_3d' | 'original_fabricante'
@@ -124,9 +122,10 @@ export async function uploadPartRequestPhoto(file: File): Promise<string> {
 }
 
 /**
- * Envia uma solicitacao de reposicao de peca faltante (formulario publico,
- * sem login). Sempre gratuito para o cliente — a Edge Function registra em
- * part_requests e dispara o e-mail de confirmacao.
+ * Envia uma solicitacao de reposicao de peca faltante — exige o cliente
+ * logado na área da conta, vinculada a um pedido real dele (orderId).
+ * Sempre gratuito para o cliente — a Edge Function confere a posse do
+ * pedido, registra em part_requests e dispara o e-mail de confirmacao.
  */
 export async function submitPartRequest(input: PartRequestInput): Promise<{ requestId: string }> {
   if (supabase) {
@@ -196,4 +195,115 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
 export async function getBlogPost(slug: string): Promise<BlogPost | undefined> {
   const posts = await getBlogPosts()
   return posts.find((p) => p.slug === slug)
+}
+
+// ---------------------------------------------------------------------------
+// Minha Conta — área logada do cliente (login por código, Supabase Auth)
+// ---------------------------------------------------------------------------
+export interface MyOrderItem {
+  product_name: string
+  quantity: number
+  unit_price_brl: number
+}
+
+export interface MyOrder {
+  id: string
+  sale_date: string
+  status: string
+  payment_method: string | null
+  shipping_city: string | null
+  shipping_federal_unit: string | null
+  shipping_zip_code: string | null
+  shipping_street_name: string | null
+  shipping_street_number: string | null
+  shipping_complement: string | null
+  shipping_neighborhood: string | null
+  customer_name: string | null
+  items: MyOrderItem[]
+}
+
+const demoOrders: MyOrder[] = [
+  {
+    id: 'demo-a1b2c3d4-0000-0000-0000-000000000001',
+    sale_date: new Date(Date.now() - 6 * 86400000).toISOString(),
+    status: 'enviado',
+    payment_method: 'pix',
+    shipping_city: 'São Paulo',
+    shipping_federal_unit: 'SP',
+    shipping_zip_code: '01310-100',
+    shipping_street_name: 'Av. Paulista',
+    shipping_street_number: '1000',
+    shipping_complement: 'Apto 52',
+    shipping_neighborhood: 'Bela Vista',
+    customer_name: 'Cliente Demonstração',
+    items: [{ product_name: 'Bugatti Tourbillon', quantity: 1, unit_price_brl: 1366.43 }],
+  },
+  {
+    id: 'demo-a1b2c3d4-0000-0000-0000-000000000002',
+    sale_date: new Date(Date.now() - 32 * 86400000).toISOString(),
+    status: 'entregue',
+    payment_method: 'cartao',
+    shipping_city: 'São Paulo',
+    shipping_federal_unit: 'SP',
+    shipping_zip_code: '01310-100',
+    shipping_street_name: 'Av. Paulista',
+    shipping_street_number: '1000',
+    shipping_complement: 'Apto 52',
+    shipping_neighborhood: 'Bela Vista',
+    customer_name: 'Cliente Demonstração',
+    items: [{ product_name: 'Ferrari Enzo', quantity: 1, unit_price_brl: 1491.03 }],
+  },
+]
+
+/**
+ * Traz o histórico de pedidos do cliente logado — via função Postgres
+ * security definer get_my_orders, que já confere que o e-mail bate com a
+ * sessão (não é possível ver pedidos de outra pessoa).
+ */
+export async function getMyOrders(): Promise<MyOrder[]> {
+  if (!supabase) return demoOrders
+  const { data, error } = await supabase.rpc('get_my_orders')
+  if (error) throw error
+  return (data ?? []) as MyOrder[]
+}
+
+export interface MyPartRequest {
+  id: string
+  created_at: string
+  product_model: string
+  part_description: string
+  replacement_type: 'impressao_3d' | 'original_fabricante'
+  status: string
+  photo_url: string | null
+}
+
+export async function getMyPartRequests(): Promise<MyPartRequest[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('get_my_part_requests')
+  if (error) throw error
+  return (data ?? []) as MyPartRequest[]
+}
+
+export interface MyWaitlistEntry {
+  id: string
+  product_id: string
+  created_at: string
+  notified: boolean
+  product: { name: string; image_url: string | null } | null
+}
+
+export async function getMyWaitlist(): Promise<MyWaitlistEntry[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('restock_waitlist')
+    .select('id, product_id, created_at, notified, product:products(name, image_url)')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as unknown as MyWaitlistEntry[]
+}
+
+export async function leaveWaitlist(id: string): Promise<void> {
+  if (!supabase) return
+  const { error } = await supabase.from('restock_waitlist').delete().eq('id', id)
+  if (error) throw error
 }

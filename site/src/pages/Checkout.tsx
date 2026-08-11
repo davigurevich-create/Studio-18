@@ -2,11 +2,12 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CardPayment } from '@mercadopago/sdk-react'
-import { createPayment, getCatalog, isDemoMode, validateCoupon, type CreatePaymentResult } from '@/lib/api'
+import { createPayment, getCatalog, getMyOrders, isDemoMode, validateCoupon, type CreatePaymentResult } from '@/lib/api'
 import { ensureMercadoPagoInit, isMercadoPagoConfigured } from '@/lib/mercadopago'
 import { formatBRL } from '@/lib/format'
 import { pixPrice } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
+import { useAuth } from '@/lib/auth'
 import type { CatalogProduct, PaymentMethod } from '@/types/catalog'
 
 const methods: { id: PaymentMethod; label: string; hint: string; badge?: string }[] = [
@@ -17,6 +18,7 @@ const methods: { id: PaymentMethod; label: string; hint: string; badge?: string 
 
 export function Checkout() {
   const navigate = useNavigate()
+  const { session } = useAuth()
   const { lines, clear } = useCart()
   const [catalog, setCatalog] = useState<CatalogProduct[] | undefined>(undefined)
   const [method, setMethod] = useState<PaymentMethod>('pix')
@@ -48,6 +50,28 @@ export function Checkout() {
   useEffect(() => {
     getCatalog().then(setCatalog)
   }, [])
+
+  useEffect(() => {
+    // Se o cliente já estiver logado, pré-preenche com o e-mail da sessão e
+    // o endereço do pedido mais recente — só agiliza, nunca é obrigatório
+    // estar logado para comprar.
+    if (!session?.user.email) return
+    setEmail(session.user.email)
+    getMyOrders()
+      .then((orders) => {
+        const last = orders[0]
+        if (!last) return
+        if (last.customer_name) setName(last.customer_name)
+        if (last.shipping_zip_code) setZipCode(last.shipping_zip_code)
+        if (last.shipping_street_name) setStreetName(last.shipping_street_name)
+        if (last.shipping_street_number) setStreetNumber(last.shipping_street_number)
+        if (last.shipping_complement) setComplement(last.shipping_complement)
+        if (last.shipping_neighborhood) setNeighborhood(last.shipping_neighborhood)
+        if (last.shipping_city) setCity(last.shipping_city)
+        if (last.shipping_federal_unit) setFederalUnit(last.shipping_federal_unit)
+      })
+      .catch(() => {})
+  }, [session])
 
   useEffect(() => {
     if (method === 'cartao') ensureMercadoPagoInit()

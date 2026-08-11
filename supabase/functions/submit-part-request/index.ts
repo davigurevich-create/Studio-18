@@ -1,7 +1,11 @@
-// Recebe solicitações de reposição de peças faltantes vindas do site
-// (formulário público, sem login) e registra em part_requests. Sempre
-// gratuito para o cliente — a equipe acompanha e atualiza o status pelo
-// painel de gestão.
+// Recebe solicitações de reposição de peças faltantes vindas da área logada
+// do cliente (site) e registra em part_requests. Sempre gratuito para o
+// cliente — a equipe acompanha e atualiza o status pelo painel de gestão.
+//
+// Exige sessão ativa (o supabase-js do site já manda o JWT do usuário
+// logado automaticamente) e confere que o pedido escolhido (orderId)
+// realmente pertence ao e-mail autenticado antes de aceitar — nome/e-mail
+// do cliente vêm da sessão verificada, nunca do que o formulário mandar.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -11,6 +15,7 @@ const corsHeaders = {
 }
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
+const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 // --- E-mail transacional (Resend) ------------------------------------------
@@ -56,9 +61,7 @@ function emailShell(title: string, bodyHtml: string): string {
 type ReplacementType = 'impressao_3d' | 'original_fabricante'
 
 interface RequestBody {
-  customerName: string
-  customerEmail: string
-  orderReference: string
+  orderId: string
   productModel: string
   partDescription: string
   replacementType: ReplacementType
@@ -71,13 +74,28 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return json({ error: 'É preciso estar logado para enviar uma solicitação.' }, 401)
+    }
+
+    // Cliente com o JWT do usuário — usado só para descobrir quem está
+    // logado (auth.getUser()), nunca para consultar tabelas diretamente.
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    })
+    const {
+      data: { user },
+    } = await userClient.auth.getUser()
+    if (!user?.email) {
+      return json({ error: 'Sessão inválida ou expirada. Faça login novamente.' }, 401)
+    }
+
     const body: RequestBody = await req.json()
-    const { customerName, customerEmail, orderReference, productModel, partDescription, replacementType, photoUrl } = body
+    const { orderId, productModel, partDescription, replacementType, photoUrl } = body
 
     if (
-      !customerName ||
-      !customerEmail ||
-      !orderReference ||
+      !orderId ||
       !productModel ||
       !partDescription ||
       (replacementType !== 'impressao_3d' && replacementType !== 'original_fabricante')
@@ -87,11 +105,28 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
+    // Confere que o pedido escolhido pertence mesmo ao e-mail autenticado —
+    // fecha a brecha de qualquer um "digitar" um número de pedido qualquer.
+    const { data: order, error: orderError } = await supabase
+      .from('sales')
+      .select('id, customer_contact')
+      .eq('id', orderId)
+      .maybeSingle()
+
+    if (orderError || !order || order.customer_contact?.toLowerCase() !== user.email.toLowerCase()) {
+      return json({ error: 'Pedido não encontrado para esse usuário.' }, 404)
+    }
+
+    const customerName = user.user_metadata?.name || user.email.split('@')[0]
+    const customerEmail = user.email
+    const orderReference = orderId.slice(0, 8)
+
     const { data: created, error } = await supabase
       .from('part_requests')
       .insert({
         customer_name: customerName,
         customer_email: customerEmail,
+        order_id: orderId,
         order_reference: orderReference,
         product_model: productModel,
         part_description: partDescription,

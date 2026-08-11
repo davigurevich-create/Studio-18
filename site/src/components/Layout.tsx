@@ -1,9 +1,11 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { User } from 'lucide-react'
 import { ChatWidget } from '@/components/ChatWidget'
 import { CartDrawer } from '@/components/CartDrawer'
 import { useCart } from '@/lib/cart'
+import { useAuth } from '@/lib/auth'
 
 const navLinks = [
   { href: '/#colecao', label: 'Coleção' },
@@ -22,6 +24,7 @@ export function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
   const { totalCount } = useCart()
+  const { session } = useAuth()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24)
@@ -84,6 +87,21 @@ export function Layout() {
                 </Link>
               ))}
             </nav>
+
+            <Link
+              to="/conta"
+              aria-label="Minha conta"
+              className="relative flex h-9 w-9 items-center justify-center"
+              style={{ color: 'var(--ink)' }}
+            >
+              <User size={20} strokeWidth={1.8} />
+              {session && (
+                <span
+                  className="absolute right-1 top-1 h-2 w-2 rounded-full"
+                  style={{ background: 'var(--gold)' }}
+                />
+              )}
+            </Link>
 
             <button
               type="button"

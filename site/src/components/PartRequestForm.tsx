@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { Factory, ImagePlus, Printer, X } from 'lucide-react'
-import { getCatalog, submitPartRequest, uploadPartRequestPhoto, type PartRequestInput } from '@/lib/api'
+import { getCatalog, submitPartRequest, uploadPartRequestPhoto, type MyOrder, type PartRequestInput } from '@/lib/api'
+import { formatBRL } from '@/lib/format'
 import type { CatalogProduct } from '@/types/catalog'
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024
@@ -26,11 +27,14 @@ const replacementOptions: {
   },
 ]
 
-export function PartRequestForm() {
+/**
+ * Formulário de peça faltante dentro da área logada — o pedido é escolhido
+ * de uma lista dos pedidos reais do cliente (não mais digitado em texto
+ * livre), e nome/e-mail vêm da sessão, não deste formulário.
+ */
+export function PartRequestForm({ orders, onSubmitted }: { orders: MyOrder[]; onSubmitted?: () => void }) {
   const [catalog, setCatalog] = useState<CatalogProduct[]>([])
-  const [customerName, setCustomerName] = useState('')
-  const [customerEmail, setCustomerEmail] = useState('')
-  const [orderReference, setOrderReference] = useState('')
+  const [orderId, setOrderId] = useState(orders[0]?.id ?? '')
   const [productModel, setProductModel] = useState('')
   const [partDescription, setPartDescription] = useState('')
   const [replacementType, setReplacementType] = useState<PartRequestInput['replacementType']>('impressao_3d')
@@ -82,20 +86,30 @@ export function PartRequestForm() {
     try {
       const photoUrl = photoFile ? await uploadPartRequestPhoto(photoFile) : undefined
       await submitPartRequest({
-        customerName,
-        customerEmail,
-        orderReference,
+        orderId,
         productModel,
         partDescription,
         replacementType,
         photoUrl,
       })
       setDone(true)
+      onSubmitted?.()
     } catch {
       setError('Não foi possível enviar sua solicitação agora. Tente novamente em instantes.')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div
+        className="rounded-2xl border p-6 text-center text-sm sm:p-8"
+        style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)', color: 'var(--ink-muted)' }}
+      >
+        Você ainda não tem nenhum pedido para vincular uma solicitação de peça faltante.
+      </div>
+    )
   }
 
   if (done) {
@@ -112,9 +126,8 @@ export function PartRequestForm() {
           Solicitação recebida!
         </h3>
         <p className="max-w-md text-sm" style={{ color: 'var(--ink-secondary)' }}>
-          Já registramos seu pedido de reposição e enviamos um e-mail de confirmação para{' '}
-          <strong style={{ color: 'var(--ink)' }}>{customerEmail}</strong>. Nossa equipe cuida do resto — sem
-          nenhum custo para você.
+          Já registramos seu pedido de reposição e enviamos um e-mail de confirmação. Nossa equipe cuida do resto —
+          sem nenhum custo para você.
         </p>
       </motion.div>
     )
@@ -127,9 +140,25 @@ export function PartRequestForm() {
       style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Nome completo" value={customerName} onChange={setCustomerName} required />
-        <Field label="E-mail" value={customerEmail} onChange={setCustomerEmail} type="email" required />
-        <Field label="Número do pedido" value={orderReference} onChange={setOrderReference} required />
+        <div>
+          <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+            PEDIDO
+          </label>
+          <select
+            value={orderId}
+            onChange={(e) => setOrderId(e.target.value)}
+            required
+            className="w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm outline-none"
+            style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+          >
+            {orders.map((o) => (
+              <option key={o.id} value={o.id} style={{ color: 'var(--ink)', background: 'var(--carbon-2)' }}>
+                #{o.id.slice(0, 8)} — {new Date(o.sale_date).toLocaleDateString('pt-BR')} —{' '}
+                {o.items.map((i) => i.product_name).join(', ')}
+              </option>
+            ))}
+          </select>
+        </div>
         <div>
           <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
             MODELO DO SET
@@ -258,32 +287,6 @@ export function PartRequestForm() {
   )
 }
 
-function Field({
-  label,
-  value,
-  onChange,
-  type = 'text',
-  required = false,
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-  type?: string
-  required?: boolean
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-        {label.toUpperCase()}
-      </label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={required}
-        className="w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm outline-none"
-        style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
-      />
-    </div>
-  )
+export function formatOrderTotal(order: MyOrder): string {
+  return formatBRL(order.items.reduce((t, i) => t + i.unit_price_brl * i.quantity, 0))
 }

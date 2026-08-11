@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, useScroll } from 'framer-motion'
 import { Hand } from 'lucide-react'
-import { PartRequestForm } from '@/components/PartRequestForm'
 import { HeroCar } from '@/components/HeroCar'
 import { ProductCard } from '@/components/ProductCard'
 import { getCatalog } from '@/lib/api'
@@ -230,8 +230,20 @@ export function Home() {
             gente qual peça faltou no seu set e escolha como prefere recebê-la — sempre sem nenhum custo.
           </motion.p>
 
-          <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
-            <PartRequestForm />
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-40px' }}
+            className="flex justify-center"
+          >
+            <Link
+              to="/conta"
+              className="inline-block rounded-full px-8 py-3 text-sm font-medium tracking-wide transition"
+              style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+            >
+              Entrar para solicitar
+            </Link>
           </motion.div>
         </div>
       </section>
