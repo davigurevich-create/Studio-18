@@ -98,7 +98,7 @@ export function Home() {
               animate={{ opacity: [0.3, 1, 0.3] }}
               transition={{ duration: 2.4, repeat: Infinity }}
             >
-              ROLE PARA EXPLORAR
+              ROLE PARA EXPLORAR A COLEÇÃO
             </motion.div>
           </section>
           {/* espaçador — distância fixa de rolagem (imune a variações de svh
@@ -108,62 +108,21 @@ export function Home() {
         </div>
       </div>
 
-      {/* BLOCO DE ABERTURA — textura de fibra de carbono e dourado */}
-      <section
-        className="relative overflow-hidden px-6 pb-16 pt-28 text-center sm:pb-20 sm:pt-36"
-        style={{
-          backgroundImage: 'url(/Section2-background.jpg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
-        <div className="pointer-events-none absolute inset-0" style={{ background: 'rgba(6,6,6,0.6)' }} />
-        <motion.div
-          className="relative z-10 mx-auto max-w-3xl"
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          <p className="eyebrow mb-4" style={{ fontSize: '15px', fontWeight: 700, textTransform: 'none' }}>
-            Importamos os mais sofisticados sets técnicos de blocos de montar em escala 1:8. Possuímos grande
-            estoque e fazemos pronta entrega para todo o Brasil.
-          </p>
-          <p className="mx-auto max-w-xl text-base sm:text-lg" style={{ color: 'var(--ink-secondary)' }}>
-            Carros, motos e motores que se tornam esculturas de engenharia, pelas suas próprias mãos.
-          </p>
-          <a
-            href="#colecao"
-            className="mt-8 inline-block rounded-full px-8 py-3 text-sm font-medium tracking-wide transition"
-            style={{ background: 'var(--gold)', color: '#0a0a0a' }}
-          >
-            Ver a coleção
-          </a>
-        </motion.div>
-
-        <motion.div
-          className="relative z-10 mt-16 text-xs tracking-[0.3em] sm:mt-24"
-          style={{ color: 'var(--ink-muted)' }}
-          animate={{ opacity: [0.3, 1, 0.3] }}
-          transition={{ duration: 2.4, repeat: Infinity }}
-        >
-          CONTINUE ROLANDO PARA EXPLORAR
-        </motion.div>
-      </section>
-
-      {/* COLEÇÃO / MARKETPLACE */}
+      {/* COLEÇÃO / MARKETPLACE — vem direto depois da hero, sem bloco de
+          transição intermediário. */}
       <section id="colecao" className="mx-auto max-w-6xl px-6 py-24">
         <motion.p variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="eyebrow mb-3 text-center">
-          Primeiro container
+          Carros, motos e motores que se tornam esculturas de engenharia, pelas suas próprias mãos.
         </motion.p>
         <motion.h2
           variants={fadeUp}
           initial="hidden"
           whileInView="show"
           viewport={{ once: true }}
-          className="mb-4 text-center text-3xl sm:text-4xl"
+          className="mx-auto mb-4 max-w-3xl text-center text-3xl sm:text-4xl"
         >
-          Uma curadoria inicial de 17 modelos para você
+          Importamos os mais sofisticados sets técnicos de blocos de montar em escala 1:8. Possuímos grande
+          estoque e fazemos pronta entrega para todo o Brasil.
         </motion.h2>
         <p className="mx-auto mb-14 max-w-xl text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
           Dê o seu primeiro passo nesse universo. Colecione. Presenteie parentes e amigos. Faça parte da

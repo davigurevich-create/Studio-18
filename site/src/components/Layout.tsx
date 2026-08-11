@@ -33,19 +33,24 @@ export function Layout() {
     setMenuOpen(false)
 
     if (location.hash) {
-      // A seção alvo só existe no DOM depois que a nova rota termina de
-      // renderizar (ex: vindo do /blog para "/"), então esperamos um
-      // instante antes de rolar até ela — sem isso o navegador tenta rolar
-      // cedo demais, não encontra o elemento e fica preso na hero.
-      const timer = window.setTimeout(() => {
-        const el = document.getElementById(location.hash.slice(1))
+      const id = location.hash.slice(1)
+      const scrollToTarget = () => {
+        const el = document.getElementById(id)
         if (el) {
           const headerOffset = 96
           const top = el.getBoundingClientRect().top + window.scrollY - headerOffset
           window.scrollTo({ top, behavior: 'smooth' })
         }
-      }, 80)
-      return () => window.clearTimeout(timer)
+      }
+      // A seção alvo só existe no DOM depois que a nova rota termina de
+      // renderizar (ex: vindo do /blog para "/"), então esperamos um
+      // instante antes de rolar até ela. Repetimos a rolagem mais algumas
+      // vezes depois disso porque o conteúdo acima da seção (ex: a grade de
+      // produtos da Coleção, carregada de forma assíncrona) pode mudar de
+      // altura e "empurrar" a seção-alvo para baixo — sem essas correções a
+      // página fica presa na posição de antes desse carregamento terminar.
+      const timers = [80, 400, 900].map((delay) => window.setTimeout(scrollToTarget, delay))
+      return () => timers.forEach((timer) => window.clearTimeout(timer))
     }
 
     window.scrollTo(0, 0)
