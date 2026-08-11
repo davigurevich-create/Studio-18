@@ -112,7 +112,7 @@ export function Home() {
           transição intermediário. */}
       <section id="colecao" className="mx-auto max-w-6xl px-6 py-24">
         <motion.p variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="eyebrow mb-3 text-center">
-          Carros, motos e motores que se tornam esculturas de engenharia, pelas suas próprias mãos.
+          Esculturas de engenharia, pelas suas próprias mãos.
         </motion.p>
         <motion.h2
           variants={fadeUp}
@@ -121,8 +121,7 @@ export function Home() {
           viewport={{ once: true }}
           className="mx-auto mb-4 max-w-3xl text-center text-3xl sm:text-4xl"
         >
-          Importamos os mais sofisticados sets técnicos de blocos de montar em escala 1:8. Possuímos grande
-          estoque e fazemos pronta entrega para todo o Brasil.
+          Curadoria de sets técnicos de blocos de montar em escala 1:8, a pronta entrega no Brasil.
         </motion.h2>
         <p className="mx-auto mb-14 max-w-xl text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
           Dê o seu primeiro passo nesse universo. Colecione. Presenteie parentes e amigos. Faça parte da
