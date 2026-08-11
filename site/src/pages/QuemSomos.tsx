@@ -9,10 +9,8 @@ const fadeUp = {
 
 const manifestoParagraphs = [
   'Somos Studio 18.',
-  'Acreditamos que algumas experiências não podem ser apressadas. Cada peça encontra seu lugar com precisão. Cada encaixe desperta os sentidos. Cada etapa transforma a montagem em um ritual de contemplação, criatividade e propósito.',
-  'Carros, motos e motores deixam de ser apenas máquinas. Tornam-se esculturas da engenharia, construídas pelas suas próprias mãos.',
-  'Criamos o Studio 18 para tornar esse universo mais acessível, sem abrir mão da sofisticação, do design e da excelência em cada detalhe.',
-  'Porque construir é mais do que montar. É dedicar tempo ao que inspira. É transformar precisão em arte. É fazer parte de uma comunidade que compartilha a mesma paixão por engenharia, design e experiências memoráveis.',
+  'Acreditamos que algumas experiências não podem ser apressadas — cada peça encontra seu lugar com precisão, e cada etapa transforma a montagem em um ritual de contemplação e propósito.',
+  'Criamos o Studio 18 para tornar esse universo mais acessível, sem abrir mão da sofisticação. Porque construir é mais do que montar: é transformar precisão em arte.',
 ]
 
 interface Word {
@@ -68,10 +66,11 @@ export function QuemSomos() {
       </div>
 
       {/* TEXTO DE IMPACTO — revela linha por linha conforme a rolagem.
-          O padding inferior generoso (em vh) garante espaço de rolagem
-          suficiente para a ultima linha terminar 100% nitida antes do fim
-          da pagina, em qualquer altura de tela. */}
-      <section className="mx-auto max-w-5xl px-6 pt-32 pb-[60svh] sm:pt-48 sm:pb-[65svh]">
+          O padding inferior (em vh) garante espaço de rolagem suficiente
+          para a ultima linha terminar 100% nitida antes do fim da pagina,
+          em qualquer altura de tela — reduzido para não empurrar demais o
+          conteúdo abaixo (Manifesto, imagem, FLOW). */}
+      <section className="mx-auto max-w-5xl px-6 pt-32 pb-[32svh] sm:pt-48 sm:pb-[38svh]">
         <div className="flex flex-col gap-2 sm:gap-4">
           {linesOfText.map((line, i) => (
             <RevealLine key={i} words={line} index={i} />
@@ -104,46 +103,71 @@ export function QuemSomos() {
         </section>
       </div>
 
+      {/* RESPIRO VISUAL — imagem full-bleed entre o Manifesto e o FLOW, para
+          quebrar a sequência de blocos de texto puro. Fundo escuro serve de
+          fallback enquanto /quem-somos-flow.jpg não é enviada. */}
+      <div
+        className="h-[46svh] min-h-[280px] border-t bg-cover bg-center sm:h-[62svh]"
+        style={{
+          borderColor: 'var(--hairline)',
+          backgroundColor: '#14120d',
+          backgroundImage: 'url(/quem-somos-flow.jpg)',
+        }}
+      />
+
       {/* FLOW — verbete de dicionário para o conceito por trás do ritual de
-          montagem: o estado de imersão que o Studio 18 vende junto com cada set. */}
+          montagem: o estado de imersão que o Studio 18 vende junto com cada
+          set. Layout em split (palavra de um lado, texto do outro) para não
+          repetir a composição centralizada do Manifesto. */}
       <section
-        className="relative border-t px-6 py-28 sm:py-36"
+        className="relative overflow-hidden border-t px-6 py-24 sm:py-32"
         style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)' }}
       >
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-80px' }}
-          className="mx-auto max-w-2xl"
-        >
-          <p className="eyebrow mb-8 text-center">Conceito</p>
-
-          <div className="mb-2 flex flex-wrap items-baseline justify-center gap-x-4 gap-y-1">
-            <h2 className="text-4xl font-medium sm:text-5xl" style={{ color: 'var(--gold-bright)' }}>
+        <div
+          className="pointer-events-none absolute -left-32 top-1/2 h-[520px] w-[520px] -translate-y-1/2 rounded-full opacity-40"
+          style={{ background: 'radial-gradient(circle, var(--gold-dim), transparent 70%)' }}
+        />
+        <div className="relative z-10 mx-auto grid max-w-5xl grid-cols-1 items-center gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] md:gap-16">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-80px' }}
+            className="text-center md:text-left"
+          >
+            <p className="eyebrow mb-4">Conceito</p>
+            <h2 className="text-6xl font-medium sm:text-7xl" style={{ color: 'var(--gold-bright)' }}>
               flow
             </h2>
             <span className="text-sm" style={{ color: 'var(--ink-muted)' }}>
               /flou/ · substantivo
             </span>
-          </div>
+          </motion.div>
 
-          <p className="mb-10 text-center text-lg sm:text-xl" style={{ color: 'var(--ink-secondary)', lineHeight: 1.6 }}>
-            Estado mental de imersão completa em uma atividade, no qual a percepção do tempo se dissolve e ação e
-            consciência se fundem.
-          </p>
-
-          <div className="flex flex-col gap-6 text-center text-base sm:text-lg" style={{ color: 'var(--ink-secondary)', lineHeight: 1.7 }}>
-            <p>
-              É exatamente essa a experiência de montar um set Studio 18 — um ritual de desconexão do ruído do dia a
-              dia. Cada peça encaixada silencia uma notificação.
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ delay: 0.1 }}
+            className="text-center md:text-left"
+          >
+            <p className="mb-8 text-lg sm:text-xl" style={{ color: 'var(--ink)', lineHeight: 1.6 }}>
+              Estado mental de imersão completa em uma atividade, no qual a percepção do tempo se dissolve e ação e
+              consciência se fundem.
             </p>
-            <p>
-              Cada hora investida desenvolve clareza, presença e a satisfação rara de construir algo com as
-              próprias mãos.
-            </p>
-          </div>
-        </motion.div>
+            <div className="flex flex-col gap-5 text-base sm:text-lg" style={{ color: 'var(--ink-secondary)', lineHeight: 1.7 }}>
+              <p>
+                É exatamente essa a experiência de montar um set Studio 18 — um ritual de desconexão do ruído do dia
+                a dia. Cada peça encaixada silencia uma notificação.
+              </p>
+              <p>
+                Cada hora investida desenvolve clareza, presença e a satisfação rara de construir algo com as
+                próprias mãos.
+              </p>
+            </div>
+          </motion.div>
+        </div>
       </section>
     </div>
   )
