@@ -2,7 +2,16 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CardPayment } from '@mercadopago/sdk-react'
-import { createPayment, getCatalog, getMyOrders, isDemoMode, validateCoupon, type CreatePaymentResult } from '@/lib/api'
+import {
+  createPayment,
+  getCatalog,
+  getMyAddresses,
+  getMyOrders,
+  getMyProfile,
+  isDemoMode,
+  validateCoupon,
+  type CreatePaymentResult,
+} from '@/lib/api'
 import { ensureMercadoPagoInit, isMercadoPagoConfigured } from '@/lib/mercadopago'
 import { formatBRL } from '@/lib/format'
 import { pixPrice } from '@/lib/pricing'
@@ -52,16 +61,33 @@ export function Checkout() {
   }, [])
 
   useEffect(() => {
-    // Se o cliente já estiver logado, pré-preenche com o e-mail da sessão e
-    // o endereço do pedido mais recente — só agiliza, nunca é obrigatório
+    // Se o cliente já estiver logado, pré-preenche com o e-mail da sessão,
+    // nome/CPF salvos em "Meus dados" e o endereço marcado como padrão —
+    // com o endereço do pedido mais recente como reserva, caso ele ainda
+    // não tenha salvo nenhum endereço. Só agiliza, nunca é obrigatório
     // estar logado para comprar.
     if (!session?.user.email) return
     setEmail(session.user.email)
-    getMyOrders()
-      .then((orders) => {
+    Promise.all([getMyProfile(), getMyAddresses(), getMyOrders()])
+      .then(([profile, addresses, orders]) => {
+        if (profile.fullName) setName(profile.fullName)
+        if (profile.cpf) setCpf(profile.cpf)
+
+        const defaultAddress = addresses.find((a) => a.is_default) ?? addresses[0]
+        if (defaultAddress) {
+          setZipCode(defaultAddress.zip_code)
+          setStreetName(defaultAddress.street_name)
+          setStreetNumber(defaultAddress.street_number)
+          setComplement(defaultAddress.complement ?? '')
+          setNeighborhood(defaultAddress.neighborhood)
+          setCity(defaultAddress.city)
+          setFederalUnit(defaultAddress.federal_unit)
+          return
+        }
+
         const last = orders[0]
         if (!last) return
-        if (last.customer_name) setName(last.customer_name)
+        if (!profile.fullName && last.customer_name) setName(last.customer_name)
         if (last.shipping_zip_code) setZipCode(last.shipping_zip_code)
         if (last.shipping_street_name) setStreetName(last.shipping_street_name)
         if (last.shipping_street_number) setStreetNumber(last.shipping_street_number)

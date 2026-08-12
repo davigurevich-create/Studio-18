@@ -1,18 +1,23 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { Heart } from 'lucide-react'
 import { ProductArt } from '@/components/ProductArt'
 import { RestockWaitlistForm } from '@/components/RestockWaitlistForm'
 import { getProduct } from '@/lib/api'
 import { formatBRL } from '@/lib/format'
 import { installmentPrice, LOW_STOCK_THRESHOLD, MAX_INSTALLMENTS, pixPrice } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
+import { useAuth } from '@/lib/auth'
+import { useFavorites } from '@/lib/favorites'
 import type { CatalogProduct } from '@/types/catalog'
 
 export function Product() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { addItem } = useCart()
+  const { session } = useAuth()
+  const { isFavorite, toggleFavorite } = useFavorites()
   const [product, setProduct] = useState<CatalogProduct | null | undefined>(undefined)
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
@@ -53,14 +58,36 @@ export function Product() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.1 }}>
-          {product.collection_tag && (
-            <span
-              className="mb-4 inline-block rounded-full px-3 py-1 text-[11px] font-semibold tracking-widest"
-              style={{ background: 'var(--gold-wash)', color: 'var(--gold-bright)', border: '1px solid var(--gold-dim)' }}
+          <div className="mb-4 flex items-center justify-between gap-3">
+            {product.collection_tag ? (
+              <span
+                className="inline-block rounded-full px-3 py-1 text-[11px] font-semibold tracking-widest"
+                style={{ background: 'var(--gold-wash)', color: 'var(--gold-bright)', border: '1px solid var(--gold-dim)' }}
+              >
+                {product.collection_tag.toUpperCase()}
+              </span>
+            ) : (
+              <span />
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                if (!session) {
+                  navigate('/conta')
+                  return
+                }
+                toggleFavorite(product.id)
+              }}
+              className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium"
+              style={{
+                borderColor: isFavorite(product.id) ? 'var(--gold-dim)' : 'var(--hairline)',
+                color: isFavorite(product.id) ? 'var(--gold-bright)' : 'var(--ink-secondary)',
+              }}
             >
-              {product.collection_tag.toUpperCase()}
-            </span>
-          )}
+              <Heart size={14} strokeWidth={2} fill={isFavorite(product.id) ? 'var(--gold-bright)' : 'none'} />
+              {isFavorite(product.id) ? 'Favoritado' : 'Favoritar'}
+            </button>
+          </div>
           <h1 className="text-3xl sm:text-4xl">{product.name}</h1>
 
           <dl className="mt-6 grid grid-cols-2 gap-4 border-y py-6 sm:grid-cols-4" style={{ borderColor: 'var(--hairline)' }}>

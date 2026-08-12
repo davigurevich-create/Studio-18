@@ -307,3 +307,180 @@ export async function leaveWaitlist(id: string): Promise<void> {
   const { error } = await supabase.from('restock_waitlist').delete().eq('id', id)
   if (error) throw error
 }
+
+// ---------------------------------------------------------------------------
+// Favoritos
+// ---------------------------------------------------------------------------
+export interface MyFavorite {
+  id: string
+  product_id: string
+  created_at: string
+  product: {
+    id: string
+    name: string
+    sale_price_brl: number
+    image_url: string | null
+    manufacturer: string | null
+    scale: string | null
+    collection_tag: string | null
+  } | null
+}
+
+export async function getFavorites(): Promise<MyFavorite[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('favorites')
+    .select('id, product_id, created_at, product:products(id, name, sale_price_brl, image_url, manufacturer, scale, collection_tag)')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as unknown as MyFavorite[]
+}
+
+export async function addFavorite(productId: string): Promise<void> {
+  if (!supabase) return
+  const { error } = await supabase.from('favorites').insert({ product_id: productId })
+  // Já estar favoritado (violação da constraint unique) não é um erro real.
+  if (error && error.code !== '23505') throw error
+}
+
+export async function removeFavorite(productId: string): Promise<void> {
+  if (!supabase) return
+  const { error } = await supabase.from('favorites').delete().eq('product_id', productId)
+  if (error) throw error
+}
+
+// ---------------------------------------------------------------------------
+// Indicação de amigos
+// ---------------------------------------------------------------------------
+export interface ReferralInfo {
+  code: string
+  discountPct: number
+}
+
+export interface MyRewardCoupon {
+  id: string
+  code: string
+  discount_pct: number
+  active: boolean
+  uses_count: number
+  max_uses: number | null
+  created_at: string
+}
+
+/**
+ * Retorna o código de indicação pessoal e permanente do cliente logado —
+ * criado na primeira vez que ele abre a aba (função Postgres security
+ * definer, já que o cliente comum não tem INSERT direto em `coupons`).
+ */
+export async function getReferralCode(): Promise<ReferralInfo> {
+  if (!supabase) return { code: 'AMIGO-DEMO01', discountPct: 5 }
+  const { data, error } = await supabase.rpc('get_or_create_referral_code')
+  if (error) throw error
+  const row = (data ?? [])[0] as { code: string; discount_pct: number } | undefined
+  return { code: row?.code ?? '', discountPct: row ? Number(row.discount_pct) : 5 }
+}
+
+export async function getMyRewardCoupons(): Promise<MyRewardCoupon[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('get_my_reward_coupons')
+  if (error) throw error
+  return (data ?? []) as MyRewardCoupon[]
+}
+
+// ---------------------------------------------------------------------------
+// Meus dados — perfil e endereços salvos
+// ---------------------------------------------------------------------------
+export interface MyProfile {
+  fullName: string
+  cpf: string
+}
+
+export async function getMyProfile(): Promise<MyProfile> {
+  if (!supabase) return { fullName: 'Cliente Demonstração', cpf: '' }
+  const { data, error } = await supabase.from('customer_profiles').select('full_name, cpf').maybeSingle()
+  if (error) throw error
+  return { fullName: data?.full_name ?? '', cpf: data?.cpf ?? '' }
+}
+
+export async function saveMyProfile(input: MyProfile): Promise<void> {
+  if (!supabase) return
+  const { error } = await supabase
+    .from('customer_profiles')
+    .upsert({ full_name: input.fullName || null, cpf: input.cpf || null, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+  if (error) throw error
+}
+
+export interface MyAddress {
+  id: string
+  label: string | null
+  zip_code: string
+  street_name: string
+  street_number: string
+  complement: string | null
+  neighborhood: string
+  city: string
+  federal_unit: string
+  is_default: boolean
+}
+
+export async function getMyAddresses(): Promise<MyAddress[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('customer_addresses')
+    .select('id, label, zip_code, street_name, street_number, complement, neighborhood, city, federal_unit, is_default')
+    .order('is_default', { ascending: false })
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as MyAddress[]
+}
+
+export async function addMyAddress(input: Omit<MyAddress, 'id'>): Promise<void> {
+  if (!supabase) return
+  const { error } = await supabase.from('customer_addresses').insert(input)
+  if (error) throw error
+}
+
+export async function deleteMyAddress(id: string): Promise<void> {
+  if (!supabase) return
+  const { error } = await supabase.from('customer_addresses').delete().eq('id', id)
+  if (error) throw error
+}
+
+/**
+ * Marca um endereço como padrão — limpa o padrão anterior antes, sem
+ * precisar filtrar por cliente explicitamente (a RLS já garante que só
+ * afeta os próprios endereços do usuário logado).
+ */
+export async function setDefaultAddress(id: string): Promise<void> {
+  if (!supabase) return
+  const { error: clearError } = await supabase.from('customer_addresses').update({ is_default: false }).eq('is_default', true)
+  if (clearError) throw clearError
+  const { error } = await supabase.from('customer_addresses').update({ is_default: true }).eq('id', id)
+  if (error) throw error
+}
+
+// ---------------------------------------------------------------------------
+// Preferências de notificação
+// ---------------------------------------------------------------------------
+export interface NotificationPrefs {
+  restockAlerts: boolean
+  newsUpdates: boolean
+}
+
+export async function getMyNotificationPrefs(): Promise<NotificationPrefs> {
+  if (!supabase) return { restockAlerts: true, newsUpdates: true }
+  const { data, error } = await supabase.from('notification_preferences').select('restock_alerts, news_updates').maybeSingle()
+  if (error) throw error
+  return { restockAlerts: data?.restock_alerts ?? true, newsUpdates: data?.news_updates ?? true }
+}
+
+export async function saveMyNotificationPrefs(input: NotificationPrefs): Promise<void> {
+  if (!supabase) return
+  const { error } = await supabase
+    .from('notification_preferences')
+    .upsert(
+      { restock_alerts: input.restockAlerts, news_updates: input.newsUpdates, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' },
+    )
+  if (error) throw error
+}

@@ -1,17 +1,22 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowUpRight, ShoppingBag } from 'lucide-react'
+import { ArrowUpRight, Heart, ShoppingBag } from 'lucide-react'
 import { ProductArt } from '@/components/ProductArt'
 import { formatBRL } from '@/lib/format'
 import { installmentPrice, LOW_STOCK_THRESHOLD, MAX_INSTALLMENTS, pixPrice } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
+import { useAuth } from '@/lib/auth'
+import { useFavorites } from '@/lib/favorites'
 import type { CatalogProduct } from '@/types/catalog'
 
 export function ProductCard({ product, index = 0 }: { product: CatalogProduct; index?: number }) {
   const { addItem } = useCart()
+  const { session } = useAuth()
+  const { isFavorite, toggleFavorite } = useFavorites()
   const navigate = useNavigate()
   const [justAdded, setJustAdded] = useState(false)
+  const favorited = isFavorite(product.id)
   const outOfStock = product.quantity_available <= 0
   const lowStock = !outOfStock && product.quantity_available <= LOW_STOCK_THRESHOLD
 
@@ -40,12 +45,35 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
             </span>
           )}
           <span
-            className="absolute right-3 top-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide opacity-90 transition-opacity group-hover:opacity-100"
+            className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide opacity-90 transition-opacity group-hover:opacity-100"
             style={{ background: 'rgba(6,6,6,0.7)', color: 'var(--ink-secondary)', border: '1px solid var(--hairline)' }}
           >
             Mais detalhes
             <ArrowUpRight size={11} strokeWidth={2} />
           </span>
+
+          <button
+            type="button"
+            aria-label={favorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              if (!session) {
+                navigate('/conta')
+                return
+              }
+              toggleFavorite(product.id)
+            }}
+            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full transition"
+            style={{ background: 'rgba(6,6,6,0.7)', border: '1px solid var(--hairline)' }}
+          >
+            <Heart
+              size={14}
+              strokeWidth={2}
+              fill={favorited ? 'var(--gold-bright)' : 'none'}
+              style={{ color: favorited ? 'var(--gold-bright)' : 'var(--ink-secondary)' }}
+            />
+          </button>
         </div>
 
         <div className="p-4">

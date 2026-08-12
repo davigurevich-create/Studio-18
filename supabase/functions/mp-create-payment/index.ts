@@ -151,12 +151,12 @@ Deno.serve(async (req) => {
     // Cupom de desconto (parcerias com influenciadores) — nunca confiamos no
     // desconto calculado no navegador, revalidamos aqui contra a tabela
     // coupons antes de aplicar qualquer coisa na cobrança de verdade.
-    let appliedCoupon: { id: string; code: string; uses_count: number } | null = null
+    let appliedCoupon: { id: string; code: string; uses_count: number; kind: string; ownerUserId: string | null } | null = null
     let couponDiscountPct = 0
     if (couponCode) {
       const { data: coupon } = await supabase
         .from('coupons')
-        .select('id, code, discount_pct, active, max_uses, uses_count, expires_at')
+        .select('id, code, discount_pct, active, max_uses, uses_count, expires_at, kind, owner_user_id')
         .ilike('code', couponCode)
         .maybeSingle()
       const isValid =
@@ -165,7 +165,13 @@ Deno.serve(async (req) => {
         (coupon.expires_at === null || new Date(coupon.expires_at) > new Date()) &&
         (coupon.max_uses === null || coupon.uses_count < coupon.max_uses)
       if (isValid) {
-        appliedCoupon = { id: coupon.id, code: coupon.code, uses_count: coupon.uses_count }
+        appliedCoupon = {
+          id: coupon.id,
+          code: coupon.code,
+          uses_count: coupon.uses_count,
+          kind: coupon.kind,
+          ownerUserId: coupon.owner_user_id,
+        }
         couponDiscountPct = Number(coupon.discount_pct)
       }
     }
@@ -214,6 +220,24 @@ Deno.serve(async (req) => {
 
     if (appliedCoupon) {
       await supabase.from('coupons').update({ uses_count: appliedCoupon.uses_count + 1 }).eq('id', appliedCoupon.id)
+
+      // Indicação de amigos: se o cupom usado é o código pessoal de um
+      // cliente, ele ganha um cupom de recompensa de uso único assim que
+      // este pedido é registrado (não espera confirmação de pagamento).
+      if (appliedCoupon.kind === 'referral_code' && appliedCoupon.ownerUserId) {
+        const REFERRAL_REWARD_PCT = 5
+        const rewardCode = `OBRIGADO-${sale.id.replace(/-/g, '').slice(0, 6).toUpperCase()}`
+        const { error: rewardError } = await supabase.from('coupons').insert({
+          code: rewardCode,
+          discount_pct: REFERRAL_REWARD_PCT,
+          active: true,
+          max_uses: 1,
+          kind: 'referral_reward',
+          owner_user_id: appliedCoupon.ownerUserId,
+          source_referral_code: appliedCoupon.code,
+        })
+        if (rewardError) console.error('Falha ao gerar cupom de recompensa por indicação:', rewardError)
+      }
     }
 
     await supabase.from('sale_items').insert(
