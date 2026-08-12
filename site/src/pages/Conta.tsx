@@ -224,7 +224,7 @@ function AccountDashboard({ onSignOut }: { onSignOut: () => void }) {
   ]
 
   return (
-    <div className="mx-auto max-w-3xl px-6 pb-24 pt-32">
+    <div className="mx-auto max-w-6xl px-6 pb-24 pt-32">
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-3xl">Minha conta</h1>
         <button
@@ -238,44 +238,75 @@ function AccountDashboard({ onSignOut }: { onSignOut: () => void }) {
         </button>
       </div>
 
-      <div className="mb-8 flex gap-2 overflow-x-auto">
-        {tabs.map((t) => {
-          const Icon = t.icon
-          const active = tab === t.id
-          return (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className="flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm transition"
-              style={{
-                borderColor: active ? 'var(--gold)' : 'var(--hairline)',
-                background: active ? 'var(--gold-wash)' : 'transparent',
-                color: active ? 'var(--gold-bright)' : 'var(--ink-secondary)',
-              }}
-            >
-              <Icon size={16} strokeWidth={1.75} />
-              {t.label}
-            </button>
-          )
-        })}
-      </div>
+      <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:gap-10">
+        {/* Mobile: grade de 2 colunas — compacta, sem barra de rolagem
+            horizontal colada no conteúdo. */}
+        <nav className="grid grid-cols-2 gap-2 sm:hidden">
+          {tabs.map((t) => {
+            const Icon = t.icon
+            const active = tab === t.id
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className="flex items-center gap-2 rounded-lg border px-3 py-2.5 text-left text-xs transition"
+                style={{
+                  borderColor: active ? 'var(--gold)' : 'var(--hairline)',
+                  background: active ? 'var(--gold-wash)' : 'transparent',
+                  color: active ? 'var(--gold-bright)' : 'var(--ink-secondary)',
+                }}
+              >
+                <Icon size={15} strokeWidth={1.75} className="shrink-0" />
+                {t.label}
+              </button>
+            )
+          })}
+        </nav>
 
-      {loading ? (
-        <p className="text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
-          Carregando...
-        </p>
-      ) : (
-        <>
-          {tab === 'pedidos' && <OrdersTab orders={orders} />}
-          {tab === 'pecas' && <PartRequestsTab orders={orders} requests={partRequests} onSubmitted={reload} />}
-          {tab === 'espera' && <WaitlistTab entries={waitlist} onChange={reload} />}
-          {tab === 'favoritos' && <FavoritesTab />}
-          {tab === 'indicacao' && <ReferralTab />}
-          {tab === 'dados' && <ProfileTab />}
-          {tab === 'notificacoes' && <NotificationsTab />}
-        </>
-      )}
+        {/* Desktop: menu lateral fixo, sem rolagem — padrão de área de
+            conta (Amazon/Mercado Livre) em vez de abas horizontais. */}
+        <nav className="hidden shrink-0 flex-col gap-1 sm:flex sm:w-60">
+          {tabs.map((t) => {
+            const Icon = t.icon
+            const active = tab === t.id
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-left text-sm transition"
+                style={{
+                  background: active ? 'var(--gold-wash)' : 'transparent',
+                  color: active ? 'var(--gold-bright)' : 'var(--ink-secondary)',
+                  borderLeft: active ? '2px solid var(--gold)' : '2px solid transparent',
+                }}
+              >
+                <Icon size={16} strokeWidth={1.75} className="shrink-0" />
+                {t.label}
+              </button>
+            )
+          })}
+        </nav>
+
+        <div className="min-w-0 flex-1 border-t pt-8 sm:border-l sm:border-t-0 sm:pl-10 sm:pt-0" style={{ borderColor: 'var(--hairline)' }}>
+          {loading ? (
+            <p className="text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
+              Carregando...
+            </p>
+          ) : (
+            <>
+              {tab === 'pedidos' && <OrdersTab orders={orders} />}
+              {tab === 'pecas' && <PartRequestsTab orders={orders} requests={partRequests} onSubmitted={reload} />}
+              {tab === 'espera' && <WaitlistTab entries={waitlist} onChange={reload} />}
+              {tab === 'favoritos' && <FavoritesTab />}
+              {tab === 'indicacao' && <ReferralTab />}
+              {tab === 'dados' && <ProfileTab />}
+              {tab === 'notificacoes' && <NotificationsTab />}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
