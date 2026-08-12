@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'framer-motion'
 import { BadgePercent, Hand, PackageOpen, ShieldCheck, Warehouse } from 'lucide-react'
 
 const fadeUp = {
@@ -38,11 +38,26 @@ const officialBrands = [
   { name: 'KBOX', logo: '/brands/kbox.png' },
 ]
 
+// Cada capítulo ocupa esse tanto de rolagem "presa" na tela (em svh) antes
+// de passar para o próximo — controla o ritmo da sequência.
+const CHAPTER_HEIGHT_SVH = 90
+
 export function Diferenciais() {
+  const pinRef = useRef<HTMLDivElement>(null)
+  const [active, setActive] = useState(0)
+  const { scrollYProgress } = useScroll({ target: pinRef, offset: ['start start', 'end end'] })
+
+  useMotionValueEvent(scrollYProgress, 'change', (v) => {
+    const idx = Math.min(diferenciais.length - 1, Math.max(0, Math.floor(v * diferenciais.length)))
+    setActive(idx)
+  })
+
+  const ActiveIcon = diferenciais[active].icon
+
   return (
     <div>
       <section
-        className="relative overflow-hidden px-6 pb-24 pt-32 sm:pt-40"
+        className="relative overflow-hidden px-6 pb-16 pt-32 sm:pt-40"
         style={{ background: 'var(--carbon-1)' }}
       >
         <div
@@ -54,31 +69,92 @@ export function Diferenciais() {
           }}
         />
         <div className="pointer-events-none absolute inset-0" style={{ background: 'rgba(6,6,6,0.72)' }} />
-        <div className="relative z-10 mx-auto max-w-6xl">
-          <motion.p variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="eyebrow mb-3 text-center">
+        <div className="relative z-10 mx-auto max-w-6xl text-center">
+          <motion.p variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="eyebrow mb-3">
             Por que Studio 18
           </motion.p>
-          <motion.h1
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            className="mb-16 text-center text-3xl sm:text-4xl"
-          >
+          <motion.h1 variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="text-3xl sm:text-4xl">
             Sofisticação acessível
           </motion.h1>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {diferenciais.map((d, i) => (
-              <DiferencialCard key={d.title} {...d} index={i} />
-            ))}
-          </div>
+        </div>
+      </section>
 
+      {/* Sequência presa na tela: cada diferencial ocupa a tela inteira por
+          um trecho da rolagem, trocando de conteúdo — mais impacto que os 4
+          cards lado a lado, sem alongar demais a página (altura total fixa,
+          não soma 4 seções inteiras). */}
+      <div ref={pinRef} className="relative" style={{ height: `${diferenciais.length * CHAPTER_HEIGHT_SVH}svh`, background: 'var(--carbon-1)' }}>
+        <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden px-6">
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage: 'url(/hero-workshop.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center 30%',
+            }}
+          />
+          <div className="pointer-events-none absolute inset-0" style={{ background: 'rgba(6,6,6,0.85)' }} />
+
+          <div className="relative z-10 mx-auto flex w-full max-w-4xl items-center gap-8 sm:gap-14">
+            <div className="hidden shrink-0 flex-col gap-5 sm:flex">
+              {diferenciais.map((_, i) => (
+                <div
+                  key={i}
+                  className="h-px transition-all duration-500"
+                  style={{
+                    width: i === active ? 36 : 16,
+                    background: i === active ? 'var(--gold-bright)' : 'var(--hairline)',
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="min-h-[280px] flex-1 sm:min-h-[240px]">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={active}
+                  initial={{ opacity: 0, y: 28 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -28 }}
+                  transition={{ duration: 0.45, ease: 'easeOut' }}
+                >
+                  <span
+                    className="mb-5 block text-6xl font-black leading-none sm:text-8xl"
+                    style={{ color: 'transparent', WebkitTextStroke: '1.5px rgba(230,199,120,0.4)' }}
+                  >
+                    {String(active + 1).padStart(2, '0')}
+                  </span>
+                  <div
+                    className="mb-5 flex h-11 w-11 items-center justify-center rounded-full"
+                    style={{ background: 'var(--gold-wash)', border: '1px solid var(--gold-dim)' }}
+                  >
+                    <ActiveIcon size={18} strokeWidth={1.75} style={{ color: 'var(--gold-bright)' }} />
+                  </div>
+                  <h3 className="mb-3 text-2xl font-semibold sm:text-3xl" style={{ color: 'var(--ink)' }}>
+                    {diferenciais[active].title}
+                  </h3>
+                  <p className="max-w-lg text-sm sm:text-base" style={{ color: 'var(--ink-secondary)' }}>
+                    {diferenciais[active].text}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            <div className="hidden shrink-0 text-xs tracking-widest sm:block" style={{ color: 'var(--ink-muted)' }}>
+              {String(active + 1).padStart(2, '0')} / {String(diferenciais.length).padStart(2, '0')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section className="px-6 pb-24 pt-4" style={{ background: 'var(--carbon-1)' }}>
+        <div className="relative z-10 mx-auto max-w-6xl">
           <motion.div
             variants={fadeUp}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
-            className="mt-20 flex flex-col items-center gap-8 sm:flex-row sm:items-center"
+            className="flex flex-col items-center gap-8 sm:flex-row sm:items-center"
           >
             <p className="max-w-xs shrink-0 text-left text-lg sm:text-xl" style={{ color: 'var(--ink)' }}>
               Representamos oficialmente as marcas mais respeitadas do segmento
@@ -117,85 +193,5 @@ export function Diferenciais() {
         </div>
       </section>
     </div>
-  )
-}
-
-function DiferencialCard({
-  icon: Icon,
-  title,
-  text,
-  index,
-}: {
-  icon: typeof Warehouse
-  title: string
-  text: string
-  index: number
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-  const mx = useMotionValue(0)
-  const my = useMotionValue(0)
-  const [hovering, setHovering] = useState(false)
-
-  const tiltSpring = { stiffness: 200, damping: 20, mass: 0.5 }
-  const rotateX = useSpring(useTransform(my, [-0.5, 0.5], [7, -7]), tiltSpring)
-  const rotateY = useSpring(useTransform(mx, [-0.5, 0.5], [-7, 7]), tiltSpring)
-  const lift = useSpring(hovering ? -6 : 0, tiltSpring)
-
-  const glowX = useTransform(mx, [-0.5, 0.5], ['0%', '100%'])
-  const glowY = useTransform(my, [-0.5, 0.5], ['0%', '100%'])
-  const glowOpacity = useSpring(hovering ? 1 : 0, { stiffness: 120, damping: 22 })
-  const glowBackground = useMotionTemplate`radial-gradient(220px circle at ${glowX} ${glowY}, rgba(230, 199, 120, 0.16), transparent 70%)`
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = ref.current?.getBoundingClientRect()
-    if (!rect) return
-    mx.set((e.clientX - rect.left) / rect.width - 0.5)
-    my.set((e.clientY - rect.top) / rect.height - 0.5)
-  }
-
-  return (
-    <motion.div
-      ref={ref}
-      variants={fadeUp}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.5, delay: index * 0.08 }}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
-      className="group relative overflow-hidden rounded-xl border p-6 transition-colors duration-300"
-      style={{
-        borderColor: hovering ? 'var(--gold-dim)' : 'var(--hairline)',
-        background: 'var(--carbon-2)',
-        perspective: 800,
-        rotateX,
-        rotateY,
-        y: lift,
-      }}
-    >
-      <motion.div
-        className="pointer-events-none absolute inset-0"
-        style={{ background: glowBackground, opacity: glowOpacity }}
-      />
-
-      <motion.div
-        className="relative z-10 mb-4 flex h-11 w-11 items-center justify-center rounded-full"
-        style={{ background: 'var(--gold-wash)', border: '1px solid var(--gold-dim)' }}
-        animate={{ y: [0, -3, 0] }}
-        transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut', delay: index * 0.25 }}
-      >
-        <Icon size={18} strokeWidth={1.75} style={{ color: 'var(--gold-bright)' }} />
-      </motion.div>
-
-      <div className="relative z-10 mb-3 h-px w-8 origin-left scale-x-100 transition-transform duration-500 group-hover:scale-x-[1.6]" style={{ background: 'var(--gold)' }} />
-
-      <h3 className="relative z-10 mb-2 text-base font-semibold" style={{ color: 'var(--ink)' }}>
-        {title}
-      </h3>
-      <p className="relative z-10 text-sm" style={{ color: 'var(--ink-secondary)' }}>
-        {text}
-      </p>
-    </motion.div>
   )
 }
