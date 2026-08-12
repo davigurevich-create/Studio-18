@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { Factory, ImagePlus, Printer, X } from 'lucide-react'
-import { getCatalog, submitPartRequest, uploadPartRequestPhoto, type MyOrder, type PartRequestInput } from '@/lib/api'
+import { submitPartRequest, uploadPartRequestPhoto, type MyOrder, type PartRequestInput } from '@/lib/api'
 import { formatBRL } from '@/lib/format'
-import type { CatalogProduct } from '@/types/catalog'
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024
 
@@ -33,7 +32,6 @@ const replacementOptions: {
  * livre), e nome/e-mail vêm da sessão, não deste formulário.
  */
 export function PartRequestForm({ orders, onSubmitted }: { orders: MyOrder[]; onSubmitted?: () => void }) {
-  const [catalog, setCatalog] = useState<CatalogProduct[]>([])
   const [orderId, setOrderId] = useState(orders[0]?.id ?? '')
   const [productModel, setProductModel] = useState('')
   const [partDescription, setPartDescription] = useState('')
@@ -45,9 +43,21 @@ export function PartRequestForm({ orders, onSubmitted }: { orders: MyOrder[]; on
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const selectedOrder = orders.find((o) => o.id === orderId)
+  const orderModels = selectedOrder ? Array.from(new Set(selectedOrder.items.map((i) => i.product_name))) : []
+  const singleModel = orderModels.length === 1
+
+  // Sempre que o pedido selecionado muda: se ele tem um único set, o modelo
+  // já vem pré-preenchido sozinho; se tem mais de um, o campo abaixo só
+  // oferece os sets daquele pedido (nunca o catálogo inteiro).
   useEffect(() => {
-    getCatalog().then(setCatalog)
-  }, [])
+    if (orderModels.length === 1) {
+      setProductModel(orderModels[0])
+    } else {
+      setProductModel((prev) => (orderModels.includes(prev) ? prev : ''))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId])
 
   useEffect(() => {
     // Revoga a URL local anterior sempre que a foto muda, para não vazar
@@ -163,22 +173,31 @@ export function PartRequestForm({ orders, onSubmitted }: { orders: MyOrder[]; on
           <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
             MODELO DO SET
           </label>
-          <select
-            value={productModel}
-            onChange={(e) => setProductModel(e.target.value)}
-            required
-            className="w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm outline-none"
-            style={{ borderColor: 'var(--hairline)', color: productModel ? 'var(--ink)' : 'var(--ink-muted)' }}
-          >
-            <option value="" disabled style={{ color: 'var(--ink-muted)' }}>
-              Selecione o modelo...
-            </option>
-            {catalog.map((p) => (
-              <option key={p.id} value={p.name} style={{ color: 'var(--ink)', background: 'var(--carbon-2)' }}>
-                {p.name}
+          {singleModel ? (
+            <div
+              className="w-full truncate rounded-lg border px-4 py-2.5 text-sm"
+              style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)', color: 'var(--ink)' }}
+            >
+              {productModel}
+            </div>
+          ) : (
+            <select
+              value={productModel}
+              onChange={(e) => setProductModel(e.target.value)}
+              required
+              className="w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm outline-none"
+              style={{ borderColor: 'var(--hairline)', color: productModel ? 'var(--ink)' : 'var(--ink-muted)' }}
+            >
+              <option value="" disabled style={{ color: 'var(--ink-muted)' }}>
+                Selecione o modelo...
               </option>
-            ))}
-          </select>
+              {orderModels.map((name) => (
+                <option key={name} value={name} style={{ color: 'var(--ink)', background: 'var(--carbon-2)' }}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
