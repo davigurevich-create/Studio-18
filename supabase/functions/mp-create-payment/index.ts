@@ -205,6 +205,7 @@ Deno.serve(async (req) => {
       .select()
       .single()
     if (saleError || !sale) {
+      console.error('Falha ao inserir venda:', saleError)
       return json({ error: 'Não foi possível registrar o pedido.' }, 500)
     }
 
