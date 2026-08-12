@@ -16,7 +16,7 @@ const diferenciais = [
   {
     icon: PackageOpen,
     title: 'Experiência oficial, do início ao fim',
-    text: 'Cada set chega na caixa original do fabricante, com manual extremamente detalhado — a mesma experiência de quem importa direto, sem abrir mão de nenhum detalhe do ritual de montagem.',
+    text: 'Cada set chega na caixa original do fabricante, com manual extremamente detalhado — diferente de quem importa por conta própria hoje e recebe o set solto num saco, sem a caixa. É isso que garante a experiência completa, do unboxing ao ritual de montagem.',
   },
   {
     icon: ShieldCheck,
