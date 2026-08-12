@@ -65,22 +65,47 @@ export function Layout() {
   const forceDarkHeader = location.pathname.startsWith('/blog/')
   const showDarkHeader = scrolled || menuOpen || forceDarkHeader
 
+  // Manifesto tem fundo branco e texto escuro (tema invertido, só nesta
+  // página) — o cabeçalho segue o mesmo tema invertido, com logo e texto
+  // escuros em vez de claros.
+  const isManifesto = location.pathname === '/manifesto'
+  const showLightHeader = isManifesto && (scrolled || menuOpen)
+
   return (
     <div style={{ background: 'var(--carbon-0)', color: 'var(--ink)', minHeight: '100vh' }}>
       <header
         className="fixed inset-x-0 top-0 z-50 transition-colors"
         style={{
-          background: showDarkHeader ? 'rgba(6,6,6,0.85)' : 'transparent',
-          borderBottom: showDarkHeader ? '1px solid var(--hairline)' : '1px solid transparent',
-          backdropFilter: showDarkHeader ? 'blur(10px)' : 'none',
+          background: isManifesto
+            ? showLightHeader
+              ? 'rgba(255,255,255,0.9)'
+              : 'transparent'
+            : showDarkHeader
+              ? 'rgba(6,6,6,0.85)'
+              : 'transparent',
+          borderBottom: isManifesto
+            ? showLightHeader
+              ? '1px solid rgba(0,0,0,0.08)'
+              : '1px solid transparent'
+            : showDarkHeader
+              ? '1px solid var(--hairline)'
+              : '1px solid transparent',
+          backdropFilter: (isManifesto ? showLightHeader : showDarkHeader) ? 'blur(10px)' : 'none',
         }}
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center">
-            <img src="/logo-studio18.png" alt="Studio 18" className="h-8 w-auto sm:h-10" />
+            <img
+              src={isManifesto ? '/logo-studio18-dark.png' : '/logo-studio18.png'}
+              alt="Studio 18"
+              className="h-8 w-auto sm:h-10"
+            />
           </Link>
           <div className="flex items-center gap-6">
-            <nav className="hidden gap-8 text-sm tracking-wide sm:flex" style={{ color: 'var(--ink-secondary)' }}>
+            <nav
+              className="hidden gap-8 text-sm tracking-wide sm:flex"
+              style={{ color: isManifesto ? '#2a2a2a' : 'var(--ink-secondary)' }}
+            >
               {navLinks.map((l) => (
                 <Link key={l.href} to={l.href} className="hover:text-[var(--gold)]">
                   {l.label}
@@ -92,7 +117,7 @@ export function Layout() {
               to="/conta"
               aria-label="Minha conta"
               className="relative flex h-9 w-9 items-center justify-center"
-              style={{ color: 'var(--ink)' }}
+              style={{ color: isManifesto ? '#1a1a1a' : 'var(--ink)' }}
             >
               <User size={20} strokeWidth={1.8} />
               {session && (
@@ -108,7 +133,7 @@ export function Layout() {
               aria-label="Abrir carrinho"
               onClick={() => setCartOpen(true)}
               className="relative flex h-9 w-9 items-center justify-center"
-              style={{ color: 'var(--ink)' }}
+              style={{ color: isManifesto ? '#1a1a1a' : 'var(--ink)' }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="9" cy="21" r="1" />
@@ -131,7 +156,7 @@ export function Layout() {
               onClick={() => setMenuOpen((v) => !v)}
               className="flex h-9 w-9 items-center justify-center sm:hidden"
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={'var(--ink)'} strokeWidth="1.8" strokeLinecap="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={isManifesto ? '#1a1a1a' : 'var(--ink)'} strokeWidth="1.8" strokeLinecap="round">
                 {menuOpen ? (
                   <>
                     <line x1="5" y1="5" x2="19" y2="19" />
@@ -157,11 +182,19 @@ export function Layout() {
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
               className="overflow-hidden sm:hidden"
-              style={{ borderTop: '1px solid var(--hairline)' }}
+              style={{ borderTop: isManifesto ? '1px solid rgba(0,0,0,0.08)' : '1px solid var(--hairline)' }}
             >
-              <div className="flex flex-col px-6 py-2 text-base" style={{ color: 'var(--ink-secondary)' }}>
+              <div
+                className="flex flex-col px-6 py-2 text-base"
+                style={{ color: isManifesto ? '#2a2a2a' : 'var(--ink-secondary)' }}
+              >
                 {navLinks.map((l) => (
-                  <Link key={l.href} to={l.href} className="border-b py-3" style={{ borderColor: 'var(--hairline)' }}>
+                  <Link
+                    key={l.href}
+                    to={l.href}
+                    className="border-b py-3"
+                    style={{ borderColor: isManifesto ? 'rgba(0,0,0,0.08)' : 'var(--hairline)' }}
+                  >
                     {l.label}
                   </Link>
                 ))}

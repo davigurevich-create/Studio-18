@@ -24,7 +24,7 @@ const manifestoLines: Word[][] = [
 
 export function Manifesto() {
   return (
-    <div>
+    <div style={{ background: '#ffffff' }}>
       <div className="px-6 pb-4 pt-32 text-center sm:pt-40">
         <motion.p
           initial={{ opacity: 0, y: 12 }}
@@ -39,11 +39,13 @@ export function Manifesto() {
       {/* Mesmo tratamento de leitura cinematográfica do texto de impacto em
           Quem Somos: cada linha revela nitidez, posição e cor conforme a
           rolagem. O padding inferior garante espaço suficiente para a
-          última linha terminar 100% nítida antes do fim da página. */}
+          última linha terminar 100% nítida antes do fim da página. Fundo
+          branco com texto preto (exceto os destaques em dourado) — só nesta
+          página, invertendo o tema escuro padrão do site. */}
       <section className="mx-auto max-w-5xl px-6 pb-[38svh] pt-8 sm:pb-[44svh]">
         <div className="flex flex-col gap-2 sm:gap-4">
           {manifestoLines.map((line, i) => (
-            <RevealLine key={i} words={line} index={i} />
+            <RevealLine key={i} words={line} index={i} dark />
           ))}
         </div>
       </section>

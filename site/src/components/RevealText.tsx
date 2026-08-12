@@ -11,7 +11,7 @@ export interface Word {
  * usuário rola a página — usada no texto de impacto de Quem Somos e no
  * Manifesto, para o mesmo efeito de leitura cinematográfica.
  */
-export function RevealLine({ words, index }: { words: Word[]; index: number }) {
+export function RevealLine({ words, index, dark }: { words: Word[]; index: number; dark?: boolean }) {
   const ref = useRef<HTMLParagraphElement>(null)
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start 0.95', 'start 0.35'] })
   const opacity = useTransform(scrollYProgress, [0, 1], [0.08, 1])
@@ -35,7 +35,7 @@ export function RevealLine({ words, index }: { words: Word[]; index: number }) {
       className="text-[9vw] font-black uppercase leading-[0.95] tracking-tight sm:text-[6vw] lg:text-[4.25rem]"
     >
       {words.map((w, i) => (
-        <span key={i} style={{ color: w.gold ? 'var(--gold-bright)' : 'var(--ink)' }}>
+        <span key={i} style={{ color: w.gold ? 'var(--gold-bright)' : dark ? '#111111' : 'var(--ink)' }}>
           {w.text}
           {i < words.length - 1 ? ' ' : ''}
         </span>
