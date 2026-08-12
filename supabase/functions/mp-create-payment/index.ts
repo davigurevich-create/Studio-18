@@ -131,10 +131,12 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
+    console.log('checkpoint: antes de buscar produtos')
     const { data: products, error: productsError } = await supabase
       .from('products')
       .select('id, name, sale_price_brl')
       .in('id', items.map((i) => i.productId))
+    console.log('checkpoint: depois de buscar produtos', { productsError, count: products?.length })
     if (productsError || !products || products.length !== items.length) {
       return json({ error: 'Um ou mais produtos não foram encontrados.' }, 404)
     }
@@ -204,6 +206,7 @@ Deno.serve(async (req) => {
       })
       .select()
       .single()
+    console.log('checkpoint: depois de inserir venda', { saleError, saleId: sale?.id })
     if (saleError || !sale) {
       console.error('Falha ao inserir venda:', saleError)
       return json({ error: 'Não foi possível registrar o pedido.' }, 500)
@@ -278,6 +281,7 @@ Deno.serve(async (req) => {
       }
     }
 
+    console.log('checkpoint: antes de chamar Mercado Pago', { hasToken: Boolean(MP_ACCESS_TOKEN), tokenLength: MP_ACCESS_TOKEN?.length })
     const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
@@ -287,7 +291,9 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify(mpBody),
     })
+    console.log('checkpoint: depois de chamar Mercado Pago', { status: mpResponse.status, ok: mpResponse.ok })
     const payment = await mpResponse.json()
+    console.log('checkpoint: corpo da resposta do Mercado Pago', payment)
 
     if (!mpResponse.ok) {
       await supabase.from('sales').update({ status: 'cancelado', provider_status: 'error' }).eq('id', sale.id)
