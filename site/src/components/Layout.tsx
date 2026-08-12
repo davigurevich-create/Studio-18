@@ -14,7 +14,6 @@ const navLinks = [
   { href: '/diferenciais', label: 'Diferenciais' },
   { href: '/#pecas-faltantes', label: 'Peças faltantes' },
   { href: '/blog', label: 'Blog' },
-  { href: '/rastreio', label: 'Rastreio' },
   { href: '/faq', label: 'FAQ' },
 ]
 

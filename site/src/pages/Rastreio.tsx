@@ -1,14 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { OrderTrackingSteps } from '@/components/OrderTrackingSteps'
 import { getOrderStatus, isDemoMode, type OrderStatus } from '@/lib/api'
-
-const steps: { id: string; label: string }[] = [
-  { id: 'pendente', label: 'Pedido registrado' },
-  { id: 'pago', label: 'Pagamento confirmado' },
-  { id: 'enviado', label: 'Enviado' },
-  { id: 'entregue', label: 'Entregue' },
-]
 
 export function Rastreio() {
   const [orderId, setOrderId] = useState('')
@@ -33,9 +27,6 @@ export function Rastreio() {
       setLoading(false)
     }
   }
-
-  const stepIndex = order ? steps.findIndex((s) => s.id === order.status) : -1
-  const isCancelled = order?.status === 'cancelado'
 
   return (
     <div className="mx-auto max-w-2xl px-6 pb-24 pt-32">
@@ -87,33 +78,7 @@ export function Rastreio() {
             {order.product_names.join(', ')}
           </div>
 
-          {isCancelled ? (
-            <p className="text-sm" style={{ color: '#e88b8b' }}>
-              Este pedido foi cancelado.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {steps.map((s, i) => (
-                <div key={s.id} className="flex items-center gap-3">
-                  <div
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px]"
-                    style={{
-                      background: i <= stepIndex ? 'var(--gold)' : 'var(--carbon-3)',
-                      color: i <= stepIndex ? '#0a0a0a' : 'var(--ink-muted)',
-                    }}
-                  >
-                    {i <= stepIndex ? '✓' : ''}
-                  </div>
-                  <span
-                    className="text-sm"
-                    style={{ color: i <= stepIndex ? 'var(--ink)' : 'var(--ink-muted)' }}
-                  >
-                    {s.label}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+          <OrderTrackingSteps status={order.status} />
 
           {order.shipping_city && (
             <p className="mt-6 text-xs" style={{ color: 'var(--ink-muted)' }}>

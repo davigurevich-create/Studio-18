@@ -28,6 +28,7 @@ import {
   type NotificationPrefs,
 } from '@/lib/api'
 import { PartRequestForm, formatOrderTotal } from '@/components/PartRequestForm'
+import { OrderTrackingSteps } from '@/components/OrderTrackingSteps'
 import { formatBRL } from '@/lib/format'
 
 const statusLabel: Record<string, string> = {
@@ -312,6 +313,17 @@ function AccountDashboard({ onSignOut }: { onSignOut: () => void }) {
 }
 
 function OrdersTab({ orders }: { orders: MyOrder[] }) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+
+  const toggleTracking = (id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   if (orders.length === 0) {
     return (
       <p className="text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
@@ -322,45 +334,67 @@ function OrdersTab({ orders }: { orders: MyOrder[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {orders.map((o) => (
-        <motion.div
-          key={o.id}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border p-5"
-          style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}
-        >
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <div className="text-xs" style={{ color: 'var(--ink-muted)' }}>
-                PEDIDO #{o.id.slice(0, 8)} · {new Date(o.sale_date).toLocaleDateString('pt-BR')}
+      {orders.map((o) => {
+        const isExpanded = expanded.has(o.id)
+        const trackable = o.status !== 'cancelado'
+        return (
+          <motion.div
+            key={o.id}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-xl border p-5"
+            style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}
+          >
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div className="text-xs" style={{ color: 'var(--ink-muted)' }}>
+                  PEDIDO #{o.id.slice(0, 8)} · {new Date(o.sale_date).toLocaleDateString('pt-BR')}
+                </div>
+                <div className="text-sm font-medium" style={{ color: statusColor[o.status] ?? 'var(--ink)' }}>
+                  {statusLabel[o.status] ?? o.status}
+                </div>
               </div>
-              <div className="text-sm font-medium" style={{ color: statusColor[o.status] ?? 'var(--ink)' }}>
-                {statusLabel[o.status] ?? o.status}
+              <div className="text-sm font-medium" style={{ color: 'var(--gold-bright)' }}>
+                {formatOrderTotal(o)}
               </div>
             </div>
-            <div className="text-sm font-medium" style={{ color: 'var(--gold-bright)' }}>
-              {formatOrderTotal(o)}
+            <div className="flex flex-col gap-1 border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
+              {o.items.map((item, i) => (
+                <div key={i} className="flex items-center justify-between text-sm">
+                  <span style={{ color: 'var(--ink-secondary)' }}>
+                    {item.quantity}x {item.product_name}
+                  </span>
+                  <span style={{ color: 'var(--ink-muted)' }}>{formatBRL(item.unit_price_brl * item.quantity)}</span>
+                </div>
+              ))}
             </div>
-          </div>
-          <div className="flex flex-col gap-1 border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
-            {o.items.map((item, i) => (
-              <div key={i} className="flex items-center justify-between text-sm">
-                <span style={{ color: 'var(--ink-secondary)' }}>
-                  {item.quantity}x {item.product_name}
-                </span>
-                <span style={{ color: 'var(--ink-muted)' }}>{formatBRL(item.unit_price_brl * item.quantity)}</span>
+            {o.shipping_city && (
+              <p className="mt-3 text-xs" style={{ color: 'var(--ink-muted)' }}>
+                Entrega: {o.shipping_street_name}, {o.shipping_street_number} — {o.shipping_neighborhood},{' '}
+                {o.shipping_city}/{o.shipping_federal_unit}
+              </p>
+            )}
+
+            {trackable && (
+              <div className="mt-3 border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
+                <button
+                  type="button"
+                  onClick={() => toggleTracking(o.id)}
+                  className="text-xs font-medium"
+                  style={{ color: 'var(--gold-bright)' }}
+                >
+                  {isExpanded ? 'Ocultar rastreio' : 'Ver rastreio'}
+                </button>
+                {isExpanded && (
+                  <div className="mt-4">
+                    <OrderTrackingSteps status={o.status} />
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-          {o.shipping_city && (
-            <p className="mt-3 text-xs" style={{ color: 'var(--ink-muted)' }}>
-              Entrega: {o.shipping_street_name}, {o.shipping_street_number} — {o.shipping_neighborhood},{' '}
-              {o.shipping_city}/{o.shipping_federal_unit}
-            </p>
-          )}
-        </motion.div>
-      ))}
+            )}
+          </motion.div>
+        )
+      })}
     </div>
   )
 }
