@@ -1,11 +1,6 @@
 import { useRef, useState } from 'react'
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'framer-motion'
-import { BadgePercent, ChevronDown, Hand, PackageOpen, ShieldCheck, Warehouse } from 'lucide-react'
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 28 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6 } },
-}
+import { BadgePercent, ChevronDown, PackageOpen, ShieldCheck, Warehouse } from 'lucide-react'
 
 const diferenciais = [
   {
@@ -44,7 +39,6 @@ const CHAPTER_HEIGHT_SVH = 90
 
 export function Diferenciais() {
   const pinRef = useRef<HTMLDivElement>(null)
-  const ctaRef = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(0)
   const { scrollYProgress } = useScroll({ target: pinRef, offset: ['start start', 'end end'] })
 
@@ -56,41 +50,31 @@ export function Diferenciais() {
   const ActiveIcon = diferenciais[active].icon
 
   // Navegação clicável entre capítulos — rola a janela até o meio do trecho
-  // "preso" correspondente ao capítulo de destino. Na última posição, some
-  // direto para o que vem depois da sequência (marcas + CTA).
+  // "preso" correspondente ao capítulo de destino, sem nunca ultrapassar o
+  // ponto em que a sequência solta (senão o conteúdo fica escondido atrás
+  // do rodapé da página).
   const goToChapter = (index: number) => {
     const el = pinRef.current
     if (!el) return
-    if (index >= diferenciais.length) {
-      ctaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      return
-    }
-    const chapterPx = el.offsetHeight / diferenciais.length
-    const targetY = el.offsetTop + chapterPx * index + chapterPx / 2
-    // O conteúdo só fica fixo/visível na tela enquanto a rolagem estiver
-    // dentro do trecho "preso" — passar disso solta o bloco antes da hora e
-    // esconde o último capítulo atrás do que vem a seguir na página.
-    const maxPinnedY = el.offsetTop + el.offsetHeight - window.innerHeight - 2
-    window.scrollTo({ top: Math.min(targetY, maxPinnedY), behavior: 'smooth' })
+    const clampedIndex = Math.max(0, Math.min(diferenciais.length - 1, index))
+    // O framer-motion mapeia o progresso 0→1 apenas até o ponto em que o
+    // bloco solta da tela (scrollY = offsetTop + offsetHeight - viewport),
+    // não até o fim da altura total do bloco — por isso o intervalo usado
+    // aqui é (offsetHeight - viewport), não offsetHeight sozinho.
+    const scrollRange = el.offsetHeight - window.innerHeight
+    const targetProgress = (clampedIndex + 0.5) / diferenciais.length
+    const targetY = el.offsetTop + targetProgress * scrollRange
+    const maxPinnedY = el.offsetTop + scrollRange - 2
+    window.scrollTo({ top: Math.min(Math.max(targetY, 0), maxPinnedY), behavior: 'smooth' })
   }
 
   return (
     <div>
-      <section className="relative overflow-hidden px-6 pb-10 pt-32 text-center sm:pt-40" style={{ background: 'var(--carbon-1)' }}>
-        <motion.p variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="eyebrow mb-3">
-          Por que Studio 18
-        </motion.p>
-        <motion.h1 variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="text-3xl sm:text-4xl">
-          Sofisticação acessível
-        </motion.h1>
-      </section>
-
-      {/* Sequência presa na tela: cada diferencial ocupa a tela inteira por
-          um trecho da rolagem, trocando de conteúdo — mais impacto que os 4
-          cards lado a lado, sem alongar demais a página (altura total fixa,
-          não soma 4 seções inteiras). O bloco de marcas oficiais fica fixo
-          no rodapé dessa mesma tela, visível o tempo todo da sequência. */}
-      <div ref={pinRef} className="relative" style={{ height: `${diferenciais.length * CHAPTER_HEIGHT_SVH}svh`, background: 'var(--carbon-1)' }}>
+      {/* Sequência presa na tela, do topo absoluto da página (por trás do
+          menu e da logo, como no resto do site) até o fim dos 4 capítulos.
+          Uma única foto de fundo cobre tudo — título, capítulos, marcas e
+          CTA — sem nenhuma seção separada quebrando essa continuidade. */}
+      <div ref={pinRef} className="relative" style={{ height: `${diferenciais.length * CHAPTER_HEIGHT_SVH}svh`, background: '#000' }}>
         <div className="sticky top-0 flex h-[100svh] flex-col overflow-hidden">
           <div
             className="pointer-events-none absolute inset-0"
@@ -100,7 +84,12 @@ export function Diferenciais() {
               backgroundPosition: 'center 30%',
             }}
           />
-          <div className="pointer-events-none absolute inset-0" style={{ background: 'rgba(6,6,6,0.85)' }} />
+          <div className="pointer-events-none absolute inset-0" style={{ background: 'rgba(6,6,6,0.72)' }} />
+
+          <div className="relative z-10 px-6 pb-4 pt-28 text-center sm:pt-32">
+            <p className="eyebrow mb-2">Por que Studio 18</p>
+            <h1 className="text-2xl sm:text-4xl">Sofisticação acessível</h1>
+          </div>
 
           <div className="relative z-10 flex flex-1 items-center px-6">
             <div className="mx-auto flex w-full max-w-4xl items-center gap-8 sm:gap-14">
@@ -124,7 +113,7 @@ export function Diferenciais() {
                 ))}
               </div>
 
-              <div className="min-h-[280px] flex-1 sm:min-h-[240px]">
+              <div className="min-h-[260px] flex-1 sm:min-h-[220px]">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={active}
@@ -134,18 +123,18 @@ export function Diferenciais() {
                     transition={{ duration: 0.45, ease: 'easeOut' }}
                   >
                     <span
-                      className="mb-5 block text-6xl font-black leading-none sm:text-8xl"
+                      className="mb-4 block text-5xl font-black leading-none sm:text-7xl"
                       style={{ color: 'transparent', WebkitTextStroke: '1.5px rgba(230,199,120,0.4)' }}
                     >
                       {String(active + 1).padStart(2, '0')}
                     </span>
                     <div
-                      className="mb-5 flex h-11 w-11 items-center justify-center rounded-full"
+                      className="mb-4 flex h-11 w-11 items-center justify-center rounded-full"
                       style={{ background: 'var(--gold-wash)', border: '1px solid var(--gold-dim)' }}
                     >
                       <ActiveIcon size={18} strokeWidth={1.75} style={{ color: 'var(--gold-bright)' }} />
                     </div>
-                    <h3 className="mb-3 text-2xl font-semibold sm:text-3xl" style={{ color: 'var(--ink)' }}>
+                    <h3 className="mb-3 text-xl font-semibold sm:text-3xl" style={{ color: 'var(--ink)' }}>
                       {diferenciais[active].title}
                     </h3>
                     <p className="max-w-lg text-sm sm:text-base" style={{ color: 'var(--ink-secondary)' }}>
@@ -162,13 +151,12 @@ export function Diferenciais() {
           </div>
 
           {/* Seta clicável — deixa explícito que dá pra navegar clicando,
-              não só rolando. Some para o próximo capítulo, ou para o
-              conteúdo seguinte quando já está no último. */}
+              não só rolando. */}
           <motion.button
             type="button"
             aria-label="Próximo diferencial"
             onClick={() => goToChapter(active + 1)}
-            className="relative z-10 mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full"
+            className="relative z-10 mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full"
             style={{ color: 'var(--gold-bright)', border: '1px solid var(--gold-dim)', background: 'var(--gold-wash)' }}
             animate={{ y: [0, 6, 0] }}
             transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
@@ -176,50 +164,42 @@ export function Diferenciais() {
             <ChevronDown size={18} strokeWidth={2} />
           </motion.button>
 
-          <div
-            className="relative z-10 border-t px-6 py-5 sm:py-6"
-            style={{ borderColor: 'rgba(255,255,255,0.1)', background: 'rgba(6,6,6,0.55)', backdropFilter: 'blur(6px)' }}
-          >
-            <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 sm:flex-row sm:justify-between">
-              <p className="text-center text-xs sm:text-left sm:text-sm" style={{ color: 'var(--ink-secondary)' }}>
-                Representamos oficialmente as marcas mais respeitadas do segmento
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-3 sm:gap-x-9">
-                {officialBrands.map((brand) => (
-                  <img
-                    key={brand.name}
-                    src={brand.logo}
-                    alt={`${brand.name} — logo`}
-                    className="h-6 opacity-70 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0 sm:h-8"
-                  />
-                ))}
+          {/* Marcas oficiais + CTA — fixos no rodapé do mesmo fundo, visíveis
+              nos 4 capítulos (não é uma caixa separada: só um gradiente
+              suave por trás para garantir leitura, sem cortar a foto). */}
+          <div className="relative z-10 px-6 pb-8 pt-14 sm:pb-10">
+            <div
+              className="pointer-events-none absolute inset-x-0 bottom-0 top-0"
+              style={{ background: 'linear-gradient(to bottom, transparent, rgba(6,6,6,0.88) 55%)' }}
+            />
+            <div className="relative mx-auto flex max-w-5xl flex-col items-center gap-6 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex flex-col items-center gap-4 sm:items-start">
+                <p className="text-xs sm:text-sm" style={{ color: 'var(--ink-secondary)' }}>
+                  Representamos oficialmente as marcas mais respeitadas do segmento
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
+                  {officialBrands.map((brand) => (
+                    <img
+                      key={brand.name}
+                      src={brand.logo}
+                      alt={`${brand.name} — logo`}
+                      className="h-10 opacity-80 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0 sm:h-14"
+                    />
+                  ))}
+                </div>
               </div>
+
+              <a
+                href="/#colecao"
+                className="inline-block shrink-0 rounded-full px-8 py-3 text-sm font-medium tracking-wide transition"
+                style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+              >
+                Ver a coleção
+              </a>
             </div>
           </div>
         </div>
       </div>
-
-      <section ref={ctaRef} className="px-6 pb-24 pt-16" style={{ background: 'var(--carbon-1)' }}>
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true }}
-          className="mx-auto flex max-w-6xl flex-col items-center gap-4 text-center"
-        >
-          <Hand size={22} style={{ color: 'var(--gold-bright)' }} strokeWidth={1.6} />
-          <p className="max-w-md text-sm" style={{ color: 'var(--ink-secondary)' }}>
-            Pronto para começar sua coleção?
-          </p>
-          <a
-            href="/#colecao"
-            className="inline-block rounded-full px-8 py-3 text-sm font-medium tracking-wide transition"
-            style={{ background: 'var(--gold)', color: '#0a0a0a' }}
-          >
-            Ver a coleção
-          </a>
-        </motion.div>
-      </section>
     </div>
   )
 }
