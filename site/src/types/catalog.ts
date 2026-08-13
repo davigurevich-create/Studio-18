@@ -11,6 +11,7 @@ export interface CatalogProduct {
   sale_price_brl: number
   image_url: string | null
   image_urls: string[]
+  video_url: string | null
   automotive_history: string | null
   dimensions: string | null
   spec_highlights: string[] | null

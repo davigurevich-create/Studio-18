@@ -55,6 +55,16 @@ export function Product() {
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
         <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
           <ProductArt product={product} className="aspect-square w-full rounded-2xl" />
+          {product.video_url && (
+            <video
+              key={product.video_url}
+              src={product.video_url}
+              controls
+              playsInline
+              className="mt-4 aspect-video w-full rounded-2xl"
+              style={{ background: 'var(--carbon-2)' }}
+            />
+          )}
         </motion.div>
 
         <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.1 }}>
