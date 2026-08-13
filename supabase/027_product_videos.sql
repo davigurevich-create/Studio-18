@@ -5,7 +5,10 @@
 -- 1. Coluna para guardar a URL pública do vídeo de cada produto (opcional).
 alter table products add column if not exists video_url text;
 
--- 2. Expõe a nova coluna na view pública que o site consome.
+-- 2. Expõe a nova coluna na view pública que o site consome. O Postgres só
+-- deixa "create or replace view" ADICIONAR coluna no final da lista (senão
+-- ele acha que você está tentando renomear uma coluna existente) — por isso
+-- video_url vai depois de width_cm, não junto das outras colunas de imagem.
 create or replace view public_catalog as
 select
   p.id,
@@ -20,14 +23,14 @@ select
   p.sale_price_brl,
   p.image_url,
   p.image_urls,
-  p.video_url,
   p.automotive_history,
   p.dimensions,
   p.spec_highlights,
   greatest(coalesce(s.quantity_in_stock, 0), 0) as quantity_available,
   p.length_cm,
   p.height_cm,
-  p.width_cm
+  p.width_cm,
+  p.video_url
 from products p
 left join product_stock s on s.product_id = p.id
 where p.active = true;
