@@ -183,7 +183,10 @@ export function QuemSomos() {
           {playlists.map((p) => (
             <div
               key={p.cover}
-              className="relative aspect-square w-40 shrink-0 overflow-hidden rounded-xl border sm:w-56"
+              className={
+                'relative aspect-square w-24 shrink-0 overflow-hidden rounded-xl border sm:w-56' +
+                (p.position === 'left' ? ' -mr-3 sm:-mr-8' : p.position === 'right' ? ' -ml-3 sm:-ml-8' : ' mx-1 sm:mx-2')
+              }
               style={{
                 borderColor: 'var(--hairline-strong)',
                 boxShadow:
@@ -192,10 +195,10 @@ export function QuemSomos() {
                     : '0 30px 60px -20px rgba(0,0,0,0.7)',
                 transform:
                   p.position === 'left'
-                    ? 'rotate(-7deg) translate(14px, 10px)'
+                    ? 'rotate(-7deg) translateY(6px)'
                     : p.position === 'right'
-                      ? 'rotate(7deg) translate(-14px, 10px)'
-                      : 'translateY(-10px) scale(1.06)',
+                      ? 'rotate(7deg) translateY(6px)'
+                      : 'translateY(-8px) scale(1.06)',
                 zIndex: p.position === 'center' ? 2 : 1,
               }}
             >
