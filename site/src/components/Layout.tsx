@@ -223,7 +223,7 @@ export function Layout() {
             <Link to="/politica-de-devolucao" className="hover:text-[var(--gold)]">
               Política de devolução
             </Link>
-            <Link to="/rastreio" className="hover:text-[var(--gold)]">
+            <Link to="/conta" className="hover:text-[var(--gold)]">
               Rastrear pedido
             </Link>
           </div>
