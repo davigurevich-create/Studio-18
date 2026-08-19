@@ -1,7 +1,7 @@
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import { mockCatalog } from '@/lib/mockCatalog'
 import { mockBlogPosts } from '@/lib/mockBlog'
-import type { BlogPost, CatalogProduct, CheckoutInput } from '@/types/catalog'
+import type { BlogPost, CatalogProduct, CheckoutInput, ShippingOption } from '@/types/catalog'
 
 export const isDemoMode = !isSupabaseConfigured
 
@@ -43,6 +43,32 @@ export async function createPayment(input: CheckoutInput): Promise<CreatePayment
   // Modo demonstracao: nao ha backend para processar o pagamento.
   await new Promise((resolve) => setTimeout(resolve, 600))
   return { orderId: `demo-${Date.now()}`, status: 'pendente' }
+}
+
+/**
+ * Cota frete em tempo real (Melhor Envio) via Supabase Edge Function — o
+ * token da API fica só no servidor. Retorna as opções ordenadas por preço,
+ * ou uma mensagem quando não há nenhuma disponível para o CEP informado.
+ */
+export async function getShippingOptions(
+  zipCode: string,
+  items: { productId: string; quantity: number }[],
+): Promise<{ options: ShippingOption[]; message?: string }> {
+  if (supabase) {
+    const { data, error } = await supabase.functions.invoke('calculate-shipping', { body: { zipCode, items } })
+    if (error) throw error
+    if (data?.error) throw new Error(data.error)
+    return data as { options: ShippingOption[]; message?: string }
+  }
+
+  // Modo demonstração: simula duas opções fixas.
+  await new Promise((resolve) => setTimeout(resolve, 500))
+  return {
+    options: [
+      { service: 'PAC', company: 'Correios', price: 32.9, deliveryDays: '7' },
+      { service: 'SEDEX', company: 'Correios', price: 54.0, deliveryDays: '3' },
+    ],
+  }
 }
 
 export interface CouponValidation {

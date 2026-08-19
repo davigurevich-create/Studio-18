@@ -97,6 +97,10 @@ interface RequestBody {
   // código de cupom de desconto (parcerias com influenciadores) — sempre
   // reconferido aqui, nunca confiamos no desconto calculado no navegador
   couponCode?: string
+  // opção de frete escolhida no checkout (cotada via calculate-shipping) —
+  // o valor confiamos do navegador porque quem manda no preço final de
+  // verdade é a cotação da Melhor Envio, não algo que o cliente controla
+  shipping?: { service: string; company: string; price: number; deliveryDays: string }
 }
 
 function mapStatus(mpStatus: string): string {
@@ -123,10 +127,14 @@ Deno.serve(async (req) => {
       installments,
       address,
       couponCode,
+      shipping,
     } = body
 
     if (!items?.length || !customerName || !customerEmail || !customerCpf || !paymentMethod || !address) {
       return json({ error: 'Dados obrigatórios ausentes.' }, 400)
+    }
+    if (!shipping || !(shipping.price >= 0)) {
+      return json({ error: 'Selecione uma opção de frete.' }, 400)
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
@@ -178,11 +186,15 @@ Deno.serve(async (req) => {
 
     const fullTotalAmount = lineItems.reduce((t, li) => t + li.fullUnitPrice * li.quantity, 0)
     const pixAdjustedTotal = lineItems.reduce((t, li) => t + li.unitPrice * li.quantity, 0)
-    const totalAmount =
+    const productsTotal =
       couponDiscountPct > 0
         ? Math.round(pixAdjustedTotal * (1 - couponDiscountPct / 100) * 100) / 100
         : pixAdjustedTotal
-    const discountAmount = Math.round((fullTotalAmount - totalAmount) * 100) / 100
+    // Frete é um repasse de custo — não entra na conta do desconto do PIX
+    // nem do cupom, só é somado por fora no total final cobrado.
+    const shippingCost = Math.round(shipping.price * 100) / 100
+    const totalAmount = Math.round((productsTotal + shippingCost) * 100) / 100
+    const discountAmount = Math.round((fullTotalAmount - productsTotal) * 100) / 100
     const description =
       lineItems.length === 1
         ? lineItems[0].product.name
@@ -198,7 +210,9 @@ Deno.serve(async (req) => {
         payment_method: paymentMethod,
         status: 'pendente',
         payment_provider: 'mercadopago',
-        shipping_cost_brl: 0,
+        shipping_cost_brl: shippingCost,
+        shipping_service: `${shipping.company} ${shipping.service}`.trim(),
+        shipping_days: shipping.deliveryDays,
         discount_brl: discountAmount,
         notes: `Pedido feito pelo site — ${description}`,
         shipping_zip_code: address.zipCode.replace(/\D/g, ''),
@@ -356,6 +370,9 @@ Deno.serve(async (req) => {
             <span>Desconto ${discountLabel}</span><span>-R$ ${discountAmount.toFixed(2).replace('.', ',')}</span>
           </div>`
         : ''
+    const shippingRowHtml = `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+            <span>Frete — ${shipping.company} ${shipping.service}</span><span>R$ ${shippingCost.toFixed(2).replace('.', ',')}</span>
+          </div>`
 
     let paymentBlockHtml = ''
     if (paymentMethod === 'pix') {
@@ -376,7 +393,7 @@ Deno.serve(async (req) => {
       emailShell(
         'Recebemos seu pedido!',
         `<p>Olá, ${customerName.split(' ')[0]}! Seu pedido <strong>#${sale.id.slice(0, 8)}</strong> foi registrado com sucesso.</p>
-         <div style="margin:16px 0;">${itemsListHtml}${discountRowHtml}</div>
+         <div style="margin:16px 0;">${itemsListHtml}${shippingRowHtml}${discountRowHtml}</div>
          <div style="display:flex;justify-content:space-between;padding:10px 0;font-weight:700;color:#f3f1ec;">
            <span>Total</span><span>R$ ${totalAmount.toFixed(2).replace('.', ',')}</span>
          </div>

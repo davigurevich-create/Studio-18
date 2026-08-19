@@ -8,6 +8,7 @@ import {
   getMyAddresses,
   getMyOrders,
   getMyProfile,
+  getShippingOptions,
   isDemoMode,
   validateCoupon,
   type CreatePaymentResult,
@@ -17,7 +18,7 @@ import { formatBRL } from '@/lib/format'
 import { pixPrice } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
-import type { CatalogProduct, PaymentMethod } from '@/types/catalog'
+import type { CatalogProduct, PaymentMethod, ShippingOption } from '@/types/catalog'
 
 const methods: { id: PaymentMethod; label: string; hint: string; badge?: string }[] = [
   { id: 'pix', label: 'PIX', hint: 'Aprovação em minutos', badge: '-10%' },
@@ -49,6 +50,10 @@ export function Checkout() {
   const [couponInput, setCouponInput] = useState('')
   const [couponStatus, setCouponStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle')
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPct: number } | null>(null)
+  const [shippingOptions, setShippingOptions] = useState<ShippingOption[] | null>(null)
+  const [shippingLoading, setShippingLoading] = useState(false)
+  const [shippingMessage, setShippingMessage] = useState<string | null>(null)
+  const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null)
 
   const copyToClipboard = useCallback((field: 'order' | 'pix', text: string) => {
     navigator.clipboard.writeText(text)
@@ -113,9 +118,10 @@ export function Checkout() {
 
   const subtotal = items.reduce((t, i) => t + i.product.sale_price_brl * i.line.quantity, 0)
   const priceBeforeCoupon = method === 'pix' ? pixPrice(subtotal) : subtotal
-  const total = appliedCoupon
+  const productsTotal = appliedCoupon
     ? Math.round(priceBeforeCoupon * (1 - appliedCoupon.discountPct / 100) * 100) / 100
     : priceBeforeCoupon
+  const total = Math.round((productsTotal + (selectedShipping?.price ?? 0)) * 100) / 100
 
   const applyCoupon = useCallback(async () => {
     const code = couponInput.trim()
@@ -147,6 +153,34 @@ export function Checkout() {
     [items],
   )
 
+  const calculateShipping = useCallback(async () => {
+    const digits = zipCode.replace(/\D/g, '')
+    if (digits.length !== 8 || checkoutItems.length === 0) return
+    setShippingLoading(true)
+    setShippingMessage(null)
+    setSelectedShipping(null)
+    setShippingOptions(null)
+    try {
+      const res = await getShippingOptions(zipCode, checkoutItems)
+      setShippingOptions(res.options)
+      if (res.options.length === 0) setShippingMessage(res.message ?? 'Nenhuma opção de frete disponível para este CEP.')
+      else if (res.options.length === 1) setSelectedShipping(res.options[0])
+    } catch {
+      setShippingOptions([])
+      setShippingMessage('Não foi possível calcular o frete agora. Tente novamente.')
+    } finally {
+      setShippingLoading(false)
+    }
+  }, [zipCode, checkoutItems])
+
+  // Se o CEP mudar depois de já ter calculado, o frete anterior não vale
+  // mais — obriga a recalcular antes de conseguir prosseguir.
+  useEffect(() => {
+    setShippingOptions(null)
+    setSelectedShipping(null)
+    setShippingMessage(null)
+  }, [zipCode])
+
   const handleContactSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (items.length === 0) return
@@ -156,6 +190,10 @@ export function Checkout() {
     }
     if (!zipCode || !streetName || !streetNumber || !neighborhood || !city || !federalUnit) {
       setError('Preencha o endereço de entrega completo.')
+      return
+    }
+    if (!selectedShipping) {
+      setError('Calcule e escolha uma opção de frete antes de continuar.')
       return
     }
     setError(null)
@@ -175,6 +213,7 @@ export function Checkout() {
         paymentMethod: method,
         address: { zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit },
         couponCode: appliedCoupon?.code,
+        shipping: selectedShipping,
       })
       setResult(res)
       setStep('done')
@@ -188,7 +227,7 @@ export function Checkout() {
 
   const handleCardSubmit = useCallback(
     async (formData: { token: string; installments: number; payment_method_id: string }) => {
-      if (checkoutItems.length === 0) return
+      if (checkoutItems.length === 0 || !selectedShipping) return
       try {
         const res = await createPayment({
           items: checkoutItems,
@@ -201,6 +240,7 @@ export function Checkout() {
           installments: formData.installments,
           address: { zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit },
           couponCode: appliedCoupon?.code,
+          shipping: selectedShipping,
         })
         setResult(res)
         setStep('done')
@@ -210,7 +250,22 @@ export function Checkout() {
         throw new Error('payment_failed')
       }
     },
-    [checkoutItems, name, email, cpf, zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit, clear, appliedCoupon],
+    [
+      checkoutItems,
+      name,
+      email,
+      cpf,
+      zipCode,
+      streetName,
+      streetNumber,
+      complement,
+      neighborhood,
+      city,
+      federalUnit,
+      clear,
+      appliedCoupon,
+      selectedShipping,
+    ],
   )
 
   const handleCardError = useCallback(() => {
@@ -432,6 +487,15 @@ export function Checkout() {
           )}
         </div>
 
+        {selectedShipping && (
+          <div className="flex items-center justify-between border-t pt-3 text-xs" style={{ borderColor: 'var(--hairline)', color: 'var(--ink-secondary)' }}>
+            <span>
+              Frete — {selectedShipping.company} {selectedShipping.service}
+            </span>
+            <span className="tabular">{formatBRL(selectedShipping.price)}</span>
+          </div>
+        )}
+
         <div className="flex items-center justify-between border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
           <span className="text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
             {method === 'pix' ? 'TOTAL À VISTA NO PIX' : 'TOTAL'}
@@ -512,6 +576,56 @@ export function Checkout() {
               <Field label="Cidade" value={city} onChange={setCity} required />
               <Field label="Estado (UF)" value={federalUnit} onChange={setFederalUnit} required placeholder="SP" />
             </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+              FRETE
+            </label>
+            <button
+              type="button"
+              onClick={calculateShipping}
+              disabled={shippingLoading || zipCode.replace(/\D/g, '').length !== 8}
+              className="w-full rounded-lg border px-4 py-2.5 text-sm font-medium disabled:opacity-50"
+              style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+            >
+              {shippingLoading ? 'Calculando frete...' : 'Calcular frete'}
+            </button>
+
+            {shippingMessage && (
+              <p className="mt-2 text-xs" style={{ color: '#e88b8b' }}>
+                {shippingMessage}
+              </p>
+            )}
+
+            {shippingOptions && shippingOptions.length > 0 && (
+              <div className="mt-3 flex flex-col gap-2">
+                {shippingOptions.map((opt) => (
+                  <button
+                    key={`${opt.company}-${opt.service}`}
+                    type="button"
+                    onClick={() => setSelectedShipping(opt)}
+                    className="flex items-center justify-between rounded-lg border px-4 py-3 text-left text-sm transition"
+                    style={{
+                      borderColor: selectedShipping === opt ? 'var(--gold)' : 'var(--hairline)',
+                      background: selectedShipping === opt ? 'var(--gold-wash)' : 'var(--carbon-2)',
+                    }}
+                  >
+                    <div>
+                      <div style={{ color: selectedShipping === opt ? 'var(--gold-bright)' : 'var(--ink)' }}>
+                        {opt.company} {opt.service}
+                      </div>
+                      <div className="mt-0.5 text-[11px]" style={{ color: 'var(--ink-muted)' }}>
+                        Até {opt.deliveryDays} dias úteis
+                      </div>
+                    </div>
+                    <div className="tabular shrink-0 font-medium" style={{ color: 'var(--gold-bright)' }}>
+                      {formatBRL(opt.price)}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {method === 'pix' && (

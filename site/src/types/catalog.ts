@@ -38,6 +38,13 @@ export interface CheckoutItem {
   quantity: number
 }
 
+export interface ShippingOption {
+  service: string
+  company: string
+  price: number
+  deliveryDays: string
+}
+
 export interface CheckoutInput {
   items: CheckoutItem[]
   customerName: string
@@ -49,6 +56,7 @@ export interface CheckoutInput {
   installments?: number
   address: CheckoutAddress
   couponCode?: string
+  shipping: ShippingOption
 }
 
 export interface BlogPost {
