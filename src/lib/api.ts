@@ -343,7 +343,14 @@ export async function generateShippingLabel(
 ): Promise<{ labelUrl: string | null; trackingCode: string | null; alreadyGenerated?: boolean }> {
   if (!supabase) throw new Error('Conecte o Supabase para gerar etiquetas de envio.')
   const { data, error } = await supabase.functions.invoke('generate-shipping-label', { body: { saleId } })
-  if (error) throw error
+  if (error) {
+    // O supabase-js não expõe a mensagem de erro real quando a function
+    // responde com status 4xx/5xx (só um "non-2xx status code" genérico) —
+    // busca o JSON de verdade (com o campo "error") direto da resposta.
+    const context = (error as { context?: Response }).context
+    const parsed = await context?.clone().json().catch(() => null)
+    throw new Error(parsed?.error || error.message)
+  }
   if (data?.error) throw new Error(data.error)
   return data
 }

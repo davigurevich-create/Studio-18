@@ -5,6 +5,24 @@ import type { BlogPost, CatalogProduct, CheckoutInput, ShippingOption } from '@/
 
 export const isDemoMode = !isSupabaseConfigured
 
+/**
+ * Chama uma Edge Function e devolve o corpo já tipado. Quando a function
+ * responde com status de erro (4xx/5xx), o supabase-js não expõe a
+ * mensagem — só um "Edge Function returned a non-2xx status code" genérico
+ * — então busca o JSON de verdade (com o campo "error" que as functions
+ * sempre devolvem) direto da resposta antes de desistir.
+ */
+async function invokeEdgeFunction<T>(name: string, body: unknown): Promise<T> {
+  const { data, error } = await supabase!.functions.invoke(name, { body: body as Record<string, unknown> })
+  if (error) {
+    const context = (error as { context?: Response }).context
+    const parsed = await context?.clone().json().catch(() => null)
+    throw new Error(parsed?.error || error.message)
+  }
+  if (data?.error) throw new Error(data.error)
+  return data as T
+}
+
 export async function getCatalog(): Promise<CatalogProduct[]> {
   if (supabase) {
     const { data, error } = await supabase.from('public_catalog').select('*').order('name')
@@ -34,10 +52,7 @@ export interface CreatePaymentResult {
  */
 export async function createPayment(input: CheckoutInput): Promise<CreatePaymentResult> {
   if (supabase) {
-    const { data, error } = await supabase.functions.invoke('mp-create-payment', { body: input })
-    if (error) throw error
-    if (data?.error) throw new Error(data.error)
-    return data as CreatePaymentResult
+    return invokeEdgeFunction<CreatePaymentResult>('mp-create-payment', input)
   }
 
   // Modo demonstracao: nao ha backend para processar o pagamento.
@@ -55,10 +70,7 @@ export async function getShippingOptions(
   items: { productId: string; quantity: number }[],
 ): Promise<{ options: ShippingOption[]; message?: string }> {
   if (supabase) {
-    const { data, error } = await supabase.functions.invoke('calculate-shipping', { body: { zipCode, items } })
-    if (error) throw error
-    if (data?.error) throw new Error(data.error)
-    return data as { options: ShippingOption[]; message?: string }
+    return invokeEdgeFunction<{ options: ShippingOption[]; message?: string }>('calculate-shipping', { zipCode, items })
   }
 
   // Modo demonstração: simula duas opções fixas.
@@ -155,10 +167,7 @@ export async function uploadPartRequestPhoto(file: File): Promise<string> {
  */
 export async function submitPartRequest(input: PartRequestInput): Promise<{ requestId: string }> {
   if (supabase) {
-    const { data, error } = await supabase.functions.invoke('submit-part-request', { body: input })
-    if (error) throw error
-    if (data?.error) throw new Error(data.error)
-    return data as { requestId: string }
+    return invokeEdgeFunction<{ requestId: string }>('submit-part-request', input)
   }
 
   // Modo demonstracao: nao ha backend para registrar a solicitacao.
@@ -200,10 +209,8 @@ export async function sendChatMessage(messages: ChatMessage[]): Promise<string> 
   if (!supabase) {
     return 'Modo demonstração: conecte o Supabase e a API da Anthropic para conversar com o assistente de verdade.'
   }
-  const { data, error } = await supabase.functions.invoke('site-chat', { body: { messages } })
-  if (error) throw error
-  if (data?.error) throw new Error(data.error)
-  return data.reply as string
+  const data = await invokeEdgeFunction<{ reply: string }>('site-chat', { messages })
+  return data.reply
 }
 
 // ---------------------------------------------------------------------------
