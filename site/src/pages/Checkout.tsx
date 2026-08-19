@@ -331,7 +331,7 @@ export function Checkout() {
     // confirmação principal — antes do card de conta — pra não ficar
     // escondido lá embaixo, depois de tudo.
     return (
-      <div className="mx-auto max-w-4xl px-6 py-32 text-center lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-16 lg:py-40 lg:text-left">
+      <div className="mx-auto max-w-4xl px-6 py-32 text-center lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-12 lg:py-40 lg:text-left">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -418,7 +418,8 @@ export function Checkout() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="mt-10 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:mt-0"
+          className="mt-10 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:mt-0 lg:flex lg:h-full lg:flex-col lg:justify-center lg:self-stretch lg:border-l lg:pl-10"
+          style={{ borderColor: 'var(--hairline)' }}
         >
           <SpotifySection compact />
         </motion.div>

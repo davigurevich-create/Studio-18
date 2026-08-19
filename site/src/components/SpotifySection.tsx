@@ -22,38 +22,35 @@ const fadeUp = {
 export function SpotifySection({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
-      <div
-        className="relative overflow-hidden rounded-2xl border px-6 py-8 text-center"
-        style={{ borderColor: 'var(--gold-dim)', background: 'var(--carbon-1)' }}
-      >
-        <p className="eyebrow mb-2">Trilha sonora do flow</p>
-        <h2 className="text-xl" style={{ color: 'var(--ink)' }}>
+      <div className="text-center">
+        <p className="eyebrow mb-3">Trilha sonora do flow</p>
+        <h2 className="text-2xl" style={{ color: 'var(--ink)' }}>
           Playlists <span style={{ color: 'var(--gold-bright)' }}>Studio 18</span> no Spotify
         </h2>
-        <p className="mx-auto mt-2 max-w-xs text-xs" style={{ color: 'var(--ink-secondary)' }}>
+        <p className="mx-auto mt-3 max-w-xs text-sm" style={{ color: 'var(--ink-secondary)' }}>
           Curadoria de música para você entrar no flow enquanto encaixa cada peça.
         </p>
 
-        <div className="relative z-10 mx-auto mt-8 flex max-w-[220px] items-end justify-center">
+        <div className="relative z-10 mx-auto mt-12 flex max-w-[300px] items-end justify-center">
           {playlists.map((p) => (
             <div
               key={p.cover}
               className={
-                'relative aspect-square w-16 shrink-0 overflow-hidden rounded-lg border' +
-                (p.position === 'left' ? ' -mr-2' : p.position === 'right' ? ' -ml-2' : ' mx-1')
+                'relative aspect-square w-24 shrink-0 overflow-hidden rounded-xl border' +
+                (p.position === 'left' ? ' -mr-3' : p.position === 'right' ? ' -ml-3' : ' mx-1.5')
               }
               style={{
                 borderColor: 'var(--hairline-strong)',
                 boxShadow:
                   p.position === 'center'
-                    ? '0 20px 40px -12px rgba(0,0,0,0.85), 0 0 0 1px var(--gold-dim)'
-                    : '0 16px 30px -14px rgba(0,0,0,0.7)',
+                    ? '0 26px 50px -14px rgba(0,0,0,0.85), 0 0 0 1px var(--gold-dim)'
+                    : '0 20px 36px -16px rgba(0,0,0,0.7)',
                 transform:
                   p.position === 'left'
-                    ? 'rotate(-7deg) translateY(4px)'
+                    ? 'rotate(-7deg) translateY(6px)'
                     : p.position === 'right'
-                      ? 'rotate(7deg) translateY(4px)'
-                      : 'translateY(-4px) scale(1.06)',
+                      ? 'rotate(7deg) translateY(6px)'
+                      : 'translateY(-6px) scale(1.06)',
                 zIndex: p.position === 'center' ? 2 : 1,
               }}
             >
@@ -66,10 +63,10 @@ export function SpotifySection({ compact = false }: { compact?: boolean }) {
           href={SPOTIFY_PROFILE_URL}
           target="_blank"
           rel="noreferrer"
-          className="relative z-10 mt-7 inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-xs font-semibold"
+          className="relative z-10 mt-12 inline-flex items-center gap-2 rounded-full px-7 py-3 text-sm font-semibold"
           style={{ background: 'var(--gold)', color: '#0a0a0a' }}
         >
-          <SpotifyIcon size={14} />
+          <SpotifyIcon size={15} />
           Ouvir no Spotify
         </a>
       </div>
