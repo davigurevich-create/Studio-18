@@ -39,6 +39,7 @@ export interface CheckoutItem {
 }
 
 export interface ShippingOption {
+  id: number
   service: string
   company: string
   price: number
@@ -50,6 +51,7 @@ export interface CheckoutInput {
   customerName: string
   customerEmail: string
   customerCpf: string
+  customerPhone: string
   paymentMethod: PaymentMethod
   cardToken?: string
   cardPaymentMethodId?: string

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { createSale, getProducts, getSaleItems, getSales, getStock, updateSaleStatus } from '@/lib/api'
+import { createSale, generateShippingLabel, getProducts, getSaleItems, getSales, getStock, updateSaleStatus } from '@/lib/api'
 import { Badge, Button, Card, PageHeader, formatBRL } from '@/components/ui'
 import type { NewSaleItemInput } from '@/lib/api'
 import type { Product, ProductStock, Sale, SaleItem, SaleStatus } from '@/types/domain'
@@ -187,12 +187,13 @@ export function Vendas() {
               <th className="pb-2 font-medium">Pagamento</th>
               <th className="pb-2 font-medium">Total</th>
               <th className="pb-2 font-medium">Status</th>
+              <th className="pb-2 font-medium">Etiqueta</th>
             </tr>
           </thead>
           <tbody>
             {filteredSales.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                <td colSpan={8} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
                   Nenhuma venda encontrada com esses filtros.
                 </td>
               </tr>
@@ -276,6 +277,9 @@ export function Vendas() {
                       <Badge tone={statusTone[s.status]}>{s.status}</Badge>
                     </div>
                   </td>
+                  <td className="py-2.5">
+                    <ShippingLabelCell sale={s} onGenerated={reload} />
+                  </td>
                 </tr>
               )
             })
@@ -283,6 +287,54 @@ export function Vendas() {
           </tbody>
         </table>
       </Card>
+    </div>
+  )
+}
+
+function ShippingLabelCell({ sale, onGenerated }: { sale: Sale; onGenerated: () => void }) {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (sale.shipping_label_url) {
+    return (
+      <div className="flex flex-col gap-1 text-xs">
+        <a href={sale.shipping_label_url} target="_blank" rel="noreferrer" style={{ color: 'var(--series-1)' }}>
+          Ver etiqueta
+        </a>
+        {sale.shipping_tracking_code && (
+          <span style={{ color: 'var(--text-muted)' }}>Rastreio: {sale.shipping_tracking_code}</span>
+        )}
+      </div>
+    )
+  }
+
+  if (sale.status !== 'pago' && sale.status !== 'enviado') {
+    return <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
+  }
+
+  const generate = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      await generateShippingLabel(sale.id)
+      onGenerated()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao gerar etiqueta.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Button variant="secondary" onClick={generate} disabled={loading}>
+        {loading ? 'Gerando...' : 'Gerar etiqueta'}
+      </Button>
+      {error && (
+        <span className="max-w-[180px] text-[11px]" style={{ color: 'var(--status-critical)' }}>
+          {error}
+        </span>
+      )}
     </div>
   )
 }

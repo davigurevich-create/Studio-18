@@ -35,6 +35,7 @@ export function Checkout() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [cpf, setCpf] = useState('')
+  const [phone, setPhone] = useState('')
   const [zipCode, setZipCode] = useState('')
   const [streetName, setStreetName] = useState('')
   const [streetNumber, setStreetNumber] = useState('')
@@ -188,6 +189,10 @@ export function Checkout() {
       setError('Informe um CPF válido (11 dígitos).')
       return
     }
+    if (phone.replace(/\D/g, '').length < 10) {
+      setError('Informe um telefone válido, com DDD.')
+      return
+    }
     if (!zipCode || !streetName || !streetNumber || !neighborhood || !city || !federalUnit) {
       setError('Preencha o endereço de entrega completo.')
       return
@@ -210,6 +215,7 @@ export function Checkout() {
         customerName: name,
         customerEmail: email,
         customerCpf: cpf,
+        customerPhone: phone,
         paymentMethod: method,
         address: { zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit },
         couponCode: appliedCoupon?.code,
@@ -234,6 +240,7 @@ export function Checkout() {
           customerName: name,
           customerEmail: email,
           customerCpf: cpf,
+          customerPhone: phone,
           paymentMethod: 'cartao',
           cardToken: formData.token,
           cardPaymentMethodId: formData.payment_method_id,
@@ -255,6 +262,7 @@ export function Checkout() {
       name,
       email,
       cpf,
+      phone,
       zipCode,
       streetName,
       streetNumber,
@@ -553,6 +561,7 @@ export function Checkout() {
           <Field label="Nome completo" value={name} onChange={setName} required />
           <Field label="E-mail" value={email} onChange={setEmail} type="email" required />
           <Field label="CPF" value={cpf} onChange={setCpf} required placeholder="000.000.000-00" />
+          <Field label="Telefone (com DDD)" value={phone} onChange={setPhone} required placeholder="(11) 98100-8013" />
 
           <div>
             <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>

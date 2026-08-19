@@ -333,6 +333,21 @@ export async function updateSaleStatus(id: string, status: Sale['status'], previ
   await logAudit('editar', 'venda', id, `Alterou status da venda de "${previousStatus}" para "${status}"`)
 }
 
+/**
+ * Compra e gera a etiqueta de envio de um pedido pago via Melhor Envio —
+ * gasta saldo real da carteira, por isso só é chamado quando a equipe
+ * clica no botão "Gerar etiqueta" (nunca automaticamente).
+ */
+export async function generateShippingLabel(
+  saleId: string,
+): Promise<{ labelUrl: string | null; trackingCode: string | null; alreadyGenerated?: boolean }> {
+  if (!supabase) throw new Error('Conecte o Supabase para gerar etiquetas de envio.')
+  const { data, error } = await supabase.functions.invoke('generate-shipping-label', { body: { saleId } })
+  if (error) throw error
+  if (data?.error) throw new Error(data.error)
+  return data
+}
+
 // ---------------------------------------------------------------------------
 // Expenses
 // ---------------------------------------------------------------------------

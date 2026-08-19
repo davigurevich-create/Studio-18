@@ -37,6 +37,7 @@ interface RequestBody {
 }
 
 interface MelhorEnvioOption {
+  id?: number
   name?: string
   price?: string | number
   delivery_time?: number
@@ -108,6 +109,7 @@ Deno.serve(async (req) => {
     const options = (raw as MelhorEnvioOption[])
       .filter((opt) => !opt.error && opt.price != null)
       .map((opt) => ({
+        id: opt.id ?? 0,
         service: opt.name ?? 'Frete',
         company: opt.company?.name ?? '',
         price: Number(opt.price),

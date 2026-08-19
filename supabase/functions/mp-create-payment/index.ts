@@ -85,6 +85,7 @@ interface RequestBody {
   customerName: string
   customerEmail: string
   customerCpf: string
+  customerPhone: string
   paymentMethod: PaymentMethod
   // só para cartão: gerado no navegador pelo SDK do Mercado Pago (Bricks),
   // nunca enviamos o número do cartão para esta function
@@ -100,7 +101,7 @@ interface RequestBody {
   // opção de frete escolhida no checkout (cotada via calculate-shipping) —
   // o valor confiamos do navegador porque quem manda no preço final de
   // verdade é a cotação da Melhor Envio, não algo que o cliente controla
-  shipping?: { service: string; company: string; price: number; deliveryDays: string }
+  shipping?: { id: number; service: string; company: string; price: number; deliveryDays: string }
 }
 
 function mapStatus(mpStatus: string): string {
@@ -121,6 +122,7 @@ Deno.serve(async (req) => {
       customerName,
       customerEmail,
       customerCpf,
+      customerPhone,
       paymentMethod,
       cardToken,
       cardPaymentMethodId,
@@ -130,7 +132,7 @@ Deno.serve(async (req) => {
       shipping,
     } = body
 
-    if (!items?.length || !customerName || !customerEmail || !customerCpf || !paymentMethod || !address) {
+    if (!items?.length || !customerName || !customerEmail || !customerCpf || !customerPhone || !paymentMethod || !address) {
       return json({ error: 'Dados obrigatórios ausentes.' }, 400)
     }
     if (!shipping || !(shipping.price >= 0)) {
@@ -207,11 +209,14 @@ Deno.serve(async (req) => {
         channel: 'site',
         customer_name: customerName,
         customer_contact: customerEmail,
+        customer_cpf: customerCpf.replace(/\D/g, ''),
+        customer_phone: customerPhone.replace(/\D/g, ''),
         payment_method: paymentMethod,
         status: 'pendente',
         payment_provider: 'mercadopago',
         shipping_cost_brl: shippingCost,
         shipping_service: `${shipping.company} ${shipping.service}`.trim(),
+        shipping_service_id: String(shipping.id),
         shipping_days: shipping.deliveryDays,
         discount_brl: discountAmount,
         notes: `Pedido feito pelo site — ${description}`,

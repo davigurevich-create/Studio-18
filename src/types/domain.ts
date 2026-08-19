@@ -87,6 +87,14 @@ export interface Sale {
   shipping_city?: string | null
   shipping_federal_unit?: string | null
   shipping_complement?: string | null
+  customer_cpf?: string | null
+  customer_phone?: string | null
+  shipping_service?: string | null
+  shipping_service_id?: string | null
+  shipping_days?: string | null
+  shipping_label_url?: string | null
+  shipping_tracking_code?: string | null
+  melhor_envio_order_id?: string | null
 }
 
 export interface SaleItem {

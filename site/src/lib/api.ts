@@ -65,8 +65,8 @@ export async function getShippingOptions(
   await new Promise((resolve) => setTimeout(resolve, 500))
   return {
     options: [
-      { service: 'PAC', company: 'Correios', price: 32.9, deliveryDays: '7' },
-      { service: 'SEDEX', company: 'Correios', price: 54.0, deliveryDays: '3' },
+      { id: 1, service: 'PAC', company: 'Correios', price: 32.9, deliveryDays: '7' },
+      { id: 2, service: 'SEDEX', company: 'Correios', price: 54.0, deliveryDays: '3' },
     ],
   }
 }
