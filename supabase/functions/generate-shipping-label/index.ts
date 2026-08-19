@@ -60,6 +60,25 @@ async function meFetch(path: string, body: unknown) {
   return { ok: res.ok, status: res.status, data }
 }
 
+// A API do Melhor Envio devolve erro em formatos diferentes dependendo do
+// endpoint — às vezes {"message": "..."}, às vezes {"errors": {"campo":
+// ["msg"]}}. Junta tudo numa string legível em vez de mostrar um erro
+// genérico sem pista nenhuma do que houve.
+function meErrorMessage(data: unknown, fallback: string): string {
+  if (!data || typeof data !== 'object') return fallback
+  const d = data as Record<string, unknown>
+  const parts: string[] = []
+  if (typeof d.message === 'string') parts.push(d.message)
+  if (d.errors && typeof d.errors === 'object') {
+    for (const msgs of Object.values(d.errors as Record<string, unknown>)) {
+      if (Array.isArray(msgs)) parts.push(...msgs.map(String))
+      else if (typeof msgs === 'string') parts.push(msgs)
+    }
+  }
+  if (parts.length === 0 && typeof d.error === 'string') parts.push(d.error)
+  return parts.length > 0 ? parts.join(' | ') : fallback
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -184,7 +203,7 @@ Deno.serve(async (req) => {
     })
     if (!cart.ok || !cart.data?.id) {
       console.error('Falha ao adicionar ao carrinho Melhor Envio:', cart.data)
-      return json({ error: cart.data?.message ?? 'Não foi possível adicionar o frete ao carrinho do Melhor Envio.' }, 502)
+      return json({ error: meErrorMessage(cart.data, 'Não foi possível adicionar o frete ao carrinho do Melhor Envio.') }, 502)
     }
     const cartItemId = cart.data.id as string
 
@@ -192,14 +211,14 @@ Deno.serve(async (req) => {
     const checkout = await meFetch('shipment/checkout', { orders: [cartItemId] })
     if (!checkout.ok) {
       console.error('Falha ao pagar frete (checkout) no Melhor Envio:', checkout.data)
-      return json({ error: checkout.data?.message ?? 'Não foi possível pagar o frete — confira o saldo da carteira do Melhor Envio.' }, 502)
+      return json({ error: meErrorMessage(checkout.data, 'Não foi possível pagar o frete — confira o saldo da carteira do Melhor Envio.') }, 502)
     }
 
     // 3. Gera a etiqueta.
     const generate = await meFetch('shipment/generate', { orders: [cartItemId] })
     if (!generate.ok) {
       console.error('Falha ao gerar etiqueta no Melhor Envio:', generate.data)
-      return json({ error: generate.data?.message ?? 'Frete pago, mas falhou ao gerar a etiqueta. Gere manualmente no painel do Melhor Envio.' }, 502)
+      return json({ error: meErrorMessage(generate.data, 'Frete pago, mas falhou ao gerar a etiqueta. Gere manualmente no painel do Melhor Envio.') }, 502)
     }
 
     // 4. Busca o PDF pra impressão.
