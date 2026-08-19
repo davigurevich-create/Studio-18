@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Heart } from 'lucide-react'
+import { Heart, Truck } from 'lucide-react'
 import { ProductArt } from '@/components/ProductArt'
 import { RestockWaitlistForm } from '@/components/RestockWaitlistForm'
-import { getProduct } from '@/lib/api'
+import { getProduct, getShippingOptions } from '@/lib/api'
 import { formatBRL } from '@/lib/format'
 import { installmentPrice, LOW_STOCK_THRESHOLD, MAX_INSTALLMENTS, pixPrice } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { useFavorites } from '@/lib/favorites'
-import type { CatalogProduct } from '@/types/catalog'
+import type { CatalogProduct, ShippingOption } from '@/types/catalog'
 
 export function Product() {
   const { id } = useParams<{ id: string }>()
@@ -217,9 +217,89 @@ export function Product() {
                 <RestockWaitlistForm productId={product.id} />
               </div>
             )}
+
+            <ShippingCalculator productId={product.id} quantity={quantity} />
           </div>
         </motion.div>
       </div>
+    </div>
+  )
+}
+
+function ShippingCalculator({ productId, quantity }: { productId: string; quantity: number }) {
+  const [zipCode, setZipCode] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [options, setOptions] = useState<ShippingOption[] | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+
+  const calculate = async () => {
+    const digits = zipCode.replace(/\D/g, '')
+    if (digits.length !== 8) return
+    setLoading(true)
+    setMessage(null)
+    setOptions(null)
+    try {
+      const res = await getShippingOptions(zipCode, [{ productId, quantity }])
+      setOptions(res.options)
+      if (res.options.length === 0) setMessage(res.message ?? 'Nenhuma opção de frete disponível para este CEP.')
+    } catch {
+      setOptions([])
+      setMessage('Não foi possível calcular o frete agora. Tente novamente.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="mt-5 rounded-xl border p-4" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)' }}>
+      <div className="mb-3 flex items-center gap-2 text-sm font-medium" style={{ color: 'var(--ink)' }}>
+        <Truck size={16} style={{ color: 'var(--gold)' }} />
+        Calcular frete e prazo
+      </div>
+      <div className="flex gap-2">
+        <input
+          value={zipCode}
+          onChange={(e) => setZipCode(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && calculate()}
+          placeholder="00000-000"
+          className="w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm outline-none"
+          style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+        />
+        <button
+          type="button"
+          onClick={calculate}
+          disabled={loading || zipCode.replace(/\D/g, '').length !== 8}
+          className="shrink-0 rounded-lg border px-4 py-2 text-xs font-medium disabled:opacity-50"
+          style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+        >
+          {loading ? 'Calculando...' : 'Calcular'}
+        </button>
+      </div>
+
+      {message && (
+        <p className="mt-3 text-xs" style={{ color: '#e88b8b' }}>
+          {message}
+        </p>
+      )}
+
+      {options && options.length > 0 && (
+        <div className="mt-3 flex flex-col gap-2">
+          {options.map((opt) => (
+            <div
+              key={`${opt.company}-${opt.service}`}
+              className="flex items-center justify-between text-xs"
+              style={{ color: 'var(--ink-secondary)' }}
+            >
+              <span>
+                {opt.company} {opt.service} · até {opt.deliveryDays} dias úteis
+              </span>
+              <span className="tabular font-medium" style={{ color: 'var(--gold-bright)' }}>
+                {formatBRL(opt.price)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
