@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CardPayment } from '@mercadopago/sdk-react'
@@ -39,6 +39,9 @@ export function Checkout() {
   const [cpf, setCpf] = useState('')
   const [phone, setPhone] = useState('')
   const [zipCode, setZipCode] = useState('')
+  const [cepLoading, setCepLoading] = useState(false)
+  const [cepNotFound, setCepNotFound] = useState(false)
+  const streetNumberRef = useRef<HTMLInputElement>(null)
   const [streetName, setStreetName] = useState('')
   const [streetNumber, setStreetNumber] = useState('')
   const [complement, setComplement] = useState('')
@@ -182,6 +185,43 @@ export function Checkout() {
     setShippingOptions(null)
     setSelectedShipping(null)
     setShippingMessage(null)
+  }, [zipCode])
+
+  // Preenche rua, bairro, cidade e estado automaticamente a partir do CEP
+  // (ViaCEP, gratuito e sem chave de API) assim que os 8 dígitos forem
+  // digitados — depois só falta o número, que o CEP não tem como saber.
+  useEffect(() => {
+    const digits = zipCode.replace(/\D/g, '')
+    if (digits.length !== 8) {
+      setCepNotFound(false)
+      return
+    }
+    let cancelled = false
+    setCepLoading(true)
+    setCepNotFound(false)
+    fetch(`https://viacep.com.br/ws/${digits}/json/`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return
+        if (data.erro) {
+          setCepNotFound(true)
+          return
+        }
+        setStreetName(data.logradouro || '')
+        setNeighborhood(data.bairro || '')
+        setCity(data.localidade || '')
+        setFederalUnit(data.uf || '')
+        streetNumberRef.current?.focus()
+      })
+      .catch(() => {
+        if (!cancelled) setCepNotFound(true)
+      })
+      .finally(() => {
+        if (!cancelled) setCepLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [zipCode])
 
   const handleContactSubmit = async (e: FormEvent) => {
@@ -622,8 +662,15 @@ export function Checkout() {
               ENDEREÇO DE ENTREGA
             </label>
             <div className="grid grid-cols-2 gap-4">
-              <Field label="CEP" value={zipCode} onChange={setZipCode} required placeholder="00000-000" />
-              <Field label="Número" value={streetNumber} onChange={setStreetNumber} required />
+              <Field
+                label="CEP"
+                value={zipCode}
+                onChange={setZipCode}
+                required
+                placeholder="00000-000"
+                hint={cepLoading ? 'Buscando endereço...' : cepNotFound ? 'CEP não encontrado — preencha manualmente.' : undefined}
+              />
+              <Field label="Número" value={streetNumber} onChange={setStreetNumber} required ref={streetNumberRef} />
               <div className="col-span-2">
                 <Field label="Rua" value={streetName} onChange={setStreetName} required />
               </div>
@@ -760,27 +807,25 @@ function PaymentNote({ text }: { text: string }) {
   )
 }
 
-function Field({
-  label,
-  value,
-  onChange,
-  required,
-  type = 'text',
-  placeholder,
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-  required?: boolean
-  type?: string
-  placeholder?: string
-}) {
+const Field = forwardRef<
+  HTMLInputElement,
+  {
+    label: string
+    value: string
+    onChange: (v: string) => void
+    required?: boolean
+    type?: string
+    placeholder?: string
+    hint?: string
+  }
+>(function Field({ label, value, onChange, required, type = 'text', placeholder, hint }, ref) {
   return (
     <div>
       <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
         {label.toUpperCase()}
       </label>
       <input
+        ref={ref}
         required={required}
         type={type}
         placeholder={placeholder}
@@ -789,6 +834,11 @@ function Field({
         className="w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm outline-none"
         style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
       />
+      {hint && (
+        <p className="mt-1.5 text-[11px]" style={{ color: 'var(--ink-muted)' }}>
+          {hint}
+        </p>
+      )}
     </div>
   )
-}
+})
