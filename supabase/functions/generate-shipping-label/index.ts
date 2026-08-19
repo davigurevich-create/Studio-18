@@ -175,7 +175,10 @@ Deno.serve(async (req) => {
         insurance_value: insuranceValue,
         receipt: false,
         own_hand: false,
-        non_commercial: true,
+        // Isto é sempre uma venda — envio "não comercial" tem teto de
+        // seguro de R$1.000 no Melhor Envio, o que rejeitava qualquer
+        // pedido acima disso.
+        non_commercial: false,
         platform: 'Studio 18',
       },
     })
