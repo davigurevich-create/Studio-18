@@ -299,147 +299,171 @@ export function Checkout() {
     )
   }
 
-  if (step === 'done' && result) {
+  if (step === 'done' && result && result.status === 'cancelado') {
     return (
-      <div>
       <div className="mx-auto max-w-lg px-6 py-40 text-center">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-          {result.status === 'cancelado' ? (
-            <>
-              <div className="mb-5 text-4xl" style={{ color: '#e88b8b' }}>✕</div>
-              <h1 className="mb-3 text-2xl">Pagamento não aprovado</h1>
-              <p className="text-sm" style={{ color: 'var(--ink-secondary)' }}>
-                O pagamento do seu pedido não foi aprovado. Você pode tentar novamente com outro cartão ou forma de
-                pagamento.
-              </p>
-              <button
-                onClick={() => {
-                  setStep('form')
-                  setResult(null)
-                }}
-                className="mt-8 inline-block rounded-full px-6 py-2.5 text-sm font-medium"
-                style={{ background: 'var(--gold)', color: '#0a0a0a' }}
-              >
-                Tentar novamente
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="mb-5 text-4xl" style={{ color: 'var(--gold)' }}>✓</div>
-              <h1 className="mb-3 text-2xl">
-                {result.status === 'pago' ? 'Pagamento aprovado' : 'Pedido registrado'}
-              </h1>
-              <p className="mb-3 text-sm" style={{ color: 'var(--ink-secondary)' }}>
-                Recebemos seu pedido via{' '}
-                <strong style={{ color: 'var(--ink)' }}>{methods.find((m) => m.id === method)?.label}</strong>.
-              </p>
-
-              <div
-                className="mb-6 flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-xs"
-                style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)', color: 'var(--ink-muted)' }}
-              >
-                <span>Número do pedido:</span>
-                <code style={{ color: 'var(--gold-bright)' }}>{result.orderId}</code>
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard('order', result.orderId)}
-                  className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium transition-colors"
-                  style={{
-                    background: copiedField === 'order' ? '#3f7f4f' : 'var(--gold)',
-                    color: copiedField === 'order' ? '#f3f1ec' : '#0a0a0a',
-                  }}
-                >
-                  {copiedField === 'order' ? '✓ Copiado!' : 'Copiar'}
-                </button>
-              </div>
-
-              {method === 'pix' && result.pix?.qrCodeBase64 && (
-                <div className="mb-6 rounded-xl border p-5" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}>
-                  <img
-                    src={`data:image/png;base64,${result.pix.qrCodeBase64}`}
-                    alt="QR Code PIX"
-                    className="mx-auto mb-4 h-48 w-48 rounded-lg bg-white p-2"
-                  />
-                  <p className="mb-2 text-xs" style={{ color: 'var(--ink-muted)' }}>
-                    PIX copia e cola
-                  </p>
-                  <div className="flex items-center gap-2 rounded-lg border p-2" style={{ borderColor: 'var(--hairline)' }}>
-                    <code className="flex-1 truncate text-left text-[11px]" style={{ color: 'var(--ink-secondary)' }}>
-                      {result.pix.qrCode}
-                    </code>
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard('pix', result.pix?.qrCode ?? '')}
-                      className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium transition-colors"
-                      style={{
-                        background: copiedField === 'pix' ? '#3f7f4f' : 'var(--gold)',
-                        color: copiedField === 'pix' ? '#f3f1ec' : '#0a0a0a',
-                      }}
-                    >
-                      {copiedField === 'pix' ? '✓ Copiado!' : 'Copiar'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {method === 'boleto' && result.boleto?.ticketUrl && (
-                <div className="mb-6 rounded-xl border p-5" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}>
-                  <a
-                    href={result.boleto.ticketUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-block rounded-full px-6 py-2.5 text-sm font-medium"
-                    style={{ background: 'var(--gold)', color: '#0a0a0a' }}
-                  >
-                    Ver boleto para pagamento
-                  </a>
-                </div>
-              )}
-
-              <p className="mb-6 text-xs" style={{ color: 'var(--ink-muted)' }}>
-                Assim que o pagamento for confirmado, nossa equipe já recebe o aviso automaticamente. Guarde o
-                número do pedido acima e o e-mail usado na compra.
-              </p>
-
-              <div
-                className="mb-6 rounded-2xl border p-6 text-left"
-                style={{ borderColor: 'var(--gold-dim)', background: 'var(--gold-wash)' }}
-              >
-                <p className="mb-4 text-sm font-medium" style={{ color: 'var(--ink)' }}>
-                  Entre na sua área da conta com o e-mail <strong style={{ color: 'var(--gold-bright)' }}>{email}</strong> para:
-                </p>
-                <ul className="mb-5 flex flex-col gap-3 text-sm" style={{ color: 'var(--ink-secondary)' }}>
-                  <li className="flex items-start gap-2.5">
-                    <Truck size={16} className="mt-0.5 shrink-0" style={{ color: 'var(--gold)' }} />
-                    Acompanhar o rastreio do seu pedido em tempo real
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <Gift size={16} className="mt-0.5 shrink-0" style={{ color: 'var(--gold)' }} />
-                    Pegar seu cupom de indicação — 5% pra você e pra quem indicar
-                  </li>
-                </ul>
-                <button
-                  type="button"
-                  onClick={() => navigate('/conta')}
-                  className="w-full rounded-full px-6 py-2.5 text-sm font-medium"
-                  style={{ background: 'var(--gold)', color: '#0a0a0a' }}
-                >
-                  Entrar na área da conta
-                </button>
-              </div>
-
-              <Link
-                to="/"
-                className="inline-block rounded-full border px-6 py-2.5 text-sm font-medium"
-                style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
-              >
-                Voltar para a coleção
-              </Link>
-            </>
-          )}
+          <div className="mb-5 text-4xl" style={{ color: '#e88b8b' }}>✕</div>
+          <h1 className="mb-3 text-2xl">Pagamento não aprovado</h1>
+          <p className="text-sm" style={{ color: 'var(--ink-secondary)' }}>
+            O pagamento do seu pedido não foi aprovado. Você pode tentar novamente com outro cartão ou forma de
+            pagamento.
+          </p>
+          <button
+            onClick={() => {
+              setStep('form')
+              setResult(null)
+            }}
+            className="mt-8 inline-block rounded-full px-6 py-2.5 text-sm font-medium"
+            style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+          >
+            Tentar novamente
+          </button>
         </motion.div>
       </div>
-      {result.status !== 'cancelado' && <SpotifySection />}
+    )
+  }
+
+  if (step === 'done' && result) {
+    // Split em duas colunas no desktop: confirmação + card de conta à
+    // esquerda, playlists do Spotify à direita (ocupando a altura das
+    // duas). No mobile tudo empilha, mas o Spotify entra logo depois da
+    // confirmação principal — antes do card de conta — pra não ficar
+    // escondido lá embaixo, depois de tudo.
+    return (
+      <div className="mx-auto max-w-4xl px-6 py-32 text-center lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-16 lg:py-40 lg:text-left">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="lg:col-start-1 lg:row-start-1"
+        >
+          <div className="mb-5 text-4xl" style={{ color: 'var(--gold)' }}>✓</div>
+          <h1 className="mb-3 text-2xl">
+            {result.status === 'pago' ? 'Pagamento aprovado' : 'Pedido registrado'}
+          </h1>
+          <p className="mb-3 text-sm" style={{ color: 'var(--ink-secondary)' }}>
+            Recebemos seu pedido via{' '}
+            <strong style={{ color: 'var(--ink)' }}>{methods.find((m) => m.id === method)?.label}</strong>.
+          </p>
+
+          <div
+            className="mb-6 flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-xs lg:justify-start"
+            style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)', color: 'var(--ink-muted)' }}
+          >
+            <span>Número do pedido:</span>
+            <code style={{ color: 'var(--gold-bright)' }}>{result.orderId}</code>
+            <button
+              type="button"
+              onClick={() => copyToClipboard('order', result.orderId)}
+              className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium transition-colors"
+              style={{
+                background: copiedField === 'order' ? '#3f7f4f' : 'var(--gold)',
+                color: copiedField === 'order' ? '#f3f1ec' : '#0a0a0a',
+              }}
+            >
+              {copiedField === 'order' ? '✓ Copiado!' : 'Copiar'}
+            </button>
+          </div>
+
+          {method === 'pix' && result.pix?.qrCodeBase64 && (
+            <div className="mb-6 rounded-xl border p-5" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}>
+              <img
+                src={`data:image/png;base64,${result.pix.qrCodeBase64}`}
+                alt="QR Code PIX"
+                className="mx-auto mb-4 h-48 w-48 rounded-lg bg-white p-2"
+              />
+              <p className="mb-2 text-xs" style={{ color: 'var(--ink-muted)' }}>
+                PIX copia e cola
+              </p>
+              <div className="flex items-center gap-2 rounded-lg border p-2" style={{ borderColor: 'var(--hairline)' }}>
+                <code className="flex-1 truncate text-left text-[11px]" style={{ color: 'var(--ink-secondary)' }}>
+                  {result.pix.qrCode}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard('pix', result.pix?.qrCode ?? '')}
+                  className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium transition-colors"
+                  style={{
+                    background: copiedField === 'pix' ? '#3f7f4f' : 'var(--gold)',
+                    color: copiedField === 'pix' ? '#f3f1ec' : '#0a0a0a',
+                  }}
+                >
+                  {copiedField === 'pix' ? '✓ Copiado!' : 'Copiar'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {method === 'boleto' && result.boleto?.ticketUrl && (
+            <div className="mb-6 rounded-xl border p-5" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}>
+              <a
+                href={result.boleto.ticketUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-block rounded-full px-6 py-2.5 text-sm font-medium"
+                style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+              >
+                Ver boleto para pagamento
+              </a>
+            </div>
+          )}
+
+          <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>
+            Assim que o pagamento for confirmado, nossa equipe já recebe o aviso automaticamente. Guarde o número
+            do pedido acima e o e-mail usado na compra.
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mt-10 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:mt-0"
+        >
+          <SpotifySection compact />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mt-10 lg:col-start-1 lg:row-start-2 lg:mt-8"
+        >
+          <div
+            className="mb-6 rounded-2xl border p-6 text-left"
+            style={{ borderColor: 'var(--gold-dim)', background: 'var(--gold-wash)' }}
+          >
+            <p className="mb-4 text-sm font-medium" style={{ color: 'var(--ink)' }}>
+              Entre na sua área da conta com o e-mail <strong style={{ color: 'var(--gold-bright)' }}>{email}</strong> para:
+            </p>
+            <ul className="mb-5 flex flex-col gap-3 text-sm" style={{ color: 'var(--ink-secondary)' }}>
+              <li className="flex items-start gap-2.5">
+                <Truck size={16} className="mt-0.5 shrink-0" style={{ color: 'var(--gold)' }} />
+                Acompanhar o rastreio do seu pedido em tempo real
+              </li>
+              <li className="flex items-start gap-2.5">
+                <Gift size={16} className="mt-0.5 shrink-0" style={{ color: 'var(--gold)' }} />
+                Pegar seu cupom de indicação — 5% pra você e pra quem indicar
+              </li>
+            </ul>
+            <button
+              type="button"
+              onClick={() => navigate('/conta')}
+              className="w-full rounded-full px-6 py-2.5 text-sm font-medium"
+              style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+            >
+              Entrar na área da conta
+            </button>
+          </div>
+
+          <Link
+            to="/"
+            className="inline-block rounded-full border px-6 py-2.5 text-sm font-medium"
+            style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+          >
+            Voltar para a coleção
+          </Link>
+        </motion.div>
       </div>
     )
   }

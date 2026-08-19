@@ -15,9 +15,67 @@ const fadeUp = {
 
 /**
  * Playlists curadas pelo Studio 18 para o momento da montagem, ligadas ao
- * conceito de flow — usado na página Quem Somos e na confirmação de compra.
+ * conceito de flow — usado na página Quem Somos (versão full-bleed) e na
+ * confirmação de compra (versão `compact`, encaixada numa coluna estreita
+ * ao lado do resto da confirmação, em vez de uma seção de página inteira).
  */
-export function SpotifySection() {
+export function SpotifySection({ compact = false }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div
+        className="relative overflow-hidden rounded-2xl border px-6 py-8 text-center"
+        style={{ borderColor: 'var(--gold-dim)', background: 'var(--carbon-1)' }}
+      >
+        <p className="eyebrow mb-2">Trilha sonora do flow</p>
+        <h2 className="text-xl" style={{ color: 'var(--ink)' }}>
+          Playlists <span style={{ color: 'var(--gold-bright)' }}>Studio 18</span> no Spotify
+        </h2>
+        <p className="mx-auto mt-2 max-w-xs text-xs" style={{ color: 'var(--ink-secondary)' }}>
+          Curadoria de música para você entrar no flow enquanto encaixa cada peça.
+        </p>
+
+        <div className="relative z-10 mx-auto mt-8 flex max-w-[220px] items-end justify-center">
+          {playlists.map((p) => (
+            <div
+              key={p.cover}
+              className={
+                'relative aspect-square w-16 shrink-0 overflow-hidden rounded-lg border' +
+                (p.position === 'left' ? ' -mr-2' : p.position === 'right' ? ' -ml-2' : ' mx-1')
+              }
+              style={{
+                borderColor: 'var(--hairline-strong)',
+                boxShadow:
+                  p.position === 'center'
+                    ? '0 20px 40px -12px rgba(0,0,0,0.85), 0 0 0 1px var(--gold-dim)'
+                    : '0 16px 30px -14px rgba(0,0,0,0.7)',
+                transform:
+                  p.position === 'left'
+                    ? 'rotate(-7deg) translateY(4px)'
+                    : p.position === 'right'
+                      ? 'rotate(7deg) translateY(4px)'
+                      : 'translateY(-4px) scale(1.06)',
+                zIndex: p.position === 'center' ? 2 : 1,
+              }}
+            >
+              <img src={p.cover} alt={p.label} className="h-full w-full object-cover" />
+            </div>
+          ))}
+        </div>
+
+        <a
+          href={SPOTIFY_PROFILE_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="relative z-10 mt-7 inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-xs font-semibold"
+          style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+        >
+          <SpotifyIcon size={14} />
+          Ouvir no Spotify
+        </a>
+      </div>
+    )
+  }
+
   return (
     <section
       className="relative overflow-hidden border-t px-6 py-28 text-center sm:py-32"
