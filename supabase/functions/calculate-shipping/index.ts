@@ -119,7 +119,10 @@ Deno.serve(async (req) => {
       return json({ options: [], message: 'Nenhuma transportadora disponível para este CEP no momento.' })
     }
 
-    return json({ options })
+    // Melhor Envio costuma devolver muitas transportadoras — mostra só as
+    // mais baratas pro cliente não ter que comparar 8+ opções no checkout.
+    const MAX_OPTIONS = 4
+    return json({ options: options.slice(0, MAX_OPTIONS) })
   } catch (err) {
     console.error('Erro ao calcular frete:', err)
     return json({ error: err instanceof Error ? err.message : 'Erro inesperado ao calcular frete.' }, 500)
