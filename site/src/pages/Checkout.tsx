@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CardPayment } from '@mercadopago/sdk-react'
-import { Gift, Music, Truck } from 'lucide-react'
+import { Gift, Truck } from 'lucide-react'
+import { SpotifySection } from '@/components/SpotifySection'
 import {
   createPayment,
   getCatalog,
@@ -300,6 +301,7 @@ export function Checkout() {
 
   if (step === 'done' && result) {
     return (
+      <div>
       <div className="mx-auto max-w-lg px-6 py-40 text-center">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
           {result.status === 'cancelado' ? (
@@ -415,10 +417,6 @@ export function Checkout() {
                     <Gift size={16} className="mt-0.5 shrink-0" style={{ color: 'var(--gold)' }} />
                     Pegar seu cupom de indicação — 5% pra você e pra quem indicar
                   </li>
-                  <li className="flex items-start gap-2.5">
-                    <Music size={16} className="mt-0.5 shrink-0" style={{ color: 'var(--gold)' }} />
-                    Conferir as playlists Studio 18 pra entrar no flow da montagem
-                  </li>
                 </ul>
                 <button
                   type="button"
@@ -440,6 +438,8 @@ export function Checkout() {
             </>
           )}
         </motion.div>
+      </div>
+      {result.status !== 'cancelado' && <SpotifySection />}
       </div>
     )
   }
