@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CardPayment } from '@mercadopago/sdk-react'
+import { Gift, Music, Truck } from 'lucide-react'
 import {
   createPayment,
   getCatalog,
@@ -393,17 +394,45 @@ export function Checkout() {
                 </div>
               )}
 
-              <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>
+              <p className="mb-6 text-xs" style={{ color: 'var(--ink-muted)' }}>
                 Assim que o pagamento for confirmado, nossa equipe já recebe o aviso automaticamente. Guarde o
-                número do pedido acima e o e-mail usado na compra para acompanhar o status a qualquer momento em{' '}
-                <Link to="/rastreio" style={{ color: 'var(--gold)' }}>
-                  /rastreio
-                </Link>
-                .
+                número do pedido acima e o e-mail usado na compra.
               </p>
+
+              <div
+                className="mb-6 rounded-2xl border p-6 text-left"
+                style={{ borderColor: 'var(--gold-dim)', background: 'var(--gold-wash)' }}
+              >
+                <p className="mb-4 text-sm font-medium" style={{ color: 'var(--ink)' }}>
+                  Entre na sua área da conta com o e-mail <strong style={{ color: 'var(--gold-bright)' }}>{email}</strong> para:
+                </p>
+                <ul className="mb-5 flex flex-col gap-3 text-sm" style={{ color: 'var(--ink-secondary)' }}>
+                  <li className="flex items-start gap-2.5">
+                    <Truck size={16} className="mt-0.5 shrink-0" style={{ color: 'var(--gold)' }} />
+                    Acompanhar o rastreio do seu pedido em tempo real
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Gift size={16} className="mt-0.5 shrink-0" style={{ color: 'var(--gold)' }} />
+                    Pegar seu cupom de indicação — 5% pra você e pra quem indicar
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Music size={16} className="mt-0.5 shrink-0" style={{ color: 'var(--gold)' }} />
+                    Conferir as playlists Studio 18 pra entrar no flow da montagem
+                  </li>
+                </ul>
+                <button
+                  type="button"
+                  onClick={() => navigate('/conta')}
+                  className="w-full rounded-full px-6 py-2.5 text-sm font-medium"
+                  style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+                >
+                  Entrar na área da conta
+                </button>
+              </div>
+
               <Link
                 to="/"
-                className="mt-8 inline-block rounded-full border px-6 py-2.5 text-sm font-medium"
+                className="inline-block rounded-full border px-6 py-2.5 text-sm font-medium"
                 style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
               >
                 Voltar para a coleção
