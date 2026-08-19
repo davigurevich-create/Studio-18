@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'framer-motion'
 import { BadgePercent, ChevronDown, PackageOpen, ShieldCheck, Warehouse } from 'lucide-react'
+import { SpotifySection } from '@/components/SpotifySection'
 
 const diferenciais = [
   {
@@ -200,6 +201,8 @@ export function Diferenciais() {
           </div>
         </div>
       </div>
+
+      <SpotifySection />
     </div>
   )
 }
