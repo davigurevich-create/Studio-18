@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll } from 'framer-motion'
-import { Hand } from 'lucide-react'
 import { HeroCar } from '@/components/HeroCar'
 import { ProductCard } from '@/components/ProductCard'
 import { getCatalog } from '@/lib/api'
@@ -86,13 +85,6 @@ export function Home() {
         <div className="mt-[calc(-1*max(100svh,560px))]">
           <section className="relative z-10 flex h-[100svh] min-h-[560px] flex-col items-center justify-end pb-8 sm:pb-10">
             <motion.div
-              className="mb-3"
-              animate={{ y: [0, 10, 0], opacity: [0.35, 1, 0.35] }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <Hand size={22} style={{ color: 'var(--ink-muted)' }} strokeWidth={1.6} />
-            </motion.div>
-            <motion.div
               className="text-xs tracking-[0.3em]"
               style={{ color: 'var(--ink-muted)' }}
               animate={{ opacity: [0.3, 1, 0.3] }}
@@ -100,6 +92,14 @@ export function Home() {
             >
               ROLE PARA EXPLORAR A COLEÇÃO
             </motion.div>
+            {/* Linha condutora — ponte visual entre a hero e a coleção,
+                começa branca sólida e esmaece até sumir. */}
+            <motion.div
+              className="mt-3 w-px"
+              style={{ height: 64, background: 'linear-gradient(to bottom, #ffffff, transparent)' }}
+              animate={{ scaleY: [0.85, 1, 0.85], opacity: [0.6, 1, 0.6] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+            />
           </section>
           {/* espaçador — distância fixa de rolagem (imune a variações de svh
               mobile) para o escurecimento terminar em preto total antes do
@@ -107,6 +107,11 @@ export function Home() {
           <div className="h-[220px]" />
         </div>
       </div>
+
+      {/* Transição suave entre o preto puro da hero e o fundo (levemente
+          mais claro) do resto do site — sem isso havia uma linha nítida
+          onde as duas cores se encontravam. */}
+      <div className="pointer-events-none relative z-10 -mt-24 h-24" style={{ background: 'linear-gradient(to bottom, #000000, var(--carbon-0))' }} />
 
       {/* COLEÇÃO / MARKETPLACE — vem direto depois da hero, sem bloco de
           transição intermediário. */}
