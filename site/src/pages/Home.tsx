@@ -96,7 +96,7 @@ export function Home() {
                 começa branca sólida e esmaece até sumir. */}
             <motion.div
               className="mt-3 w-px"
-              style={{ height: 64, background: 'linear-gradient(to bottom, #ffffff, transparent)' }}
+              style={{ height: 140, background: 'linear-gradient(to bottom, #ffffff, transparent)' }}
               animate={{ scaleY: [0.85, 1, 0.85], opacity: [0.6, 1, 0.6] }}
               transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
             />
