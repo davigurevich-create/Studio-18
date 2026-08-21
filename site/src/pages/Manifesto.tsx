@@ -56,23 +56,16 @@ export function Manifesto() {
         className="relative hidden lg:block"
         style={{ height: `${phrases.length * SLICE_SVH}svh` }}
       >
-        <div className="sticky top-0 h-screen overflow-hidden">
+        <div className="sticky top-0 h-screen overflow-hidden" style={{ background: '#000' }}>
+          {/* Luz dourada fixa vindo de cima — não acompanha a rolagem, é o
+              "holofote" físico da cena, sempre no mesmo lugar. */}
           <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              backgroundImage:
-                'linear-gradient(var(--hairline) 1px, transparent 1px), linear-gradient(90deg, var(--hairline) 1px, transparent 1px)',
-              backgroundSize: '48px 48px',
-              maskImage: 'radial-gradient(circle at center, black, transparent 70%)',
-            }}
+            className="pointer-events-none absolute inset-x-0 top-0 h-full"
+            style={{ background: 'radial-gradient(ellipse 55% 60% at 50% -10%, rgba(205,164,77,0.28), transparent 65%)' }}
           />
           <div
-            className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2"
-            style={{ background: 'linear-gradient(to bottom, transparent, var(--gold-dim) 20%, var(--gold-dim) 80%, transparent)' }}
-          />
-          <div
-            className="pointer-events-none absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rotate-45"
-            style={{ background: 'var(--gold-bright)' }}
+            className="pointer-events-none absolute inset-x-0 top-0 h-[45%]"
+            style={{ background: 'linear-gradient(to bottom, rgba(205,164,77,0.10), transparent)' }}
           />
 
           {phrases.map((phrase, i) => (
@@ -117,15 +110,15 @@ function ManifestoStories() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative" style={{ background: '#000' }}>
+      {/* Luz dourada fixa vindo de cima, mesmo conceito do desktop. */}
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-[72svh]"
-        style={{
-          backgroundImage:
-            'linear-gradient(var(--hairline) 1px, transparent 1px), linear-gradient(90deg, var(--hairline) 1px, transparent 1px)',
-          backgroundSize: '32px 32px',
-          maskImage: 'radial-gradient(circle at center, black, transparent 75%)',
-        }}
+        style={{ background: 'radial-gradient(ellipse 90% 55% at 50% -12%, rgba(205,164,77,0.3), transparent 65%)' }}
+      />
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[35%]"
+        style={{ background: 'linear-gradient(to bottom, rgba(205,164,77,0.12), transparent)' }}
       />
 
       <div className="relative z-10 flex gap-1.5 px-4 pt-3">
@@ -149,7 +142,11 @@ function ManifestoStories() {
         {phrases.map((phrase, i) => (
           <div key={i} className="flex w-full shrink-0 snap-center items-center justify-center px-8 text-center">
             <motion.p
-              animate={{ opacity: active === i ? 1 : 0.25, scale: active === i ? 1 : 0.88 }}
+              animate={{
+                opacity: active === i ? 1 : 0.25,
+                scale: active === i ? 1 : 0.88,
+                textShadow: active === i ? '0 12px 40px rgba(230, 199, 120, 0.5)' : '0 0px 0px rgba(230, 199, 120, 0)',
+              }}
               transition={{ duration: 0.35, ease: 'easeOut' }}
               className="text-[10vw] font-black uppercase leading-[1.05] tracking-tight"
             >
@@ -191,12 +188,18 @@ function SpotlightPhrase({
   const scale = useTransform(distance, [0, window, window * 1.8], [1.06, 1, 0.72])
   const filter = useMotionTemplate`blur(${blurAmount}px)`
 
+  // Sombra dourada projetada pra baixo — só aparece quando a frase está
+  // 100% nítida e centralizada, como se a luz de cima a estivesse
+  // iluminando por completo.
+  const glowOpacity = useTransform(distance, [0, window], [0.55, 0])
+  const textShadow = useMotionTemplate`0 14px 46px rgba(230, 199, 120, ${glowOpacity})`
+
   // Frases curtas ganham letra bem grande; frases longas encolhem o
   // suficiente pra caber inteiras na tela sem quebrar linha.
   const remSize = Math.max(1.9, Math.min(4.6, 1750 / text.length / 16))
 
   return (
-    <motion.div className="absolute inset-0 flex items-center justify-center px-10" style={{ x, opacity, filter, scale }}>
+    <motion.div className="absolute inset-0 flex items-center justify-center px-10" style={{ x, opacity, filter, scale, textShadow }}>
       <p
         className="whitespace-nowrap text-center font-black uppercase leading-none tracking-tight"
         style={{ color: 'var(--ink)', fontSize: `${remSize}rem` }}
