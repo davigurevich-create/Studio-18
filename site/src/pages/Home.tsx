@@ -83,7 +83,7 @@ export function Home() {
         </div>
 
         <div className="mt-[calc(-1*max(100svh,560px))]">
-          <section className="relative z-10 flex h-[100svh] min-h-[560px] flex-col items-center justify-end pb-16 sm:pb-20">
+          <section className="relative z-10 flex h-[100svh] min-h-[560px] flex-col items-center justify-end pb-8 sm:pb-10">
             <motion.div
               className="text-xs tracking-[0.3em]"
               style={{ color: 'var(--ink-muted)' }}
@@ -100,13 +100,13 @@ export function Home() {
                    pontinha e se estende para além da hero, entrando na zona
                    de transição até quase encostar na Coleção. */}
             <motion.div
-              className="relative mt-3 h-10 w-px"
+              className="relative mt-2 h-4 w-px"
               style={{ background: 'linear-gradient(to bottom, #ffffff, rgba(255,255,255,0.35))' }}
               animate={{ opacity: [0.6, 1, 0.6] }}
               transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
             >
               <div
-                className="absolute left-1/2 top-full h-[240px] w-px -translate-x-1/2 sm:h-[160px]"
+                className="absolute left-1/2 top-full h-[264px] w-px -translate-x-1/2 sm:h-[186px]"
                 style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.35), transparent)' }}
               />
             </motion.div>
