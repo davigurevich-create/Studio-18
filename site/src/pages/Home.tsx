@@ -92,12 +92,15 @@ export function Home() {
             >
               ROLE PARA EXPLORAR A COLEÇÃO
             </motion.div>
-            {/* Linha condutora — ponte visual entre a hero e a coleção,
-                começa branca sólida e esmaece até sumir. */}
+            {/* Linha condutora — nasce logo abaixo do texto (ainda dentro da
+                hero, pra deixar claro que a navegação é por rolagem) e se
+                estende para além do fim da hero, entrando na zona de
+                transição até quase encostar na Coleção. Fica fora do fluxo
+                flex pra crescer sem empurrar o texto pra cima. */}
             <motion.div
-              className="mt-3 w-px"
-              style={{ height: 140, background: 'linear-gradient(to bottom, #ffffff, transparent)' }}
-              animate={{ scaleY: [0.85, 1, 0.85], opacity: [0.6, 1, 0.6] }}
+              className="absolute left-1/2 top-full mt-3 h-[280px] w-px -translate-x-1/2 sm:h-[200px]"
+              style={{ background: 'linear-gradient(to bottom, #ffffff, transparent)' }}
+              animate={{ opacity: [0.6, 1, 0.6] }}
               transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
             />
           </section>
@@ -111,7 +114,7 @@ export function Home() {
       {/* Transição suave entre o preto puro da hero e o fundo (levemente
           mais claro) do resto do site — sem isso havia uma linha nítida
           onde as duas cores se encontravam. */}
-      <div className="pointer-events-none relative z-10 -mt-24 h-24" style={{ background: 'linear-gradient(to bottom, #000000, var(--carbon-0))' }} />
+      <div className="pointer-events-none relative -mt-24 h-24" style={{ background: 'linear-gradient(to bottom, #000000, var(--carbon-0))' }} />
 
       {/* COLEÇÃO / MARKETPLACE — vem direto depois da hero, sem bloco de
           transição intermediário. */}
