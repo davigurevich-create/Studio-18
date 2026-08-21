@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState, type MouseEvent } from 'react'
 import { motion, useMotionTemplate, useScroll, useTransform, type MotionValue } from 'framer-motion'
 
 const phrases = [
@@ -81,14 +81,91 @@ export function Manifesto() {
         </div>
       </div>
 
-      {/* MOBILE — mesmo conceito de holofote, mas na rolagem vertical
-          natural do dedo: a frase mais próxima do centro da tela fica em
-          foco, as vizinhas desfocam acima e abaixo. */}
-      <div className="flex flex-col px-6 pb-32 pt-8 lg:hidden">
-        {phrases.map((phrase, i) => (
-          <SpotlightLineMobile key={i} text={phrase} />
+      {/* MOBILE — formato "stories": cada frase é um cartão em tela cheia,
+          navegado por deslize horizontal (swipe nativo) ou toque nas
+          laterais, com barra de progresso no topo. Rolagem vertical sutil
+          não funcionava bem no toque — isso dá um gesto de leitura ativo,
+          bem mais vivo. */}
+      <div className="lg:hidden">
+        <ManifestoStories />
+      </div>
+    </div>
+  )
+}
+
+function ManifestoStories() {
+  const [active, setActive] = useState(0)
+  const trackRef = useRef<HTMLDivElement>(null)
+
+  const scrollToIndex = (i: number) => {
+    const track = trackRef.current
+    if (!track) return
+    const clamped = Math.max(0, Math.min(phrases.length - 1, i))
+    track.scrollTo({ left: clamped * track.clientWidth, behavior: 'smooth' })
+  }
+
+  const handleScroll = () => {
+    const track = trackRef.current
+    if (!track || track.clientWidth === 0) return
+    setActive(Math.round(track.scrollLeft / track.clientWidth))
+  }
+
+  const handleTap = (e: MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const tapX = e.clientX - rect.left
+    scrollToIndex(tapX < rect.width / 2 ? active - 1 : active + 1)
+  }
+
+  return (
+    <div className="relative">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[72svh]"
+        style={{
+          backgroundImage:
+            'linear-gradient(var(--hairline) 1px, transparent 1px), linear-gradient(90deg, var(--hairline) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+          maskImage: 'radial-gradient(circle at center, black, transparent 75%)',
+        }}
+      />
+
+      <div className="relative z-10 flex gap-1.5 px-4 pt-3">
+        {phrases.map((_, i) => (
+          <div key={i} className="h-[3px] flex-1 overflow-hidden rounded-full" style={{ background: 'var(--hairline-strong)' }}>
+            <div
+              className="h-full rounded-full"
+              style={{ width: i <= active ? '100%' : '0%', background: 'var(--gold)' }}
+            />
+          </div>
         ))}
       </div>
+
+      <div
+        ref={trackRef}
+        onScroll={handleScroll}
+        onClick={handleTap}
+        className="relative z-10 mt-4 flex h-[72svh] snap-x snap-mandatory overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden"
+        style={{ scrollbarWidth: 'none' }}
+      >
+        {phrases.map((phrase, i) => (
+          <div key={i} className="flex w-full shrink-0 snap-center items-center justify-center px-8 text-center">
+            <motion.p
+              animate={{ opacity: active === i ? 1 : 0.25, scale: active === i ? 1 : 0.88 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="text-[10vw] font-black uppercase leading-[1.05] tracking-tight"
+            >
+              {renderWords(phrase).map(({ key, word, gold }) => (
+                <span key={key} style={{ color: gold ? 'var(--gold-bright)' : 'var(--ink)' }}>
+                  {word}{' '}
+                </span>
+              ))}
+            </motion.p>
+          </div>
+        ))}
+      </div>
+
+      <p className="relative z-10 pb-16 pt-5 text-center text-[11px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+        TOQUE NAS LATERAIS OU DESLIZE PARA NAVEGAR
+      </p>
     </div>
   )
 }
@@ -131,28 +208,5 @@ function SpotlightPhrase({
         ))}
       </p>
     </motion.div>
-  )
-}
-
-function SpotlightLineMobile({ text }: { text: string }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 0.85', 'center center', 'end 0.15'] })
-  const distance = useTransform(scrollYProgress, (v) => Math.abs(v - 0.5))
-
-  const opacity = useTransform(distance, [0, 0.28, 0.5], [1, 0.9, 0.15])
-  const blurAmount = useTransform(distance, [0, 0.28, 0.5], [0, 0, 6])
-  const scale = useTransform(distance, [0, 0.5], [1, 0.9])
-  const filter = useMotionTemplate`blur(${blurAmount}px)`
-
-  return (
-    <div ref={ref} className="flex min-h-[42svh] items-center justify-center text-center">
-      <motion.p style={{ opacity, filter, scale }} className="text-[9vw] font-black uppercase leading-[1.05] tracking-tight">
-        {renderWords(text).map(({ key, word, gold }) => (
-          <span key={key} style={{ color: gold ? 'var(--gold-bright)' : 'var(--ink)' }}>
-            {word}{' '}
-          </span>
-        ))}
-      </motion.p>
-    </div>
   )
 }
