@@ -35,42 +35,39 @@ export function Manifesto() {
   const { scrollYProgress } = useScroll({ target: pinRef, offset: ['start start', 'end end'] })
 
   return (
-    <div>
-      <div className="px-6 pb-4 pt-32 text-center sm:pt-40">
-        <motion.p
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="eyebrow"
-        >
-          Manifesto
-        </motion.p>
+    <div style={{ background: '#000' }}>
+      {/* Luz dourada fixa vindo do topo absoluto da página — fica atrás do
+          header/logo desde o primeiro frame, não acompanha a rolagem, dá a
+          sensação de amplitude de um holofote real iluminando a cena
+          inteira, não só o texto. */}
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-screen" style={{ zIndex: 0 }}>
+        <div
+          className="absolute inset-x-0 top-0 h-full"
+          style={{ background: 'radial-gradient(ellipse 60% 60% at 50% -12%, rgba(205,164,77,0.32), transparent 62%)' }}
+        />
+        <div
+          className="absolute inset-x-0 top-0 h-[38%]"
+          style={{ background: 'linear-gradient(to bottom, rgba(205,164,77,0.14), transparent)' }}
+        />
       </div>
 
       {/* DESKTOP — holofote de leitura: as frases deslizam na horizontal
           enquanto a página fica presa numa rolagem longa; uma marca fixa no
           centro da tela mantém em foco total só a frase que está passando
-          por ali, como uma agulha de vitrola sobre o texto. */}
-      <div
-        ref={pinRef}
-        className="relative hidden lg:block"
-        style={{ height: `${phrases.length * SLICE_SVH}svh` }}
-      >
-        <div className="sticky top-0 h-screen overflow-hidden" style={{ background: '#000' }}>
-          {/* Luz dourada fixa vindo de cima — não acompanha a rolagem, é o
-              "holofote" físico da cena, sempre no mesmo lugar. */}
-          <div
-            className="pointer-events-none absolute inset-x-0 top-0 h-full"
-            style={{ background: 'radial-gradient(ellipse 55% 60% at 50% -10%, rgba(205,164,77,0.28), transparent 65%)' }}
-          />
-          <div
-            className="pointer-events-none absolute inset-x-0 top-0 h-[45%]"
-            style={{ background: 'linear-gradient(to bottom, rgba(205,164,77,0.10), transparent)' }}
-          />
+          por ali, como uma agulha de vitrola sobre o texto. O título
+          "Manifesto" fica fixo no topo da cena presa, visível o tempo todo
+          junto com as frases. */}
+      <div ref={pinRef} className="relative z-10 hidden lg:block" style={{ height: `${phrases.length * SLICE_SVH}svh` }}>
+        <div className="sticky top-0 flex h-screen flex-col overflow-hidden">
+          <div className="px-6 pt-32 text-center">
+            <p className="eyebrow">Manifesto</p>
+          </div>
 
-          {phrases.map((phrase, i) => (
-            <SpotlightPhrase key={i} text={phrase} index={i} total={phrases.length} progress={scrollYProgress} />
-          ))}
+          <div className="relative flex-1">
+            {phrases.map((phrase, i) => (
+              <SpotlightPhrase key={i} text={phrase} index={i} total={phrases.length} progress={scrollYProgress} />
+            ))}
+          </div>
         </div>
       </div>
 
@@ -79,7 +76,7 @@ export function Manifesto() {
           laterais, com barra de progresso no topo. Rolagem vertical sutil
           não funcionava bem no toque — isso dá um gesto de leitura ativo,
           bem mais vivo. */}
-      <div className="lg:hidden">
+      <div className="relative z-10 lg:hidden">
         <ManifestoStories />
       </div>
     </div>
@@ -110,18 +107,12 @@ function ManifestoStories() {
   }
 
   return (
-    <div className="relative" style={{ background: '#000' }}>
-      {/* Luz dourada fixa vindo de cima, mesmo conceito do desktop. */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[72svh]"
-        style={{ background: 'radial-gradient(ellipse 90% 55% at 50% -12%, rgba(205,164,77,0.3), transparent 65%)' }}
-      />
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[35%]"
-        style={{ background: 'linear-gradient(to bottom, rgba(205,164,77,0.12), transparent)' }}
-      />
+    <div className="relative">
+      <div className="px-6 pb-2 pt-32 text-center">
+        <p className="eyebrow">Manifesto</p>
+      </div>
 
-      <div className="relative z-10 flex gap-1.5 px-4 pt-3">
+      <div className="flex gap-1.5 px-4 pt-3">
         {phrases.map((_, i) => (
           <div key={i} className="h-[3px] flex-1 overflow-hidden rounded-full" style={{ background: 'var(--hairline-strong)' }}>
             <div
@@ -136,17 +127,13 @@ function ManifestoStories() {
         ref={trackRef}
         onScroll={handleScroll}
         onClick={handleTap}
-        className="relative z-10 mt-4 flex h-[72svh] snap-x snap-mandatory overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden"
+        className="mt-4 flex h-[65svh] snap-x snap-mandatory overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden"
         style={{ scrollbarWidth: 'none' }}
       >
         {phrases.map((phrase, i) => (
           <div key={i} className="flex w-full shrink-0 snap-center items-center justify-center px-8 text-center">
             <motion.p
-              animate={{
-                opacity: active === i ? 1 : 0.25,
-                scale: active === i ? 1 : 0.88,
-                textShadow: active === i ? '0 12px 40px rgba(230, 199, 120, 0.5)' : '0 0px 0px rgba(230, 199, 120, 0)',
-              }}
+              animate={{ opacity: active === i ? 1 : 0.25, scale: active === i ? 1 : 0.88 }}
               transition={{ duration: 0.35, ease: 'easeOut' }}
               className="text-[10vw] font-black uppercase leading-[1.05] tracking-tight"
             >
@@ -160,7 +147,7 @@ function ManifestoStories() {
         ))}
       </div>
 
-      <p className="relative z-10 pb-16 pt-5 text-center text-[11px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+      <p className="pb-16 pt-5 text-center text-[11px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
         TOQUE NAS LATERAIS OU DESLIZE PARA NAVEGAR
       </p>
     </div>
@@ -188,18 +175,12 @@ function SpotlightPhrase({
   const scale = useTransform(distance, [0, window, window * 1.8], [1.06, 1, 0.72])
   const filter = useMotionTemplate`blur(${blurAmount}px)`
 
-  // Sombra dourada projetada pra baixo — só aparece quando a frase está
-  // 100% nítida e centralizada, como se a luz de cima a estivesse
-  // iluminando por completo.
-  const glowOpacity = useTransform(distance, [0, window], [0.55, 0])
-  const textShadow = useMotionTemplate`0 14px 46px rgba(230, 199, 120, ${glowOpacity})`
-
   // Frases curtas ganham letra bem grande; frases longas encolhem o
   // suficiente pra caber inteiras na tela sem quebrar linha.
   const remSize = Math.max(1.9, Math.min(4.6, 1750 / text.length / 16))
 
   return (
-    <motion.div className="absolute inset-0 flex items-center justify-center px-10" style={{ x, opacity, filter, scale, textShadow }}>
+    <motion.div className="absolute inset-0 flex items-center justify-center px-10" style={{ x, opacity, filter, scale }}>
       <p
         className="whitespace-nowrap text-center font-black uppercase leading-none tracking-tight"
         style={{ color: 'var(--ink)', fontSize: `${remSize}rem` }}
