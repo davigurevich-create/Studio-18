@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { RevealLine, type Word } from '@/components/RevealText'
+import { ManifestoBlueprint } from '@/components/ManifestoBlueprint'
 
 const manifestoLines: Word[][] = [
   [{ text: 'Somos' }, { text: 'Studio', gold: true }, { text: '18.', gold: true }],
@@ -24,31 +25,37 @@ const manifestoLines: Word[][] = [
 
 export function Manifesto() {
   return (
-    <div style={{ background: '#ffffff' }}>
-      <div className="px-6 pb-4 pt-32 text-center sm:pt-40">
-        <motion.p
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="eyebrow"
-        >
-          Manifesto
-        </motion.p>
+    <div className="mx-auto max-w-6xl px-6 pb-24 pt-32 sm:pt-40 lg:grid lg:grid-cols-[1fr_1.1fr] lg:items-start lg:gap-16">
+      <div className="lg:order-2 lg:sticky lg:top-32">
+        <div className="mb-8 lg:mb-0">
+          <ManifestoBlueprint />
+        </div>
       </div>
 
-      {/* Mesmo tratamento de leitura cinematográfica do texto de impacto em
-          Quem Somos: cada linha revela nitidez, posição e cor conforme a
-          rolagem. O padding inferior garante espaço suficiente para a
-          última linha terminar 100% nítida antes do fim da página. Fundo
-          branco com texto preto (exceto os destaques em dourado) — só nesta
-          página, invertendo o tema escuro padrão do site. */}
-      <section className="mx-auto max-w-5xl px-6 pb-[38svh] pt-8 sm:pb-[44svh]">
-        <div className="flex flex-col gap-2 sm:gap-4">
-          {manifestoLines.map((line, i) => (
-            <RevealLine key={i} words={line} index={i} dark />
-          ))}
+      <div className="lg:order-1">
+        <div className="pb-4 text-center lg:text-left">
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="eyebrow"
+          >
+            Manifesto
+          </motion.p>
         </div>
-      </section>
+
+        {/* Mesmo tratamento de leitura cinematográfica do texto de impacto em
+            Quem Somos: cada linha revela nitidez, posição e cor conforme a
+            rolagem. O padding inferior garante espaço suficiente para a
+            última linha terminar 100% nítida antes do fim da coluna. */}
+        <div className="pb-[30svh] pt-8 text-center sm:pb-[36svh] lg:pb-24 lg:text-left">
+          <div className="flex flex-col gap-2 sm:gap-4">
+            {manifestoLines.map((line, i) => (
+              <RevealLine key={i} words={line} index={i} />
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
