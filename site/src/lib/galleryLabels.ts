@@ -7,6 +7,9 @@ const GALLERY_LABELS: Record<string, string> = {
   detail: 'Detalhe',
   interior: 'Interior',
   motor: 'Motor',
+  aberto: 'Aberto',
+  acima: 'Acima',
+  above: 'Acima',
   caixa: 'Caixa',
   box: 'Caixa',
 }
