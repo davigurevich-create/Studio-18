@@ -31,16 +31,20 @@ const MotoGlyph = () => (
   </svg>
 )
 
-export function ProductArt({ product, className = '' }: { product: CatalogProduct; className?: string }) {
-  if (product.image_url) {
+export function ProductArt({
+  product,
+  className = '',
+  overrideSrc,
+}: {
+  product: CatalogProduct
+  className?: string
+  overrideSrc?: string
+}) {
+  const src = overrideSrc ?? product.image_url
+  if (src) {
     return (
       <div className={`relative overflow-hidden ${className}`}>
-        <img
-          src={product.image_url}
-          alt={product.name}
-          className="h-full w-full object-cover"
-          loading="lazy"
-        />
+        <img src={src} alt={product.name} className="h-full w-full object-cover" loading="lazy" />
       </div>
     )
   }
