@@ -21,11 +21,18 @@ export function Product() {
   const [product, setProduct] = useState<CatalogProduct | null | undefined>(undefined)
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
+  const [activeImageIndex, setActiveImageIndex] = useState(0)
 
   useEffect(() => {
     if (!id) return
     getProduct(id).then((p) => setProduct(p ?? null))
   }, [id])
+
+  useEffect(() => {
+    setActiveImageIndex(0)
+  }, [product?.id])
+
+  const gallery = product ? [product.image_url, ...product.image_urls].filter((u): u is string => !!u) : []
 
   if (product === undefined) {
     return <div className="px-6 py-40 text-center" style={{ color: 'var(--ink-muted)' }}>Carregando...</div>
@@ -54,7 +61,29 @@ export function Product() {
 
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
         <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-          <ProductArt product={product} className="aspect-square w-full rounded-2xl" />
+          <ProductArt
+            product={product}
+            overrideSrc={gallery[activeImageIndex]}
+            className="aspect-square w-full rounded-2xl"
+          />
+          {gallery.length > 1 && (
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+              {gallery.map((url, i) => (
+                <button
+                  key={url}
+                  type="button"
+                  onClick={() => setActiveImageIndex(i)}
+                  className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-opacity"
+                  style={{
+                    borderColor: i === activeImageIndex ? 'var(--gold)' : 'var(--hairline)',
+                    opacity: i === activeImageIndex ? 1 : 0.7,
+                  }}
+                >
+                  <img src={url} alt={`${product.name} ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                </button>
+              ))}
+            </div>
+          )}
           {product.video_url && (
             <video
               key={product.video_url}
