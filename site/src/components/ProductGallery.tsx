@@ -46,7 +46,12 @@ export function ProductGallery({ product, className = '' }: { product: CatalogPr
   const goPrev = () => setActiveIndex((i) => (i - 1 + total) % total)
   const swipe = useSwipeNav(goNext, goPrev)
   const railRef = useRef<HTMLDivElement>(null)
+  const thumbRefs = useRef<(HTMLButtonElement | null)[]>([])
   const fade = useEdgeFade(railRef, [total])
+
+  useEffect(() => {
+    thumbRefs.current[activeIndex]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+  }, [activeIndex])
 
   if (gallery.length === 0) {
     return <ProductArt product={product} className={className} />
@@ -132,6 +137,9 @@ export function ProductGallery({ product, className = '' }: { product: CatalogPr
             {gallery.map((url, i) => (
               <button
                 key={url}
+                ref={(el) => {
+                  thumbRefs.current[i] = el
+                }}
                 type="button"
                 onClick={() => setActiveIndex(i)}
                 className="group/thumb flex shrink-0 flex-col items-center gap-1.5"
