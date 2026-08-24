@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Maximize2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react'
 import { ProductArt } from '@/components/ProductArt'
 import { ProductLightbox } from '@/components/ProductLightbox'
 import { labelForGalleryImage } from '@/lib/galleryLabels'
@@ -91,6 +91,35 @@ export function ProductGallery({ product, className = '' }: { product: CatalogPr
         >
           <Maximize2 size={16} />
         </div>
+
+        {total > 1 && (
+          <>
+            <button
+              type="button"
+              aria-label="Foto anterior"
+              onClick={(e) => {
+                e.stopPropagation()
+                goPrev()
+              }}
+              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full p-2 opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100"
+              style={{ background: 'rgba(6,6,6,0.55)', color: 'var(--ink)' }}
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              type="button"
+              aria-label="Próxima foto"
+              onClick={(e) => {
+                e.stopPropagation()
+                goNext()
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100"
+              style={{ background: 'rgba(6,6,6,0.55)', color: 'var(--ink)' }}
+            >
+              <ChevronRight size={18} />
+            </button>
+          </>
+        )}
       </div>
 
       {total > 1 && (
