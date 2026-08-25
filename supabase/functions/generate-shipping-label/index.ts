@@ -19,13 +19,14 @@ const MELHOR_ENVIO_TOKEN = Deno.env.get('MELHOR_ENVIO_TOKEN')!
 
 const DEFAULT_BOX_CM = { length: 50, width: 35, height: 12 }
 
-// Dados do remetente (Studio 18) que vão em toda etiqueta gerada. O CNPJ
-// ainda não existe (empresa em processo de abertura) — sem ele o Melhor
-// Envio recusa a etiqueta, então a function barra com uma mensagem clara
-// até SHIPPING_ORIGIN_DOCUMENT ser configurado como secret.
+// Dados do remetente (Studio 18) que vão em toda etiqueta gerada. Sem o
+// CNPJ configurado, a function barra com uma mensagem clara até
+// SHIPPING_ORIGIN_DOCUMENT ser configurado como secret.
 const ORIGIN = {
   name: Deno.env.get('SHIPPING_ORIGIN_NAME') ?? 'Studio 18',
-  document: (Deno.env.get('SHIPPING_ORIGIN_DOCUMENT') ?? '').replace(/\D/g, ''),
+  // CNPJ (pessoa jurídica) — a API do Melhor Envio usa um campo separado
+  // de CPF (`document`) para isso, ver `company_document` no payload abaixo.
+  companyDocument: (Deno.env.get('SHIPPING_ORIGIN_DOCUMENT') ?? '').replace(/\D/g, ''),
   phone: (Deno.env.get('SHIPPING_ORIGIN_PHONE') ?? '11981008013').replace(/\D/g, ''),
   email: Deno.env.get('SHIPPING_ORIGIN_EMAIL') ?? 'contato@studio18bricks.com.br',
   address: Deno.env.get('SHIPPING_ORIGIN_STREET') ?? 'Rua Francisco Pais',
@@ -85,7 +86,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    if (!ORIGIN.document) {
+    if (!ORIGIN.companyDocument) {
       return json({ error: 'CNPJ do remetente ainda não cadastrado (SHIPPING_ORIGIN_DOCUMENT). Configure essa secret no Supabase assim que o CNPJ sair.' }, 400)
     }
 
@@ -172,7 +173,7 @@ Deno.serve(async (req) => {
       name: ORIGIN.name,
       phone: ORIGIN.phone,
       email: ORIGIN.email,
-      document: ORIGIN.document,
+      company_document: ORIGIN.companyDocument,
       address: ORIGIN.address,
       number: ORIGIN.number,
       complement: ORIGIN.complement || undefined,
