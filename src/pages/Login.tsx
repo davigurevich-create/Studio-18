@@ -97,6 +97,15 @@ export function Login() {
         <Button type="submit" disabled={loading || success}>
           {success ? 'Entrando no painel...' : loading ? 'Verificando...' : 'Entrar'}
         </Button>
+
+        <button
+          type="button"
+          onClick={() => navigate('/esqueci-senha')}
+          className="mt-3 block text-xs hover:underline"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          Esqueci minha senha
+        </button>
       </form>
     </div>
   )

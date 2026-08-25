@@ -8,6 +8,8 @@ interface AuthState {
   demo: boolean
   signIn: (email: string, password: string) => Promise<string | null>
   signOut: () => Promise<void>
+  requestPasswordReset: (email: string) => Promise<string | null>
+  updatePassword: (password: string) => Promise<string | null>
 }
 
 const AuthContext = createContext<AuthState | null>(null)
@@ -49,8 +51,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut()
   }
 
+  // Envia o e-mail de recuperação de senha (link do Supabase que abre o
+  // painel já com uma sessão temporária de recuperação, usada em seguida
+  // por updatePassword para definir a senha nova).
+  const requestPasswordReset = async (email: string) => {
+    if (!supabase) return null
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/redefinir-senha`,
+      })
+      if (error) return error.message
+      return null
+    } catch {
+      return 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.'
+    }
+  }
+
+  // Define uma senha nova — funciona tanto vindo do link de recuperação
+  // (sessão temporária) quanto já logado normalmente (trocar senha).
+  const updatePassword = async (password: string) => {
+    if (!supabase) return null
+    try {
+      const { error } = await supabase.auth.updateUser({ password })
+      if (error) return error.message
+      return null
+    } catch {
+      return 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.'
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ session, loading, demo: !isSupabaseConfigured, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{ session, loading, demo: !isSupabaseConfigured, signIn, signOut, requestPasswordReset, updatePassword }}
+    >
       {children}
     </AuthContext.Provider>
   )

@@ -2,6 +2,8 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/lib/auth'
 import { Layout } from '@/components/Layout'
 import { Login } from '@/pages/Login'
+import { EsqueciSenha } from '@/pages/EsqueciSenha'
+import { RedefinirSenha } from '@/pages/RedefinirSenha'
 import { Overview } from '@/pages/Overview'
 import { Estoque } from '@/pages/Estoque'
 import { Vendas } from '@/pages/Vendas'
@@ -28,6 +30,8 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+          <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           <Route
             element={
               <RequireAuth>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Package, ShoppingCart, Wallet, Ship, Newspaper, Wrench, ScrollText, LogOut, Bell, Megaphone, Menu, X, Ticket } from 'lucide-react'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { LayoutDashboard, Package, ShoppingCart, Wallet, Ship, Newspaper, Wrench, ScrollText, LogOut, Bell, Megaphone, Menu, X, Ticket, KeyRound } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { getBlogPosts, getPartRequests, getRestockWaitlist } from '@/lib/api'
 
@@ -146,14 +146,24 @@ export function Layout() {
         )}
 
         {!demo && (
-          <button
-            onClick={signOut}
-            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium hover:opacity-80"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            <LogOut size={16} />
-            Sair
-          </button>
+          <>
+            <Link
+              to="/redefinir-senha"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium hover:opacity-80"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              <KeyRound size={16} />
+              Trocar senha
+            </Link>
+            <button
+              onClick={signOut}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium hover:opacity-80"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              <LogOut size={16} />
+              Sair
+            </button>
+          </>
         )}
       </aside>
 
