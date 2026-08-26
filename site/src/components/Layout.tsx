@@ -185,7 +185,7 @@ export function Layout() {
           <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>
             Do nosso Studio para o seu.
           </p>
-          <div className="flex gap-4 text-xs" style={{ color: 'var(--ink-muted)' }}>
+          <div className="flex flex-wrap justify-center gap-4 text-xs" style={{ color: 'var(--ink-muted)' }}>
             <Link to="/blog" className="hover:text-[var(--gold)]">
               Blog
             </Link>
@@ -194,6 +194,12 @@ export function Layout() {
             </Link>
             <Link to="/politica-de-devolucao" className="hover:text-[var(--gold)]">
               Política de devolução
+            </Link>
+            <Link to="/termos-de-uso" className="hover:text-[var(--gold)]">
+              Termos de uso
+            </Link>
+            <Link to="/politica-de-privacidade" className="hover:text-[var(--gold)]">
+              Política de privacidade
             </Link>
             <Link to="/conta" className="hover:text-[var(--gold)]">
               Rastrear pedido
@@ -227,6 +233,11 @@ export function Layout() {
               </svg>
             </a>
           </div>
+          <p className="mt-2 max-w-md text-[11px] leading-relaxed" style={{ color: 'var(--ink-muted)' }}>
+            Studio 18 Bricks Importação e Comércio LTDA — CNPJ 68.753.475/0001-92
+            <br />
+            Rua Francisco Pais, 362, Jardim Ipanema, São Paulo/SP — CEP 04784-080
+          </p>
         </div>
       </footer>
 
