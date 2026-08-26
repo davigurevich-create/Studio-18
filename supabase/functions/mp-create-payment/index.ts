@@ -102,6 +102,29 @@ interface RequestBody {
   // o valor confiamos do navegador porque quem manda no preço final de
   // verdade é a cotação da Melhor Envio, não algo que o cliente controla
   shipping?: { id: number; service: string; company: string; price: number; deliveryDays: string }
+  turnstileToken?: string | null
+}
+
+const TURNSTILE_SECRET_KEY = Deno.env.get('TURNSTILE_SECRET_KEY')
+
+// Confere o desafio do Cloudflare Turnstile antes de criar o pedido — sem
+// isso, um bot conseguiria disparar pedidos "pendentes" em massa. Se a
+// secret ainda não estiver configurada, deixa passar (não quebra o checkout
+// antes do Turnstile estar configurado).
+async function verifyTurnstile(token: string | null | undefined): Promise<boolean> {
+  if (!TURNSTILE_SECRET_KEY) return true
+  if (!token) return false
+  try {
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: TURNSTILE_SECRET_KEY, response: token }),
+    })
+    const data = await res.json().catch(() => null)
+    return Boolean(data?.success)
+  } catch {
+    return false
+  }
 }
 
 function mapStatus(mpStatus: string): string {
@@ -130,6 +153,7 @@ Deno.serve(async (req) => {
       address,
       couponCode,
       shipping,
+      turnstileToken,
     } = body
 
     if (!items?.length || !customerName || !customerEmail || !customerCpf || !customerPhone || !paymentMethod || !address) {
@@ -137,6 +161,9 @@ Deno.serve(async (req) => {
     }
     if (!shipping || !(shipping.price >= 0)) {
       return json({ error: 'Selecione uma opção de frete.' }, 400)
+    }
+    if (!(await verifyTurnstile(turnstileToken))) {
+      return json({ error: 'Não foi possível verificar que você não é um robô. Recarregue a página e tente de novo.' }, 403)
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)

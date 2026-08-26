@@ -59,6 +59,7 @@ export interface CheckoutInput {
   address: CheckoutAddress
   couponCode?: string
   shipping: ShippingOption
+  turnstileToken?: string | null
 }
 
 export interface BlogPost {

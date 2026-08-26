@@ -20,6 +20,7 @@ import { formatBRL } from '@/lib/format'
 import { pixPrice } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
+import { useTurnstile } from '@/lib/useTurnstile'
 import type { CatalogProduct, PaymentMethod, ShippingOption } from '@/types/catalog'
 
 const methods: { id: PaymentMethod; label: string; hint: string; badge?: string }[] = [
@@ -60,6 +61,7 @@ export function Checkout() {
   const [shippingLoading, setShippingLoading] = useState(false)
   const [shippingMessage, setShippingMessage] = useState<string | null>(null)
   const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null)
+  const { containerRef: turnstileRef, getToken: getTurnstileToken } = useTurnstile()
 
   const copyToClipboard = useCallback((field: 'order' | 'pix', text: string) => {
     navigator.clipboard.writeText(text)
@@ -252,6 +254,7 @@ export function Checkout() {
 
     setSubmitting(true)
     try {
+      const turnstileToken = await getTurnstileToken()
       const res = await createPayment({
         items: checkoutItems,
         customerName: name,
@@ -262,6 +265,7 @@ export function Checkout() {
         address: { zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit },
         couponCode: appliedCoupon?.code,
         shipping: selectedShipping,
+        turnstileToken,
       })
       setResult(res)
       setStep('done')
@@ -277,6 +281,7 @@ export function Checkout() {
     async (formData: { token: string; installments: number; payment_method_id: string }) => {
       if (checkoutItems.length === 0 || !selectedShipping) return
       try {
+        const turnstileToken = await getTurnstileToken()
         const res = await createPayment({
           items: checkoutItems,
           customerName: name,
@@ -290,6 +295,7 @@ export function Checkout() {
           address: { zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit },
           couponCode: appliedCoupon?.code,
           shipping: selectedShipping,
+          turnstileToken,
         })
         setResult(res)
         setStep('done')
@@ -315,6 +321,7 @@ export function Checkout() {
       clear,
       appliedCoupon,
       selectedShipping,
+      getTurnstileToken,
     ],
   )
 
@@ -511,6 +518,7 @@ export function Checkout() {
 
   return (
     <div className="mx-auto max-w-2xl px-6 pb-24 pt-32">
+      <div ref={turnstileRef} />
       <button onClick={() => navigate(-1)} className="mb-8 text-sm" style={{ color: 'var(--ink-muted)' }}>
         ← Voltar
       </button>

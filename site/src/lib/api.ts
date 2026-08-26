@@ -205,11 +205,11 @@ export interface ChatMessage {
   content: string
 }
 
-export async function sendChatMessage(messages: ChatMessage[]): Promise<string> {
+export async function sendChatMessage(messages: ChatMessage[], turnstileToken?: string | null): Promise<string> {
   if (!supabase) {
     return 'Modo demonstração: conecte o Supabase e a API da Anthropic para conversar com o assistente de verdade.'
   }
-  const data = await invokeEdgeFunction<{ reply: string }>('site-chat', { messages })
+  const data = await invokeEdgeFunction<{ reply: string }>('site-chat', { messages, turnstileToken })
   return data.reply
 }
 

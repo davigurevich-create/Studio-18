@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { sendChatMessage, type ChatMessage } from '@/lib/api'
+import { useTurnstile } from '@/lib/useTurnstile'
 
 export function ChatWidget() {
   const [open, setOpen] = useState(false)
@@ -10,6 +11,7 @@ export function ChatWidget() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
+  const { containerRef: turnstileRef, getToken } = useTurnstile()
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -22,7 +24,8 @@ export function ChatWidget() {
     setLoading(true)
 
     try {
-      const reply = await sendChatMessage(next)
+      const turnstileToken = await getToken()
+      const reply = await sendChatMessage(next, turnstileToken)
       setMessages([...next, { role: 'assistant', content: reply }])
     } catch {
       setMessages([...next, { role: 'assistant', content: 'Desculpe, não consegui responder agora. Tente novamente em instantes.' }])
@@ -36,6 +39,7 @@ export function ChatWidget() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
+      <div ref={turnstileRef} />
       <AnimatePresence>
         {open && (
           <motion.div

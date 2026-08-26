@@ -12,7 +12,29 @@ const corsHeaders = {
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')!
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const TURNSTILE_SECRET_KEY = Deno.env.get('TURNSTILE_SECRET_KEY')
 const MODEL = 'claude-sonnet-5'
+
+// Confere o desafio do Cloudflare Turnstile contra a API deles antes de
+// gastar crédito de IA numa mensagem — sem isso, um bot conseguiria chamar
+// esta function em loop e gerar uma conta alta rapidamente. Se a secret
+// ainda não estiver configurada, deixa passar (não quebra o chat antes do
+// Turnstile estar configurado).
+async function verifyTurnstile(token: string | null | undefined): Promise<boolean> {
+  if (!TURNSTILE_SECRET_KEY) return true
+  if (!token) return false
+  try {
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: TURNSTILE_SECRET_KEY, response: token }),
+    })
+    const data = await res.json().catch(() => null)
+    return Boolean(data?.success)
+  } catch {
+    return false
+  }
+}
 
 const FAQ_AND_POLICY = `
 PERGUNTAS FREQUENTES:
@@ -52,9 +74,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json()
+    const { messages, turnstileToken } = await req.json()
     if (!Array.isArray(messages) || messages.length === 0) {
       return json({ error: 'Nenhuma mensagem enviada.' }, 400)
+    }
+    if (!(await verifyTurnstile(turnstileToken))) {
+      return json({ error: 'Não foi possível verificar que você não é um robô. Recarregue a página e tente de novo.' }, 403)
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
