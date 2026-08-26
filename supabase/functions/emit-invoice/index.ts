@@ -159,7 +159,9 @@ Deno.serve(async (req) => {
         numero_item: idx + 1,
         codigo_produto: it.product.sku,
         descricao: it.product.name,
-        ncm: it.product.ncm,
+        // A SEFAZ exige NCM só com os 8 dígitos, sem pontuação — limpa aqui
+        // pra poder cadastrar com pontos (mais legível) na aba Estoque.
+        ncm: String(it.product.ncm).replace(/\D/g, ''),
         cfop: '5102',
         unidade_comercial: 'UN',
         quantidade_comercial: it.quantity,
