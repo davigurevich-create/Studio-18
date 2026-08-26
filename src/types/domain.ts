@@ -21,6 +21,7 @@ export interface Product {
   length_cm?: number | null
   height_cm?: number | null
   width_cm?: number | null
+  ncm?: string | null
   active: boolean
   created_at: string
 }
@@ -95,6 +96,13 @@ export interface Sale {
   shipping_label_url?: string | null
   shipping_tracking_code?: string | null
   melhor_envio_order_id?: string | null
+  invoice_status?: 'nao_emitida' | 'processando' | 'autorizada' | 'erro' | 'cancelada' | null
+  invoice_number?: string | null
+  invoice_series?: string | null
+  invoice_key?: string | null
+  invoice_pdf_url?: string | null
+  invoice_xml_url?: string | null
+  invoice_error?: string | null
 }
 
 export interface SaleItem {
@@ -142,6 +150,7 @@ export interface ProductStock {
   width_cm: number | null
   quantity_in_stock: number
   piece_count: number | null
+  ncm: string | null
 }
 
 export interface SaleWithItems extends Sale {

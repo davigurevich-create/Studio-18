@@ -167,13 +167,14 @@ export function Estoque() {
               <th className="pb-2 pr-4 font-medium whitespace-nowrap">Compr. (clique p/ editar)</th>
               <th className="pb-2 pr-4 font-medium whitespace-nowrap">Altura (clique p/ editar)</th>
               <th className="pb-2 pr-4 font-medium whitespace-nowrap">Largura (clique p/ editar)</th>
+              <th className="pb-2 pr-4 font-medium whitespace-nowrap">NCM (clique p/ editar)</th>
               <th className="pb-2 pr-4 font-medium whitespace-nowrap">Status</th>
             </tr>
           </thead>
           <tbody>
             {filteredStock.length === 0 ? (
               <tr>
-                <td colSpan={12} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                <td colSpan={13} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
                   Nenhum produto encontrado com esses filtros.
                 </td>
               </tr>
@@ -267,6 +268,19 @@ export function Estoque() {
                           p.product_id,
                           { width_cm: v },
                           `Editou largura do SKU ${p.sku}: ${p.width_cm ?? '—'} → ${v} cm`,
+                        ).then(reload)
+                      }
+                    />
+                  </td>
+                  <td className="py-2.5 pr-4">
+                    <EditableText
+                      value={p.ncm}
+                      placeholder="cadastrar"
+                      onSave={(v) =>
+                        updateProduct(
+                          p.product_id,
+                          { ncm: v },
+                          `Editou NCM do SKU ${p.sku}: ${p.ncm ?? '—'} → ${v}`,
                         ).then(reload)
                       }
                     />
@@ -774,6 +788,49 @@ function EditableDimension({
         if (e.key === 'Escape') setEditing(false)
       }}
       className="tabular w-20 rounded-md border px-2 py-1 text-sm"
+      style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
+    />
+  )
+}
+
+function EditableText({ value, onSave, placeholder }: { value: string | null; onSave: (value: string) => void; placeholder?: string }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value ?? '')
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setDraft(value ?? '')
+          setEditing(true)
+        }}
+        className="tabular text-left"
+        style={{ color: value ? 'var(--text-secondary)' : 'var(--status-warning)' }}
+        title="Clique para editar"
+      >
+        {value || placeholder || '—'}
+      </button>
+    )
+  }
+
+  const commit = () => {
+    setEditing(false)
+    if (draft !== (value ?? '')) onSave(draft)
+  }
+
+  return (
+    <input
+      autoFocus
+      type="text"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur()
+        if (e.key === 'Escape') setEditing(false)
+      }}
+      className="w-24 rounded-md border px-2 py-1 text-sm"
       style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
     />
   )

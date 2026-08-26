@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { createSale, generateShippingLabel, getProducts, getSaleItems, getSales, getStock, updateSaleStatus } from '@/lib/api'
+import { createSale, emitInvoice, generateShippingLabel, getProducts, getSaleItems, getSales, getStock, updateSaleStatus } from '@/lib/api'
 import { Badge, Button, Card, PageHeader, formatBRL } from '@/components/ui'
 import type { NewSaleItemInput } from '@/lib/api'
 import type { Product, ProductStock, Sale, SaleItem, SaleStatus } from '@/types/domain'
@@ -187,6 +187,7 @@ export function Vendas() {
               <th className="pb-2 font-medium">Pagamento</th>
               <th className="pb-2 font-medium">Total</th>
               <th className="pb-2 font-medium">Status</th>
+              <th className="pb-2 font-medium">Nota fiscal</th>
               <th className="pb-2 font-medium">Etiqueta</th>
             </tr>
           </thead>
@@ -278,6 +279,9 @@ export function Vendas() {
                     </div>
                   </td>
                   <td className="py-2.5">
+                    <InvoiceCell sale={s} onUpdated={reload} />
+                  </td>
+                  <td className="py-2.5">
                     <ShippingLabelCell sale={s} onGenerated={reload} />
                   </td>
                 </tr>
@@ -287,6 +291,66 @@ export function Vendas() {
           </tbody>
         </table>
       </Card>
+    </div>
+  )
+}
+
+function InvoiceCell({ sale, onUpdated }: { sale: Sale; onUpdated: () => void }) {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (sale.invoice_status === 'autorizada' && sale.invoice_pdf_url) {
+    return (
+      <div className="flex flex-col gap-1 text-xs">
+        <a href={sale.invoice_pdf_url} target="_blank" rel="noreferrer" style={{ color: 'var(--series-1)' }}>
+          Ver nota
+        </a>
+        {sale.invoice_number && (
+          <span style={{ color: 'var(--text-muted)' }}>Nº {sale.invoice_number}</span>
+        )}
+      </div>
+    )
+  }
+
+  if (sale.status !== 'pago' && sale.status !== 'enviado' && sale.status !== 'entregue') {
+    return <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
+  }
+
+  const emit = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      await emitInvoice(sale.id)
+      onUpdated()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao emitir nota fiscal.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const label =
+    sale.invoice_status === 'processando'
+      ? 'Verificar status'
+      : sale.invoice_status === 'erro'
+        ? 'Tentar de novo'
+        : 'Emitir nota'
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Button variant="secondary" onClick={emit} disabled={loading}>
+        {loading ? 'Emitindo...' : label}
+      </Button>
+      {sale.invoice_status === 'erro' && sale.invoice_error && !error && (
+        <span className="max-w-[180px] text-[11px]" style={{ color: 'var(--status-critical)' }}>
+          {sale.invoice_error}
+        </span>
+      )}
+      {error && (
+        <span className="max-w-[180px] text-[11px]" style={{ color: 'var(--status-critical)' }}>
+          {error}
+        </span>
+      )}
     </div>
   )
 }

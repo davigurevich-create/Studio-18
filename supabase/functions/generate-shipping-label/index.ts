@@ -192,13 +192,17 @@ Deno.serve(async (req) => {
       products,
       volumes,
       options: {
-        insurance_value: insuranceValue,
+        // Sem a chave da nota fiscal, o Melhor Envio classifica o envio como
+        // "não comercial" (declaração de conteúdo) e trava o seguro em
+        // R$1.000, mesmo com non_commercial: false — só a nota real
+        // destrava o valor integral. Enquanto a emissão de nota não está
+        // ativa, limitamos o seguro a R$1.000 pra não bloquear a etiqueta;
+        // o risco da diferença fica sem cobertura até isso ser resolvido.
+        insurance_value: sale.invoice_key ? insuranceValue : Math.min(insuranceValue, 1000),
         receipt: false,
         own_hand: false,
-        // Isto é sempre uma venda — envio "não comercial" tem teto de
-        // seguro de R$1.000 no Melhor Envio, o que rejeitava qualquer
-        // pedido acima disso.
-        non_commercial: false,
+        non_commercial: !sale.invoice_key,
+        ...(sale.invoice_key ? { invoice: { key: sale.invoice_key } } : {}),
         platform: 'Studio 18',
       },
     })

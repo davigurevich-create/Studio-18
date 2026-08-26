@@ -155,6 +155,7 @@ export async function getStock(): Promise<ProductStock[]> {
       width_cm: p.width_cm ?? null,
       quantity_in_stock: qty,
       piece_count: p.piece_count ?? null,
+      ncm: p.ncm ?? null,
     }
   })
 }
@@ -347,6 +348,24 @@ export async function generateShippingLabel(
     // O supabase-js não expõe a mensagem de erro real quando a function
     // responde com status 4xx/5xx (só um "non-2xx status code" genérico) —
     // busca o JSON de verdade (com o campo "error") direto da resposta.
+    const context = (error as { context?: Response }).context
+    const parsed = await context?.clone().json().catch(() => null)
+    throw new Error(parsed?.error || error.message)
+  }
+  if (data?.error) throw new Error(data.error)
+  return data
+}
+
+/**
+ * Emite a NFC-e de um pedido pago via Focus NFe — só é chamado quando a
+ * equipe clica no botão "Emitir nota" (nunca automaticamente).
+ */
+export async function emitInvoice(
+  saleId: string,
+): Promise<{ status: string; invoiceKey: string | null; pdfUrl: string | null; error?: string | null }> {
+  if (!supabase) throw new Error('Conecte o Supabase para emitir nota fiscal.')
+  const { data, error } = await supabase.functions.invoke('emit-invoice', { body: { saleId } })
+  if (error) {
     const context = (error as { context?: Response }).context
     const parsed = await context?.clone().json().catch(() => null)
     throw new Error(parsed?.error || error.message)
