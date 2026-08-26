@@ -100,6 +100,7 @@ export interface Sale {
   invoice_number?: string | null
   invoice_series?: string | null
   invoice_key?: string | null
+  invoice_ref?: string | null
   invoice_pdf_url?: string | null
   invoice_xml_url?: string | null
   invoice_error?: string | null

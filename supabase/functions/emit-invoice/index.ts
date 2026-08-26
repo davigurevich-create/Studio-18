@@ -89,8 +89,6 @@ Deno.serve(async (req) => {
     const { data: sale, error: saleError } = await supabase.from('sales').select('*').eq('id', saleId).maybeSingle()
     if (saleError || !sale) return json({ error: 'Pedido não encontrado.' }, 404)
 
-    const ref = `s18-${saleId}`
-
     // Já autorizada: devolve o que já temos, sem chamar a Focus NFe de novo.
     if (sale.invoice_status === 'autorizada') {
       return json({
@@ -101,13 +99,18 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Já em processamento: só consulta o status atual, não reemite (evita
-    // duplicar nota — a Focus NFe também trava por "ref" duplicado, mas
-    // mais barato checar antes).
-    if (sale.invoice_status === 'processando') {
-      const check = await focusFetch(`/v2/nfce/${ref}`, { method: 'GET' })
+    // Já em processamento: só consulta o status da MESMA ref já enviada,
+    // não reemite.
+    if (sale.invoice_status === 'processando' && sale.invoice_ref) {
+      const check = await focusFetch(`/v2/nfce/${sale.invoice_ref}`, { method: 'GET' })
       return await saveAndReturn(supabase, saleId, check.data)
     }
+
+    // Uma ref nova a cada tentativa de emissão de verdade — a Focus NFe
+    // reaproveita o XML já gerado (mesmo com payload corrigido) quando
+    // reenviamos a mesma ref de uma tentativa rejeitada, então "tentar de
+    // novo" precisa de uma referência que ela nunca viu antes.
+    const ref = `s18-${saleId}-${Date.now()}`
 
     if (sale.status !== 'pago' && sale.status !== 'enviado' && sale.status !== 'entregue') {
       return json({ error: 'Só é possível emitir nota de pedidos pagos.' }, 400)
@@ -183,20 +186,21 @@ Deno.serve(async (req) => {
     const emit = await focusFetch(`/v2/nfce?ref=${ref}`, { method: 'POST', body: JSON.stringify(payload) })
     if (!emit.ok && emit.status !== 202) {
       const message = typeof emit.data?.mensagem === 'string' ? emit.data.mensagem : 'Falha ao emitir nota fiscal na Focus NFe.'
-      await supabase.from('sales').update({ invoice_status: 'erro', invoice_error: message }).eq('id', saleId)
+      await supabase.from('sales').update({ invoice_status: 'erro', invoice_error: message, invoice_ref: ref }).eq('id', saleId)
       return json({ error: message, raw: emit.data }, 502)
     }
 
-    return await saveAndReturn(supabase, saleId, emit.data)
+    return await saveAndReturn(supabase, saleId, emit.data, ref)
   } catch (err) {
     console.error('Erro ao emitir nota fiscal:', err)
     return json({ error: err instanceof Error ? err.message : 'Erro inesperado ao emitir nota fiscal.' }, 500)
   }
 })
 
-async function saveAndReturn(supabase: ReturnType<typeof createClient>, saleId: string, data: Record<string, unknown> | null) {
+async function saveAndReturn(supabase: ReturnType<typeof createClient>, saleId: string, data: Record<string, unknown> | null, ref?: string) {
   const status = statusFromFocus(data)
   const patch: Record<string, unknown> = { invoice_status: status }
+  if (ref) patch.invoice_ref = ref
   if (status === 'autorizada') {
     patch.invoice_number = data?.numero ?? null
     patch.invoice_series = data?.serie ?? null
