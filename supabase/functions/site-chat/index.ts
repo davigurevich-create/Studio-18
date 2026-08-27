@@ -22,7 +22,10 @@ const MODEL = 'claude-sonnet-5'
 // Turnstile estar configurado).
 async function verifyTurnstile(token: string | null | undefined): Promise<boolean> {
   if (!TURNSTILE_SECRET_KEY) return true
-  if (!token) return false
+  if (!token) {
+    console.error('Turnstile: nenhum token recebido do navegador.')
+    return false
+  }
   try {
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
@@ -30,8 +33,12 @@ async function verifyTurnstile(token: string | null | undefined): Promise<boolea
       body: JSON.stringify({ secret: TURNSTILE_SECRET_KEY, response: token }),
     })
     const data = await res.json().catch(() => null)
+    if (!data?.success) {
+      console.error('Turnstile recusou o token:', JSON.stringify(data))
+    }
     return Boolean(data?.success)
-  } catch {
+  } catch (err) {
+    console.error('Turnstile: erro ao chamar siteverify:', err)
     return false
   }
 }
