@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 declare global {
   interface Window {
@@ -39,26 +39,33 @@ function loadScript(): Promise<void> {
  * vez e gera um token novo a cada chamada de getToken(), sem exigir nenhuma
  * interação do visitante na imensa maioria dos casos. Protege o checkout e o
  * chat de automação em massa (bots), sem CAPTCHA visível pro cliente real.
+ *
+ * O container é um "ref callback" (não um useRef comum) de propósito: em
+ * páginas como o Checkout, a div que hospeda o widget pode não existir ainda
+ * no primeiro render (ex: carrinho carregando) — com um useRef comum, o
+ * efeito de inicialização rodaria uma única vez, veria o container nulo e
+ * nunca mais tentaria de novo. Usando estado pro nó do DOM, o efeito
+ * reexecuta automaticamente assim que a div passa a existir de verdade.
  */
 export function useTurnstile() {
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [container, setContainer] = useState<HTMLDivElement | null>(null)
+  const containerRef = useCallback((node: HTMLDivElement | null) => setContainer(node), [])
   const widgetIdRef = useRef<string | null>(null)
   const pendingRef = useRef<((token: string | null) => void) | null>(null)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    if (!isTurnstileConfigured || !containerRef.current) {
-      console.error('Turnstile: efeito não iniciou', { isTurnstileConfigured, hasContainer: Boolean(containerRef.current) })
-      return
-    }
+    if (!isTurnstileConfigured || !container) return
     let cancelled = false
-    console.error('Turnstile: efeito iniciado, carregando script...')
 
     loadScript()
       .then(() => {
-        console.error('Turnstile: script carregado', { cancelled, hasContainer: Boolean(containerRef.current), hasTurnstile: Boolean(window.turnstile) })
-        if (cancelled || !containerRef.current || !window.turnstile) return
-        widgetIdRef.current = window.turnstile.render(containerRef.current, {
+        if (cancelled) return
+        if (!window.turnstile) {
+          console.error('Turnstile: script carregado mas window.turnstile ausente.')
+          return
+        }
+        widgetIdRef.current = window.turnstile.render(container, {
           sitekey: SITE_KEY,
           execution: 'execute',
           appearance: 'interaction-only',
@@ -71,7 +78,6 @@ export function useTurnstile() {
             pendingRef.current = null
           },
         })
-        console.error('Turnstile: widget renderizado', { widgetId: widgetIdRef.current })
         setReady(true)
       })
       .catch((err) => {
@@ -82,18 +88,14 @@ export function useTurnstile() {
     return () => {
       cancelled = true
       if (widgetIdRef.current && window.turnstile) window.turnstile.remove(widgetIdRef.current)
+      widgetIdRef.current = null
+      setReady(false)
     }
-  }, [])
+  }, [container])
 
   /** Resolve com o token do desafio, ou null se o Turnstile não estiver configurado/pronto. */
   const getToken = (): Promise<string | null> => {
     if (!isTurnstileConfigured || !ready || !widgetIdRef.current || !window.turnstile) {
-      console.error('Turnstile: getToken chamado sem widget pronto', {
-        isTurnstileConfigured,
-        ready,
-        hasWidget: Boolean(widgetIdRef.current),
-        hasScript: Boolean(window.turnstile),
-      })
       return Promise.resolve(null)
     }
     const widgetId = widgetIdRef.current
