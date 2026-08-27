@@ -192,17 +192,19 @@ Deno.serve(async (req) => {
       products,
       volumes,
       options: {
-        // Sem a chave da nota fiscal, o Melhor Envio classifica o envio como
-        // "não comercial" (declaração de conteúdo) e trava o seguro em
-        // R$1.000, mesmo com non_commercial: false — só a nota real
-        // destrava o valor integral. Enquanto a emissão de nota não está
-        // ativa, limitamos o seguro a R$1.000 pra não bloquear a etiqueta;
-        // o risco da diferença fica sem cobertura até isso ser resolvido.
-        insurance_value: sale.invoice_key ? insuranceValue : Math.min(insuranceValue, 1000),
+        // O Melhor Envio só aceita chave de nota no campo "invoice" quando é
+        // NF-e modelo 55 — recusa com "A Nota fiscal deve ser modelo 55"
+        // (confirmado testando). A nossa nota é NFC-e modelo 65 (o formato
+        // correto pra venda direta ao consumidor final), então nunca dá pra
+        // usar esse campo aqui. Sem ele, o envio é sempre classificado como
+        // "não comercial" (declaração de conteúdo) e o seguro trava em
+        // R$1.000 — o risco da diferença, em pedidos acima disso, fica sem
+        // cobertura até o Melhor Envio confirmar se existe algum outro
+        // caminho pra NFC-e (pergunta em aberto com o suporte deles).
+        insurance_value: Math.min(insuranceValue, 1000),
         receipt: false,
         own_hand: false,
-        non_commercial: !sale.invoice_key,
-        ...(sale.invoice_key ? { invoice: { key: sale.invoice_key } } : {}),
+        non_commercial: true,
         platform: 'Studio 18',
       },
     })
