@@ -175,6 +175,7 @@ Deno.serve(async (req) => {
     const payload = {
       natureza_operacao: 'Venda de mercadoria',
       data_emissao: new Date().toISOString(),
+      tipo_documento: 1, // 1 = saída (venda) — NF-e exige esse campo (tpNF), diferente da NFC-e que não pedia
       presenca_comprador: 2, // não presencial, pela internet — o valor certo pra NF-e (era rejeitado em NFC-e, que exigia 1 ou 4)
       finalidade_emissao: 1, // NF-e normal
       consumidor_final: 1, // venda a consumidor final
