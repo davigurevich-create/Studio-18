@@ -30,13 +30,12 @@ as fotos brutas enviadas pelo usuário (fundo branco/estúdio ou fotos
 | S18-003 | Porsche 963 | ✅ já estava certa | ✅ 5 fotos (frente, lateral, traseira, aberto, caixa) | `032` — **rodar no Supabase** | — |
 | S18-011 | Bugatti Tourbillon | ✅ já estava certa | ✅ 6 fotos (frente, acima, traseira, detalhe, aberto, caixa) | `033` — **rodar no Supabase** | Caixa teve que ser regerada 1x (saiu "GUEY" em vez de "GULY") |
 | S18-016 | Land Rover Discovery | ✅ corrigida (carro errado) | ✅ 6 fotos (frente, lateral, traseira, detalhe, caixa) | `030` — já rodado pelo usuário | Primeiro produto feito; rodas tiveram que ser corrigidas (saíram pretas, deveriam ser prateadas) |
-| S18-004 | BMW M4 GT4 | ✅ já estava certa (rodas douradas conferidas) | ✅ 6 imagens **geradas e aprovadas** (frente, traseira, aberto, detalhe/motor, interior, caixa) — usuário vai salvar os arquivos finais em `products/` e me avisar pra eu finalizar (converter, `mockCatalog.ts`, migration SQL) numa próxima sessão | pendente (criar `038_s18004_gallery_images.sql` quando os arquivos estiverem no repo) | Primeiro produto a usar a técnica de "detalhe com fundo trocado" (ver seção abaixo) |
-| S18-005, 006, 007, 008, 009, 010, 012, 013, 014, 015, 017 | (11 restantes) | — | — | — | **Usuário ainda não subiu fotos brutas** em `products-raw/` pra nenhum desses |
+| S18-004 | BMW M4 GT4 | ✅ já estava certa (rodas douradas conferidas) | ✅ 6 fotos (frente, traseira, aberto, motor, interior, caixa) | `038` — **rodar no Supabase** | Primeiro produto a usar a técnica de "detalhe com fundo trocado" (ver seção abaixo) |
+| S18-005, 006, 007, 008, 009, 010, 012, 013, 014, 015, 017 | (11 restantes) | — | — | — | Fotos brutas **já estão todas em `products-raw/`** (Pagani Utopia, Lotus Exige Cup 430, Mazda 787B, Pagani Huayra, Maserati GranTurismo, Formula 1, Lamborghini concept, Nissan GT-R, Ferrari Enzo, Ferrari SF90 XX, Lamborghini Aventador SVJ) — ainda não processados |
 
-**Ação pendente imediata ao retomar**: confirmar se o usuário já rodou as
-migrations `031`, `032`, `033`, `035` no SQL Editor do Supabase (a `030`
-já foi confirmada). Sem isso as galerias não aparecem em produção mesmo
-com o código certo.
+**Ação pendente imediata ao retomar**: confirmar se o usuário já rodou a
+migration `038` no SQL Editor do Supabase (031, 032, 033, 035 já
+confirmadas).
 
 ## Pipeline técnico (o que funciona)
 
@@ -195,31 +194,22 @@ Este ambiente **bloqueia egress para os domínios de storage da Higgsfield**
 
 ## Próximos passos ao retomar
 
-**Estado em 27/08/2026, fim da sessão**: trial convertido pro plano Plus
-(1.000 créditos/mês) com sucesso. Migrations `031`, `032`, `033`, `035`
-já rodadas pelo usuário no Supabase. S18-002 finalizado como está (sem
-foto "frente", decisão do usuário) e nome "BMW R1300GS" mantido no
-catálogo (decisão do usuário, não mexer).
+**Estado em 27/08/2026 (continuação)**: S18-004 (BMW M4 GT4) finalizado —
+galeria de 6 fotos (frente, traseira, aberto, motor, interior, caixa)
+convertida pra `.jpg`, wired em `mockCatalog.ts`, migration
+`038_s18004_gallery_images.sql` criada (pendente rodar no Supabase).
+Trial convertido pro plano Plus (1.000 créditos/mês). Migrations `031`,
+`032`, `033`, `035` já rodadas pelo usuário no Supabase. S18-002
+finalizado como está (sem foto "frente", decisão do usuário) e nome
+"BMW R1300GS" mantido no catálogo (decisão do usuário, não mexer). Fotos
+brutas de **todos os 17 produtos** já estão em `products-raw/`.
 
-1. **Finalizar S18-004** (BMW M4 GT4): as 6 imagens da galeria já foram
-   geradas e aprovadas pelo usuário (frente, traseira, aberto,
-   detalhe/motor, interior, caixa — a "interior" usou a técnica nova de
-   troca de fundo, ver item 13 do pipeline acima). O usuário disse que ia
-   salvar os arquivos finais em `site/public/products/` ele mesmo
-   enquanto a sessão anterior encerrava — **conferir primeiro se os
-   arquivos já estão no repo** (`git log` / `ls site/public/products/
-   S18-004*`) antes de pedir upload de novo. Se já estiverem: converter
-   pra `.jpg` otimizado se ainda for PNG, decidir nomes de arquivo
-   (`frente`, `traseira`, `aberto`, `detalhe`, `interior` — novo label,
-   adicionar em `galleryLabels.ts` se ainda não existir, `caixa`), wire em
-   `mockCatalog.ts` + criar `038_s18004_gallery_images.sql`, commit e
-   push, lembrar o usuário de rodar a migration.
-2. Confirmar créditos disponíveis (`balance`) — devem estar próximos de
-   1.000 menos o que foi gasto com S18-004 (~12 créditos, 6 imagens x 2).
-3. Perguntar ao usuário quais dos 11 produtos restantes (S18-005 a 010,
-   012 a 015, 017) ele já subiu fotos brutas em `products-raw/` (conferir
-   com `ls site/public/products-raw/S18-0XX-*/`) antes de começar cada
-   um.
+1. Lembrar o usuário de rodar a migration `038` no Supabase.
+2. Confirmar créditos disponíveis (`balance`).
+3. Seguir com os 11 produtos restantes (S18-005 a 010, 012 a 015, 017),
+   um de cada vez, na ordem numérica ou pela preferência do usuário. Fotos
+   brutas já estão todas disponíveis, então não é mais preciso perguntar
+   se foram subidas — só ver as fotos de cada pasta antes de começar.
 4. Seguir o mesmo pipeline validado: ver fotos brutas → comparar com capa
    atual → corrigir capa só se necessário → identificar se alguma foto é
    "detalhe em ambiente real" (técnica do item 13) vs ângulo normal do
