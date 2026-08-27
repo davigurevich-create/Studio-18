@@ -47,11 +47,16 @@ export function useTurnstile() {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    if (!isTurnstileConfigured || !containerRef.current) return
+    if (!isTurnstileConfigured || !containerRef.current) {
+      console.error('Turnstile: efeito não iniciou', { isTurnstileConfigured, hasContainer: Boolean(containerRef.current) })
+      return
+    }
     let cancelled = false
+    console.error('Turnstile: efeito iniciado, carregando script...')
 
     loadScript()
       .then(() => {
+        console.error('Turnstile: script carregado', { cancelled, hasContainer: Boolean(containerRef.current), hasTurnstile: Boolean(window.turnstile) })
         if (cancelled || !containerRef.current || !window.turnstile) return
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           sitekey: SITE_KEY,
@@ -66,6 +71,7 @@ export function useTurnstile() {
             pendingRef.current = null
           },
         })
+        console.error('Turnstile: widget renderizado', { widgetId: widgetIdRef.current })
         setReady(true)
       })
       .catch((err) => {
