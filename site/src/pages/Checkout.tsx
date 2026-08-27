@@ -270,8 +270,8 @@ export function Checkout() {
       setResult(res)
       setStep('done')
       clear()
-    } catch {
-      setError('Não foi possível registrar o pedido agora. Tente novamente em instantes.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível registrar o pedido agora. Tente novamente em instantes.')
     } finally {
       setSubmitting(false)
     }
@@ -300,8 +300,8 @@ export function Checkout() {
         setResult(res)
         setStep('done')
         clear()
-      } catch {
-        setError('Não foi possível processar o pagamento agora. Tente novamente.')
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Não foi possível processar o pagamento agora. Tente novamente.')
         throw new Error('payment_failed')
       }
     },
