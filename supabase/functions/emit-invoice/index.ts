@@ -163,8 +163,11 @@ Deno.serve(async (req) => {
         codigo_produto: it.product.sku,
         descricao: it.product.name,
         // A SEFAZ exige NCM só com os 8 dígitos, sem pontuação — limpa aqui
-        // pra poder cadastrar com pontos (mais legível) na aba Estoque.
-        ncm: String(it.product.ncm).replace(/\D/g, ''),
+        // pra poder cadastrar com pontos (mais legível) na aba Estoque. O
+        // nome do campo é "codigo_ncm" na API da Focus NFe, não "ncm" (o que
+        // a fazia descartar o campo silenciosamente — confirmado com o
+        // suporte deles).
+        codigo_ncm: String(it.product.ncm).replace(/\D/g, ''),
         cfop: '5102',
         unidade_comercial: 'UN',
         quantidade_comercial: it.quantity,
