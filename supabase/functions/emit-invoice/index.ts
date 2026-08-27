@@ -142,7 +142,11 @@ Deno.serve(async (req) => {
     const payload = {
       natureza_operacao: 'Venda de mercadoria',
       data_emissao: new Date().toISOString(),
-      presenca_comprador: 2, // não presencial, pela internet
+      // NFC-e exige presença do comprador (1) ou entrega a domicílio (4) —
+      // "2 (não presencial, pela internet)" só vale pra NF-e modelo 55, e
+      // é rejeitado em NFC-e (confirmado com o suporte da Focus NFe). Como
+      // toda venda do site é entregue por transportadora, o valor certo é 4.
+      presenca_comprador: 4,
       modalidade_frete: 9, // sem transporte (frete cobrado à parte, não como item de venda)
       cnpj_emitente: FOCUS_NFE_CNPJ,
       cpf_destinatario: sale.customer_cpf.replace(/\D/g, ''),
