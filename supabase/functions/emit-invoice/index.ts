@@ -54,6 +54,14 @@ async function focusFetch(path: string, init: RequestInit) {
   return { ok: res.ok, status: res.status, data: data as Record<string, unknown> | null }
 }
 
+// A Focus NFe devolve caminho_danfe/caminho_xml_nota_fiscal como caminhos
+// relativos (ex: "/v2/nfce/.../danfe"), não URLs completas — sem completar
+// com o domínio, o link "Ver nota" no painel abria a própria URL do painel
+// em vez do PDF (confirmado testando).
+function absoluteUrl(path: unknown): string | null {
+  return typeof path === 'string' && path ? new URL(path, FOCUS_BASE_URL).toString() : null
+}
+
 function statusFromFocus(data: Record<string, unknown> | null): 'processando' | 'autorizada' | 'erro' {
   const s = String(data?.status ?? '')
   if (s === 'autorizado') return 'autorizada'
@@ -90,11 +98,18 @@ Deno.serve(async (req) => {
     if (saleError || !sale) return json({ error: 'Pedido não encontrado.' }, 404)
 
     // Já autorizada: devolve o que já temos, sem chamar a Focus NFe de novo.
+    // Se a URL do PDF ainda estiver salva como caminho relativo (de antes da
+    // correção do bug), completa e já corrige no banco antes de devolver.
     if (sale.invoice_status === 'autorizada') {
+      let pdfUrl: string | null = sale.invoice_pdf_url
+      if (pdfUrl && !pdfUrl.startsWith('http')) {
+        pdfUrl = absoluteUrl(pdfUrl)
+        await supabase.from('sales').update({ invoice_pdf_url: pdfUrl }).eq('id', saleId)
+      }
       return json({
         status: 'autorizada',
         invoiceKey: sale.invoice_key,
-        pdfUrl: sale.invoice_pdf_url,
+        pdfUrl,
         alreadyIssued: true,
       })
     }
@@ -241,11 +256,6 @@ async function saveAndReturn(supabase: ReturnType<typeof createClient>, saleId: 
     patch.invoice_number = data?.numero ?? null
     patch.invoice_series = data?.serie ?? null
     patch.invoice_key = data?.chave_nfe ?? null
-    // A Focus NFe devolve caminho_danfe/caminho_xml_nota_fiscal como
-    // caminhos relativos (ex: "/v2/nfce/.../danfe"), não URLs completas —
-    // sem completar com o domínio, o link "Ver nota" no painel abria a
-    // própria URL do painel em vez do PDF (confirmado testando).
-    const absoluteUrl = (path: unknown) => (typeof path === 'string' && path ? new URL(path, FOCUS_BASE_URL).toString() : null)
     patch.invoice_pdf_url = absoluteUrl(data?.caminho_danfe)
     patch.invoice_xml_url = absoluteUrl(data?.caminho_xml_nota_fiscal)
     patch.invoice_error = null
