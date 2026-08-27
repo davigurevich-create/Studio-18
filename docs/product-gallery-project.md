@@ -30,7 +30,8 @@ as fotos brutas enviadas pelo usuário (fundo branco/estúdio ou fotos
 | S18-003 | Porsche 963 | ✅ já estava certa | ✅ 5 fotos (frente, lateral, traseira, aberto, caixa) | `032` — **rodar no Supabase** | — |
 | S18-011 | Bugatti Tourbillon | ✅ já estava certa | ✅ 6 fotos (frente, acima, traseira, detalhe, aberto, caixa) | `033` — **rodar no Supabase** | Caixa teve que ser regerada 1x (saiu "GUEY" em vez de "GULY") |
 | S18-016 | Land Rover Discovery | ✅ corrigida (carro errado) | ✅ 6 fotos (frente, lateral, traseira, detalhe, caixa) | `030` — já rodado pelo usuário | Primeiro produto feito; rodas tiveram que ser corrigidas (saíram pretas, deveriam ser prateadas) |
-| S18-004, 005, 006, 007, 008, 009, 010, 012, 013, 014, 015, 017 | (12 restantes) | — | — | — | **Usuário ainda não subiu fotos brutas** em `products-raw/` pra nenhum desses |
+| S18-004 | BMW M4 GT4 | ✅ já estava certa (rodas douradas conferidas) | ✅ 6 imagens **geradas e aprovadas** (frente, traseira, aberto, detalhe/motor, interior, caixa) — usuário vai salvar os arquivos finais em `products/` e me avisar pra eu finalizar (converter, `mockCatalog.ts`, migration SQL) numa próxima sessão | pendente (criar `038_s18004_gallery_images.sql` quando os arquivos estiverem no repo) | Primeiro produto a usar a técnica de "detalhe com fundo trocado" (ver seção abaixo) |
+| S18-005, 006, 007, 008, 009, 010, 012, 013, 014, 015, 017 | (11 restantes) | — | — | — | **Usuário ainda não subiu fotos brutas** em `products-raw/` pra nenhum desses |
 
 **Ação pendente imediata ao retomar**: confirmar se o usuário já rodou as
 migrations `031`, `032`, `033`, `035` no SQL Editor do Supabase (a `030`
@@ -91,7 +92,26 @@ com o código certo.
     com o método de recorte, testamos só a capa primeiro).
 12. **Ângulos duplicados**: às vezes duas fotos brutas geram resultados
     quase idênticos (ex. duas laterais do S18-001). Perguntar ao usuário
-    qual manter em vez de assumir.
+    qual manter em vez de assumir — mas se a duplicidade for óbvia (mesma
+    pose, só muda o fundo estúdio-vs-quarto), pode escolher a melhor e só
+    avisar depois, sem travar o fluxo.
+13. **Fotos de "detalhe" macro tiradas em ambiente real** (cabine/painel,
+    motor bem de perto) que mostram um pedaço do quarto/parede ao redor
+    (ex. guarda-roupa branco atrás da cabine) precisam de um tratamento
+    DIFERENTE do composite normal: em vez de "recriar o veículo inteiro
+    sentado na mesa", a instrução deve ser "troca de fundo, preservando o
+    assunto". Funcionou muito bem (aprovado pelo usuário, S18-004) com
+    este prompt: apresentar a foto-cena como primeira referência e a foto
+    de detalhe como segunda, e pedir explicitamente "keep the entire
+    subject from the second image completely unchanged, pixel-for-pixel
+    identical — same crop, same framing, same zoom level — and ONLY
+    replace the plain wall/closet background visible in the gaps with a
+    softly out-of-focus warm bokeh continuation of the first image's
+    scene... Do not zoom out, do not change the subject in any way —
+    background only." Ou seja: NÃO tentar recompor o carro inteiro numa
+    mesa quando a foto já é um close-up de detalhe — só substituir o que
+    aparece de fundo pelos tons/desfoque do cenário padrão, mantendo o
+    enquadramento e o assunto exatamente como na foto bruta.
 
 ## Limitação de rede (não contornável)
 
@@ -173,20 +193,38 @@ Este ambiente **bloqueia egress para os domínios de storage da Higgsfield**
   cobre com folga o restante do catálogo.
 - Checar saldo com `mcp__Higgsfield__balance` ao retomar.
 
-## Próximos passos ao retomar (27/08 em diante)
+## Próximos passos ao retomar
 
-1. Confirmar créditos disponíveis (`balance`).
-2. Confirmar se as migrations `031`, `032`, `033`, `035` já foram rodadas
-   no Supabase.
-3. Fechar a ponta solta do S18-002 (frente — foto já gerada, falta o
-   usuário subir e eu aplicar) e decidir sobre renomear "BMW R1300GS" no
-   catálogo.
-4. Perguntar ao usuário quais dos 12 produtos restantes ele já subiu fotos
-   brutas em `products-raw/` (conferir com
-   `ls site/public/products-raw/S18-0XX-*/`) antes de começar cada um.
-5. Seguir o mesmo pipeline validado: ver fotos brutas → comparar com capa
-   atual → corrigir capa só se necessário → gerar galeria (recorte de
-   fundo primeiro se for produto com estrutura fina/complexa) → testar 1
-   imagem → mostrar link pro usuário → usuário baixa e sobe no GitHub →
-   puxar, converter, wire no `mockCatalog.ts` + migration SQL → commit e
-   push → lembrar o usuário de rodar a migration no Supabase.
+**Estado em 27/08/2026, fim da sessão**: trial convertido pro plano Plus
+(1.000 créditos/mês) com sucesso. Migrations `031`, `032`, `033`, `035`
+já rodadas pelo usuário no Supabase. S18-002 finalizado como está (sem
+foto "frente", decisão do usuário) e nome "BMW R1300GS" mantido no
+catálogo (decisão do usuário, não mexer).
+
+1. **Finalizar S18-004** (BMW M4 GT4): as 6 imagens da galeria já foram
+   geradas e aprovadas pelo usuário (frente, traseira, aberto,
+   detalhe/motor, interior, caixa — a "interior" usou a técnica nova de
+   troca de fundo, ver item 13 do pipeline acima). O usuário disse que ia
+   salvar os arquivos finais em `site/public/products/` ele mesmo
+   enquanto a sessão anterior encerrava — **conferir primeiro se os
+   arquivos já estão no repo** (`git log` / `ls site/public/products/
+   S18-004*`) antes de pedir upload de novo. Se já estiverem: converter
+   pra `.jpg` otimizado se ainda for PNG, decidir nomes de arquivo
+   (`frente`, `traseira`, `aberto`, `detalhe`, `interior` — novo label,
+   adicionar em `galleryLabels.ts` se ainda não existir, `caixa`), wire em
+   `mockCatalog.ts` + criar `038_s18004_gallery_images.sql`, commit e
+   push, lembrar o usuário de rodar a migration.
+2. Confirmar créditos disponíveis (`balance`) — devem estar próximos de
+   1.000 menos o que foi gasto com S18-004 (~12 créditos, 6 imagens x 2).
+3. Perguntar ao usuário quais dos 11 produtos restantes (S18-005 a 010,
+   012 a 015, 017) ele já subiu fotos brutas em `products-raw/` (conferir
+   com `ls site/public/products-raw/S18-0XX-*/`) antes de começar cada
+   um.
+4. Seguir o mesmo pipeline validado: ver fotos brutas → comparar com capa
+   atual → corrigir capa só se necessário → identificar se alguma foto é
+   "detalhe em ambiente real" (técnica do item 13) vs ângulo normal do
+   carro inteiro (técnica do item 3, recorte de fundo pra estruturas
+   finas) → gerar galeria → testar 1 imagem se for técnica nova/incerta →
+   mostrar link pro usuário → usuário baixa e sobe no GitHub → puxar,
+   converter, wire no `mockCatalog.ts` + migration SQL → commit e push →
+   lembrar o usuário de rodar a migration no Supabase.
