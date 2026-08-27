@@ -193,18 +193,16 @@ Deno.serve(async (req) => {
       volumes,
       options: {
         // O Melhor Envio só aceita chave de nota no campo "invoice" quando é
-        // NF-e modelo 55 — recusa com "A Nota fiscal deve ser modelo 55"
-        // (confirmado testando). A nossa nota é NFC-e modelo 65 (o formato
-        // correto pra venda direta ao consumidor final), então nunca dá pra
-        // usar esse campo aqui. Sem ele, o envio é sempre classificado como
-        // "não comercial" (declaração de conteúdo) e o seguro trava em
-        // R$1.000 — o risco da diferença, em pedidos acima disso, fica sem
-        // cobertura até o Melhor Envio confirmar se existe algum outro
-        // caminho pra NFC-e (pergunta em aberto com o suporte deles).
-        insurance_value: Math.min(insuranceValue, 1000),
+        // NF-e modelo 55 (não NFC-e modelo 65, confirmado com o suporte) —
+        // é por isso que a emit-invoice emite NF-e agora. Sem a chave, o
+        // envio é classificado como "não comercial" (declaração de
+        // conteúdo) e o seguro trava em R$1.000; com ela, cobre o valor
+        // integral do pedido.
+        insurance_value: sale.invoice_key ? insuranceValue : Math.min(insuranceValue, 1000),
         receipt: false,
         own_hand: false,
-        non_commercial: true,
+        non_commercial: !sale.invoice_key,
+        ...(sale.invoice_key ? { invoice: { key: sale.invoice_key } } : {}),
         platform: 'Studio 18',
       },
     })

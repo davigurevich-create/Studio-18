@@ -357,8 +357,8 @@ export async function generateShippingLabel(
 }
 
 /**
- * Emite a NFC-e de um pedido pago via Focus NFe — só é chamado quando a
- * equipe clica no botão "Emitir nota" (nunca automaticamente).
+ * Emite a NF-e (modelo 55) de um pedido pago via Focus NFe — só é chamado
+ * quando a equipe clica no botão "Emitir nota" (nunca automaticamente).
  */
 export async function emitInvoice(
   saleId: string,

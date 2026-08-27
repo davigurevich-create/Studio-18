@@ -1,6 +1,12 @@
-// Emite a NFC-e de um pedido já pago, via Focus NFe. Só a equipe (staff)
-// pode chamar isso — mesmo padrão do generate-shipping-label: verifica
-// is_staff() com o token de quem chamou, nunca dispara sozinho.
+// Emite a NF-e (modelo 55) de um pedido já pago, via Focus NFe. Só a equipe
+// (staff) pode chamar isso — mesmo padrão do generate-shipping-label:
+// verifica is_staff() com o token de quem chamou, nunca dispara sozinho.
+//
+// Usamos NF-e (modelo 55) em vez de NFC-e (modelo 65) — não por exigência
+// fiscal (o contador confirmou que qualquer um dos dois serve pra venda
+// online), mas porque o Melhor Envio só aceita chave de NF-e modelo 55 no
+// campo que destrava seguro acima de R$1.000 (NFC-e não entra nessa lista
+// pra eles, confirmado com o suporte). Ver generate-shipping-label.
 //
 // IMPORTANTE: os campos fiscais abaixo (CFOP, CSOSN, situação do PIS/COFINS,
 // código de forma de pagamento) são os valores mais comuns para um Simples
@@ -117,7 +123,7 @@ Deno.serve(async (req) => {
     // Já em processamento: só consulta o status da MESMA ref já enviada,
     // não reemite.
     if (sale.invoice_status === 'processando' && sale.invoice_ref) {
-      const check = await focusFetch(`/v2/nfce/${sale.invoice_ref}`, { method: 'GET' })
+      const check = await focusFetch(`/v2/nfe/${sale.invoice_ref}`, { method: 'GET' })
       return await saveAndReturn(supabase, saleId, check.data)
     }
 
@@ -169,11 +175,9 @@ Deno.serve(async (req) => {
     const payload = {
       natureza_operacao: 'Venda de mercadoria',
       data_emissao: new Date().toISOString(),
-      // NFC-e exige presença do comprador (1) ou entrega a domicílio (4) —
-      // "2 (não presencial, pela internet)" só vale pra NF-e modelo 55, e
-      // é rejeitado em NFC-e (confirmado com o suporte da Focus NFe). Como
-      // toda venda do site é entregue por transportadora, o valor certo é 4.
-      presenca_comprador: 4,
+      presenca_comprador: 2, // não presencial, pela internet — o valor certo pra NF-e (era rejeitado em NFC-e, que exigia 1 ou 4)
+      finalidade_emissao: 1, // NF-e normal
+      consumidor_final: 1, // venda a consumidor final
       modalidade_frete: 9, // sem transporte (frete cobrado à parte, não como item de venda)
       cnpj_emitente: FOCUS_NFE_CNPJ,
       cpf_destinatario: sale.customer_cpf.replace(/\D/g, ''),
@@ -234,7 +238,7 @@ Deno.serve(async (req) => {
       ],
     }
 
-    const emit = await focusFetch(`/v2/nfce?ref=${ref}`, { method: 'POST', body: JSON.stringify(payload) })
+    const emit = await focusFetch(`/v2/nfe?ref=${ref}`, { method: 'POST', body: JSON.stringify(payload) })
     if (!emit.ok && emit.status !== 202) {
       const message = typeof emit.data?.mensagem === 'string' ? emit.data.mensagem : 'Falha ao emitir nota fiscal na Focus NFe.'
       await supabase.from('sales').update({ invoice_status: 'erro', invoice_error: message, invoice_ref: ref }).eq('id', saleId)
