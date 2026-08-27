@@ -241,11 +241,13 @@ async function saveAndReturn(supabase: ReturnType<typeof createClient>, saleId: 
     patch.invoice_number = data?.numero ?? null
     patch.invoice_series = data?.serie ?? null
     patch.invoice_key = data?.chave_nfe ?? null
-    // A Focus NFe às vezes devolve caminho_danfe como URL relativa — se o
-    // primeiro teste em homologação vier assim, prefixe com FOCUS_BASE_URL
-    // aqui antes de salvar.
-    patch.invoice_pdf_url = data?.caminho_danfe ?? null
-    patch.invoice_xml_url = data?.caminho_xml_nota_fiscal ?? null
+    // A Focus NFe devolve caminho_danfe/caminho_xml_nota_fiscal como
+    // caminhos relativos (ex: "/v2/nfce/.../danfe"), não URLs completas —
+    // sem completar com o domínio, o link "Ver nota" no painel abria a
+    // própria URL do painel em vez do PDF (confirmado testando).
+    const absoluteUrl = (path: unknown) => (typeof path === 'string' && path ? new URL(path, FOCUS_BASE_URL).toString() : null)
+    patch.invoice_pdf_url = absoluteUrl(data?.caminho_danfe)
+    patch.invoice_xml_url = absoluteUrl(data?.caminho_xml_nota_fiscal)
     patch.invoice_error = null
   } else if (status === 'erro') {
     patch.invoice_error = typeof data?.mensagem_sefaz === 'string' ? data.mensagem_sefaz : (typeof data?.mensagem === 'string' ? data.mensagem : 'Erro desconhecido na SEFAZ.')
