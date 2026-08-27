@@ -68,7 +68,10 @@ export function useTurnstile() {
         })
         setReady(true)
       })
-      .catch(() => setReady(false))
+      .catch((err) => {
+        console.error('Turnstile: falha ao carregar/renderizar o widget:', err)
+        setReady(false)
+      })
 
     return () => {
       cancelled = true
@@ -79,6 +82,12 @@ export function useTurnstile() {
   /** Resolve com o token do desafio, ou null se o Turnstile não estiver configurado/pronto. */
   const getToken = (): Promise<string | null> => {
     if (!isTurnstileConfigured || !ready || !widgetIdRef.current || !window.turnstile) {
+      console.error('Turnstile: getToken chamado sem widget pronto', {
+        isTurnstileConfigured,
+        ready,
+        hasWidget: Boolean(widgetIdRef.current),
+        hasScript: Boolean(window.turnstile),
+      })
       return Promise.resolve(null)
     }
     const widgetId = widgetIdRef.current
