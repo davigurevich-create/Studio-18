@@ -184,6 +184,22 @@ Deno.serve(async (req) => {
         icms_situacao_tributaria: '102', // CSOSN — Simples Nacional, sem permissão de crédito
         pis_situacao_tributaria: '07', // isento
         cofins_situacao_tributaria: '07', // isento
+        // Reforma Tributária (LC 214/2025) — grupo IBS/CBS, obrigatório em
+        // toda nota desde 2026. Valores abaixo são o cenário padrão da fase
+        // de transição para uma venda comum (CST 000 = tributação integral,
+        // cClassTrib 000001 = sem nenhum benefício/exceção específica) com
+        // as alíquotas-teste definidas pela Receita para 2026 (IBS 0,1% +
+        // CBS 0,9%) — empresas do Simples Nacional não recolhem esse valor
+        // de verdade nessa fase, só precisam informar. CONFIRME com seu
+        // contador antes de ligar em produção — existem 164 códigos de
+        // cClassTrib possíveis dependendo da situação exata do produto.
+        ibs_cbs_situacao_tributaria: '000',
+        ibs_cbs_classificacao_tributaria: '000001',
+        ibs_cbs_base_calculo: Number(it.unit_price_brl) * it.quantity,
+        cbs_aliquota: 0.9,
+        cbs_valor: Number((Number(it.unit_price_brl) * it.quantity * 0.009).toFixed(2)),
+        ibs_uf_aliquota: 0.1,
+        ibs_uf_valor: Number((Number(it.unit_price_brl) * it.quantity * 0.001).toFixed(2)),
       })),
       formas_pagamento: [
         { forma_pagamento: paymentCode, valor_pagamento: itemsTotal + shippingCost - Number(sale.discount_brl ?? 0) },
