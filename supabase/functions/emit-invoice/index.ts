@@ -139,6 +139,18 @@ Deno.serve(async (req) => {
     const shippingCost = Number(sale.shipping_cost_brl ?? 0)
     const paymentCode = PAYMENT_CODE[sale.payment_method ?? 'outro'] ?? '99'
 
+    // A SEFAZ confere se o frete total da nota bate exatamente com a soma do
+    // frete distribuído item a item — declarar só no nível geral (sem
+    // distribuir) causa rejeição "Total do Frete difere do somatório dos
+    // itens". Distribui proporcionalmente ao valor de cada item, e joga
+    // qualquer sobra de centavo de arredondamento no último item, pra
+    // garantir que a soma bate certinho com o total.
+    const itemFreights: number[] = items.map((it: any) =>
+      itemsTotal > 0 ? Math.round((Number(it.unit_price_brl) * it.quantity / itemsTotal) * shippingCost * 100) / 100 : 0,
+    )
+    const freightRounding = Math.round((shippingCost - itemFreights.reduce((t, v) => t + v, 0)) * 100) / 100
+    if (itemFreights.length > 0) itemFreights[itemFreights.length - 1] += freightRounding
+
     const payload = {
       natureza_operacao: 'Venda de mercadoria',
       data_emissao: new Date().toISOString(),
@@ -177,6 +189,7 @@ Deno.serve(async (req) => {
         quantidade_comercial: it.quantity,
         valor_unitario_comercial: Number(it.unit_price_brl),
         valor_bruto: Number(it.unit_price_brl) * it.quantity,
+        valor_frete: itemFreights[idx] || undefined,
         unidade_tributavel: 'UN',
         quantidade_tributavel: it.quantity,
         valor_unitario_tributacao: Number(it.unit_price_brl),
