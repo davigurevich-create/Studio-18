@@ -15,7 +15,14 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const MELHOR_ENVIO_TOKEN = Deno.env.get('MELHOR_ENVIO_TOKEN')!
+// 'producao' (padrão) fala com a carteira real do Melhor Envio. 'sandbox'
+// usa a conta de testes deles (saldo fake, sem gastar nada de verdade) —
+// só pra validar coisas como o comportamento da chave de nota fiscal antes
+// de confiar isso em produção. Nunca deixe 'sandbox' configurado por engano
+// depois de terminar o teste, ou as etiquetas reais param de funcionar.
+const MELHOR_ENVIO_ENV = Deno.env.get('MELHOR_ENVIO_ENV') ?? 'producao'
+const MELHOR_ENVIO_BASE_URL = MELHOR_ENVIO_ENV === 'sandbox' ? 'https://sandbox.melhorenvio.com.br' : 'https://www.melhorenvio.com.br'
+const MELHOR_ENVIO_TOKEN = (MELHOR_ENVIO_ENV === 'sandbox' ? Deno.env.get('MELHOR_ENVIO_SANDBOX_TOKEN') : Deno.env.get('MELHOR_ENVIO_TOKEN'))!
 
 const DEFAULT_BOX_CM = { length: 50, width: 35, height: 12 }
 
@@ -47,7 +54,7 @@ function json(body: unknown, status = 200) {
 }
 
 async function meFetch(path: string, body: unknown) {
-  const res = await fetch(`https://www.melhorenvio.com.br/api/v2/me/${path}`, {
+  const res = await fetch(`${MELHOR_ENVIO_BASE_URL}/api/v2/me/${path}`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${MELHOR_ENVIO_TOKEN}`,

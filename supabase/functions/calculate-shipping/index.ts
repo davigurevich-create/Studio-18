@@ -11,7 +11,12 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const MELHOR_ENVIO_TOKEN = Deno.env.get('MELHOR_ENVIO_TOKEN')!
+// Ver o mesmo toggle em generate-shipping-label — os dois precisam estar no
+// mesmo ambiente (sandbox ou produção) ao mesmo tempo, porque o ID do
+// serviço de frete cotado aqui só existe no ambiente onde foi cotado.
+const MELHOR_ENVIO_ENV = Deno.env.get('MELHOR_ENVIO_ENV') ?? 'producao'
+const MELHOR_ENVIO_BASE_URL = MELHOR_ENVIO_ENV === 'sandbox' ? 'https://sandbox.melhorenvio.com.br' : 'https://www.melhorenvio.com.br'
+const MELHOR_ENVIO_TOKEN = (MELHOR_ENVIO_ENV === 'sandbox' ? Deno.env.get('MELHOR_ENVIO_SANDBOX_TOKEN') : Deno.env.get('MELHOR_ENVIO_TOKEN'))!
 const SHIPPING_ORIGIN_ZIP = (Deno.env.get('SHIPPING_ORIGIN_ZIP') ?? '04784-080').replace(/\D/g, '')
 
 // Ainda não temos as dimensões reais medidas de cada caixa (só o peso) —
@@ -85,7 +90,7 @@ Deno.serve(async (req) => {
       }
     })
 
-    const meResponse = await fetch('https://www.melhorenvio.com.br/api/v2/me/shipment/calculate', {
+    const meResponse = await fetch(`${MELHOR_ENVIO_BASE_URL}/api/v2/me/shipment/calculate`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${MELHOR_ENVIO_TOKEN}`,
