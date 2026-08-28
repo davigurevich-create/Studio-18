@@ -37,13 +37,14 @@ as fotos brutas enviadas pelo usuário (fundo branco/estúdio ou fotos
 | S18-005 | Pagani Utopia | ✅ já estava certa | ⏸️ pausado — fotos brutas iniciais em 220x220 (baixa demais), usuário vai subir 2 fotos em resolução melhor (behind, box) depois | — | Retomar quando usuário voltar a esse produto |
 | S18-009 | Maserati Gran Turismo | ✅ já estava certa | ✅ 5 fotos (lateral, traseira, aberto, interior, caixa) | `045` — **rodar no Supabase** | Tridente real da Maserati preservado (marca licenciada). Capa da caixa teve que ser refeita 1x (saiu com carro/cores diferentes do real na 1ª tentativa) |
 | S18-010 | Fórmula 1 Edição Especial | ✅ já estava certa | ✅ 2 fotos (frente, caixa) | `049` — **rodar no Supabase** | Só 3 fotos brutas disponíveis (frente, caixa, caixa-ângulo). 1ª tentativa da "frente" saiu com detalhes errados usando a foto bruta inteira (fundo de pista/faixa de texto atrapalhou); refeita usando um recorte da foto sem o banner, corrigida |
-| S18-012, 013, 014, 015, 017 | (5 restantes) | — | — | — | Fotos brutas já em `products-raw/` — ainda não processados. S18-012 (Lamborghini conceito) é o próximo da fila |
+| S18-012 | Lamborghini Temerario | ✅ já estava certa | ✅ 5 fotos (frente, traseira, detalhe, aberto, caixa) | `051` — **rodar no Supabase** | Nome corrigido: catálogo tinha "Lamborghini Carro Conceito"/"Lamborghini Concept" errado (migration `050`, pasta `products-raw/` renomeada). Fotos de aberto/traseira/caixa usaram refs em 220x220 (baixa res, aceito pelo usuário); a de "detalhe" (traseira reta) usou uma foto nova boa. 1ª tentativa do "aberto" saiu sem o aerofólio, corrigida usando a capa como referência extra |
+| S18-013, 014, 015, 017 | (4 restantes) | — | — | — | Fotos brutas já em `products-raw/` — ainda não processados. S18-013 (Nissan GT-R) é o próximo da fila |
 
 **Vídeos de produto cadastrados**: S18-009 (`046`), S18-014 (`047`), S18-017
 (`048`) — rodar essas migrations também se ainda não tiver rodado.
 
 **Ação pendente imediata ao retomar**: confirmar se o usuário já rodou as
-migrations `038`, `041`–`049` no SQL Editor do Supabase (031, 032, 033,
+migrations `038`, `041`–`051` no SQL Editor do Supabase (031, 032, 033,
 035 já confirmadas).
 
 ## Pipeline técnico (o que funciona)
