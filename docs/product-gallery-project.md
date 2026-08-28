@@ -36,11 +36,15 @@ as fotos brutas enviadas pelo usuário (fundo branco/estúdio ou fotos
 | S18-008 | Lamborghini Centenario | ✅ já estava certa | ✅ 4 fotos (lateral, traseira, aberto, caixa) | `044` — **rodar no Supabase** | Nome corrigido: catálogo tinha "770-4 Touro Furioso"/"Pagani Huayra" errado, produto real é Lamborghini Centenario (migration `043`, pasta `products-raw/` renomeada). Fotos de motor/interior geradas mas reprovadas pelo usuário |
 | S18-005 | Pagani Utopia | ✅ já estava certa | ⏸️ pausado — fotos brutas iniciais em 220x220 (baixa demais), usuário vai subir 2 fotos em resolução melhor (behind, box) depois | — | Retomar quando usuário voltar a esse produto |
 | S18-009 | Maserati Gran Turismo | ✅ já estava certa | ✅ 5 fotos (lateral, traseira, aberto, interior, caixa) | `045` — **rodar no Supabase** | Tridente real da Maserati preservado (marca licenciada). Capa da caixa teve que ser refeita 1x (saiu com carro/cores diferentes do real na 1ª tentativa) |
-| S18-010, 012, 013, 014, 015, 017 | (6 restantes) | — | — | — | Fotos brutas já em `products-raw/` — ainda não processados. S18-010 (Fórmula 1) é o próximo da fila |
+| S18-010 | Fórmula 1 Edição Especial | ✅ já estava certa | ✅ 2 fotos (frente, caixa) | `049` — **rodar no Supabase** | Só 3 fotos brutas disponíveis (frente, caixa, caixa-ângulo). 1ª tentativa da "frente" saiu com detalhes errados usando a foto bruta inteira (fundo de pista/faixa de texto atrapalhou); refeita usando um recorte da foto sem o banner, corrigida |
+| S18-012, 013, 014, 015, 017 | (5 restantes) | — | — | — | Fotos brutas já em `products-raw/` — ainda não processados. S18-012 (Lamborghini conceito) é o próximo da fila |
+
+**Vídeos de produto cadastrados**: S18-009 (`046`), S18-014 (`047`), S18-017
+(`048`) — rodar essas migrations também se ainda não tiver rodado.
 
 **Ação pendente imediata ao retomar**: confirmar se o usuário já rodou as
-migrations `038`, `041`, `042`, `043`, `044` e `045` no SQL Editor do
-Supabase (031, 032, 033, 035 já confirmadas).
+migrations `038`, `041`–`049` no SQL Editor do Supabase (031, 032, 033,
+035 já confirmadas).
 
 ## Pipeline técnico (o que funciona)
 
