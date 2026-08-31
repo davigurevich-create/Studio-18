@@ -43,7 +43,7 @@ de verdade visual pra cada ângulo.
 | S18-012 | Lamborghini Temerario | ✅ já estava certa | ✅ 5 fotos (frente, traseira, detalhe, aberto, caixa) | `050` (nome) + `051` (galeria) | Nome corrigido: era "Lamborghini Carro Conceito"/"Lamborghini Concept" |
 | S18-013 | Nissan GTR Liberty Walk | ✅ já estava certa | ✅ 3 fotos (frente, traseira, caixa) | `052` | Marca real GULY preservada |
 | S18-014 | Ferrari Enzo | ✅ já estava certa | ✅ 3 fotos (aberto, motor, caixa) | `054` (galeria) + vídeo: `047` | Material bruto sem referência de traseira/lateral — galeria só com os ângulos que tinham fonte confiável |
-| S18-015 | Ferrari SF90 XX Stradale | não conferida ainda | ❌ não iniciado | — | `products-raw/` só tem o README — **usuário ainda não subiu fotos brutas** |
+| S18-015 | Ferrari SF90 XX Stradale | ✅ já estava certa | ✅ 4 fotos (frente, lateral, traseira, aberto) | `055` | Sem caixa (sem referência bruta). Frente refeita 1x: rodas saíram amarelas e viradas pra dentro nas duas, corrigido pra cinza claro + geometria de esterço realista |
 | S18-017 | Lamborghini Aventador SVJ | não conferida ainda | ❌ não iniciado | vídeo: `048` | Fotos brutas já em `products-raw/` (behind, box, motor detail, other angle). **Vídeo de produto já cadastrado e migration criada** — só falta a galeria de fotos |
 | S18-011, S18-016 | Bugatti Tourbillon, Land Rover Discovery | ✅ | ✅ (feitos em sessão anterior a 25/08) | `033`, `030` | — |
 
@@ -248,25 +248,23 @@ Este ambiente **bloqueia egress para os domínios de storage da Higgsfield**
 - Trial converteu com sucesso pro plano Plus mensal ($49/mês, 1.000
   créditos/mês) em 27/08/2026. Checar saldo com `mcp__Higgsfield__balance`
   ao retomar (não checado nesta sessão, mas o plano cobre com folga o
-  restante do catálogo — só faltam 015, 017).
+  restante do catálogo — só falta 017).
 
 ## Próximos passos ao retomar
 
 1. **S18-017 (Lamborghini Aventador SVJ)**: fotos brutas já disponíveis
    (`products-raw/S18-017-lamborghini-aventador-svj/`: behind.webp,
-   box.avif, motor detail.webp, other angle.webp — nunca vistas ainda).
-   Vídeo já cadastrado (migration `048`).
-2. **S18-015 (Ferrari SF90 XX Stradale)**: `products-raw/` só tem o
-   README — **perguntar ao usuário se ele já tem fotos brutas pra subir**
-   antes de tentar processar.
-3. Depois desses 2, o catálogo de 17 produtos estará com galeria completa.
+   box.avif, motor detail.webp, other angle.webp, other side.webp,
+   side.webp — conferir qualidade/resolução antes de gerar). Vídeo já
+   cadastrado (migration `048`).
+2. Depois desse, o catálogo de 17 produtos estará com galeria completa.
    Vale perguntar ao usuário se quer mais vídeos de produto pros que ainda
    não têm, ou se quer revisitar algum produto já feito.
-4. Seguir o mesmo pipeline validado (seção acima): ver fotos brutas →
+3. Seguir o mesmo pipeline validado (seção acima): ver fotos brutas →
    comparar com capa atual → corrigir capa só se necessário → identificar
    técnica certa por tipo de foto → gerar galeria → testar 1 imagem se for
    técnica nova/incerta → mostrar link pro usuário → usuário baixa e sobe
    no GitHub → puxar, converter, wire no `mockCatalog.ts` + migration SQL
    → commit e push → lembrar o usuário de rodar a migration no Supabase.
-5. **Perguntar ao usuário quais migrations (`030`–`054`) ele já rodou no
+4. **Perguntar ao usuário quais migrations (`030`–`055`) ele já rodou no
    Supabase** — não assumir que produção está sincronizada.
