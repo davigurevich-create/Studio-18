@@ -1,7 +1,9 @@
 # Projeto: galerias de fotos ambientadas dos produtos Studio 18
 
-**Status em 28/08/2026, fim de sessão (encerrada por tamanho de contexto —
-retomar em nova sessão).**
+**Status em 31/08/2026: catálogo completo — todos os 17 produtos (S18-001
+a S18-017) têm capa e galeria corretas.** Ver seção "Próximos passos"
+pra tarefas de manutenção que ainda restam (confirmar migrations rodadas,
+vídeos de produto opcionais).
 
 ## Objetivo
 
@@ -44,7 +46,7 @@ de verdade visual pra cada ângulo.
 | S18-013 | Nissan GTR Liberty Walk | ✅ já estava certa | ✅ 3 fotos (frente, traseira, caixa) | `052` | Marca real GULY preservada |
 | S18-014 | Ferrari Enzo | ✅ já estava certa | ✅ 3 fotos (aberto, motor, caixa) | `054` (galeria) + vídeo: `047` | Material bruto sem referência de traseira/lateral — galeria só com os ângulos que tinham fonte confiável |
 | S18-015 | Ferrari SF90 XX Stradale | ✅ já estava certa | ✅ 4 fotos (frente, lateral, traseira, aberto) | `055` | Sem caixa (sem referência bruta). Frente refeita 1x: rodas saíram amarelas e viradas pra dentro nas duas, corrigido pra cinza claro + geometria de esterço realista |
-| S18-017 | Lamborghini Aventador SVJ | não conferida ainda | ❌ não iniciado | vídeo: `048` | Fotos brutas já em `products-raw/` (behind, box, motor detail, other angle). **Vídeo de produto já cadastrado e migration criada** — só falta a galeria de fotos |
+| S18-017 | Lamborghini Aventador SVJ | ✅ trocada por foto gerada | ✅ 2 fotos (traseira, motor) | `056` (galeria+capa) + vídeo: `048` | Usuário aprovou só frente/traseira/motor das 5 geradas; capa antiga substituída pela nova frente. Lateral e caixa (essa vinda de foto bruta 220x220) descartadas |
 | S18-011, S18-016 | Bugatti Tourbillon, Land Rover Discovery | ✅ | ✅ (feitos em sessão anterior a 25/08) | `033`, `030` | — |
 
 **Vídeos de produto cadastrados** (fora da galeria de fotos, feature
@@ -247,24 +249,26 @@ Este ambiente **bloqueia egress para os domínios de storage da Higgsfield**
 
 - Trial converteu com sucesso pro plano Plus mensal ($49/mês, 1.000
   créditos/mês) em 27/08/2026. Checar saldo com `mcp__Higgsfield__balance`
-  ao retomar (não checado nesta sessão, mas o plano cobre com folga o
-  restante do catálogo — só falta 017).
+  ao retomar (não checado desde 27/08, mas o plano cobre com folga
+  qualquer trabalho de manutenção que sobrar).
 
 ## Próximos passos ao retomar
 
-1. **S18-017 (Lamborghini Aventador SVJ)**: fotos brutas já disponíveis
-   (`products-raw/S18-017-lamborghini-aventador-svj/`: behind.webp,
-   box.avif, motor detail.webp, other angle.webp, other side.webp,
-   side.webp — conferir qualidade/resolução antes de gerar). Vídeo já
-   cadastrado (migration `048`).
-2. Depois desse, o catálogo de 17 produtos estará com galeria completa.
-   Vale perguntar ao usuário se quer mais vídeos de produto pros que ainda
-   não têm, ou se quer revisitar algum produto já feito.
-3. Seguir o mesmo pipeline validado (seção acima): ver fotos brutas →
-   comparar com capa atual → corrigir capa só se necessário → identificar
-   técnica certa por tipo de foto → gerar galeria → testar 1 imagem se for
-   técnica nova/incerta → mostrar link pro usuário → usuário baixa e sobe
-   no GitHub → puxar, converter, wire no `mockCatalog.ts` + migration SQL
-   → commit e push → lembrar o usuário de rodar a migration no Supabase.
-4. **Perguntar ao usuário quais migrations (`030`–`055`) ele já rodou no
-   Supabase** — não assumir que produção está sincronizada.
+O catálogo de 17 produtos está com capa e galeria completas. O que pode
+sobrar pra uma próxima sessão:
+
+1. **Perguntar ao usuário quais migrations (`030`–`056`) ele já rodou no
+   Supabase** — não assumir que produção está sincronizada. Essa é a
+   ação mais importante ao retomar, sempre.
+2. Perguntar se o usuário quer mais vídeos de produto pros que ainda não
+   têm (hoje só S18-009, S18-014, S18-017 têm vídeo).
+3. Perguntar se quer revisitar/refinar algum produto já feito (trocar
+   ângulo, gerar foto que faltou por falta de material bruto na época,
+   etc.).
+4. Se qualquer um dos itens acima virar trabalho novo, seguir o mesmo
+   pipeline validado (seção acima): ver fotos brutas → comparar com capa
+   atual → corrigir capa só se necessário → identificar técnica certa por
+   tipo de foto → gerar galeria → testar 1 imagem se for técnica
+   nova/incerta → mostrar link pro usuário → usuário baixa e sobe no
+   GitHub → puxar, converter, wire no `mockCatalog.ts` + migration SQL →
+   commit e push → lembrar o usuário de rodar a migration no Supabase.
