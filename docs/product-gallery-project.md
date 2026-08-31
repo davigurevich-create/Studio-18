@@ -1,9 +1,8 @@
 # Projeto: galerias de fotos ambientadas dos produtos Studio 18
 
-**Status em 31/08/2026: catálogo completo — todos os 17 produtos (S18-001
-a S18-017) têm capa e galeria corretas.** Ver seção "Próximos passos"
-pra tarefas de manutenção que ainda restam (confirmar migrations rodadas,
-vídeos de produto opcionais).
+**Status em 31/08/2026: galerias completas nos 17 produtos. Nova frente
+de trabalho aberta: refazer capas de baixa resolução** — ver seção
+"Refazendo capas de baixa resolução" logo abaixo.
 
 ## Objetivo
 
@@ -53,12 +52,39 @@ de verdade visual pra cada ângulo.
 separada — ver seção "Vídeos de produto"): S18-009 (`046`), S18-014
 (`047`), S18-017 (`048`).
 
-**⚠️ Ação pendente mais importante ao retomar**: o usuário provavelmente
-ainda não rodou boa parte das migrations no Supabase. Pergunte quais das
-`030`–`052` já foram rodadas antes de assumir que a produção está
-atualizada — a lista completa está em `supabase/*.sql` (arquivos
-numerados, cada um comentado com qual migration ele espera já ter rodado
-antes).
+**Migrations `030`–`056` já confirmadas como rodadas pelo usuário em
+31/08/2026.** Qualquer migration nova a partir da `057` ainda precisa ser
+confirmada ao retomar — não assumir que produção está sincronizada sem
+perguntar.
+
+## 🖼️ Refazendo capas de baixa resolução (aberto em 31/08/2026)
+
+Depois que as galerias ficaram completas, o usuário notou que a maioria
+das **capas** (`image_url`, campo separado da galeria) foi herdada de uma
+fase anterior do projeto e está em resolução baixa. Só 4 produtos têm
+capa boa hoje: **S18-002 (BMW R1300GS), S18-007 (Mazda 787B), S18-016
+(Land Rover Discovery) e S18-017 (Aventador SVJ)** — não mexer nessas.
+
+Fluxo combinado: criei `site/public/covers-raw/` (mesmo padrão de
+`products-raw/`, um `README.md` geral + uma subpasta por SKU com slug
+idêntico ao de `products-raw/`) pros outros 13 produtos:
+
+- S18-001, S18-003, S18-004, S18-005, S18-006, S18-008, S18-009, S18-010,
+  S18-011, S18-012, S18-013, S18-014, S18-015.
+
+O usuário sobe 1+ foto(s) do produto no mesmo ângulo/pose da capa atual
+em cada subpasta. Pipeline pra gerar a capa nova é o mesmo já validado
+pras galerias (pixel-fidelity na foto de referência + cena padrão do
+site) — só que o resultado vai direto pra `site/public/products/S18-0XX.jpg`
+(sobrescrevendo a capa antiga, mesmo nome de arquivo) em vez de virar uma
+entrada nova em `image_urls`. Cada substituição de capa também pede uma
+migration `update products set image_url = ... where sku = ...` (a menos
+que o nome do arquivo continue exatamente igual, caso em que só
+sobrescrever o arquivo já basta — mas gerar a migration mesmo assim deixa
+rastro e cobre o caso de mudar o Supabase de storage local no futuro).
+
+**Nenhuma foto foi subida em `covers-raw/` ainda nesta sessão** — ao
+retomar, checar se o usuário já subiu alguma antes de perguntar de novo.
 
 ## ✅ S18-005 (Pagani Utopia) — resolvido em 31/08/2026
 
