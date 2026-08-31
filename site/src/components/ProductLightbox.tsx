@@ -6,14 +6,12 @@ import { useSwipeNav } from '@/lib/useSwipeNav'
 
 export function ProductLightbox({
   gallery,
-  labels,
   index,
   onIndexChange,
   onClose,
   productName,
 }: {
   gallery: string[]
-  labels: string[]
   index: number
   onIndexChange: (index: number) => void
   onClose: () => void
@@ -99,7 +97,7 @@ export function ProductLightbox({
           <motion.img
             key={gallery[index]}
             src={gallery[index]}
-            alt={`${productName} — ${labels[index]}`}
+            alt={productName}
             initial={{ opacity: 0, scale: 1.04 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
@@ -108,15 +106,6 @@ export function ProductLightbox({
           />
         </AnimatePresence>
       </div>
-
-      {total > 1 && (
-        <div
-          className="mt-5 rounded-full px-4 py-1.5 text-xs tracking-widest"
-          style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--gold-bright)', border: '1px solid var(--hairline-strong)' }}
-        >
-          {index + 1} / {total} — {labels[index].toUpperCase()}
-        </div>
-      )}
     </motion.div>,
     document.body,
   )
