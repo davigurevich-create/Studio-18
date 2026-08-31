@@ -1,8 +1,9 @@
 # Projeto: galerias de fotos ambientadas dos produtos Studio 18
 
-**Status em 31/08/2026: galerias completas nos 17 produtos. Nova frente
-de trabalho aberta: refazer capas de baixa resolução** — ver seção
-"Refazendo capas de baixa resolução" logo abaixo.
+**Status em 31/08/2026: catálogo completo — todos os 17 produtos têm
+galeria E capa em boa resolução.** Ver seção "Capas de baixa resolução
+refeitas" logo abaixo pra lições aprendidas nessa rodada, caso precise
+refazer mais alguma capa no futuro.
 
 ## Objetivo
 
@@ -57,34 +58,56 @@ separada — ver seção "Vídeos de produto"): S18-009 (`046`), S18-014
 confirmada ao retomar — não assumir que produção está sincronizada sem
 perguntar.
 
-## 🖼️ Refazendo capas de baixa resolução (aberto em 31/08/2026)
+## ✅ Capas de baixa resolução refeitas (31/08/2026)
 
-Depois que as galerias ficaram completas, o usuário notou que a maioria
-das **capas** (`image_url`, campo separado da galeria) foi herdada de uma
-fase anterior do projeto e está em resolução baixa. Só 4 produtos têm
-capa boa hoje: **S18-002 (BMW R1300GS), S18-007 (Mazda 787B), S18-016
-(Land Rover Discovery) e S18-017 (Aventador SVJ)** — não mexer nessas.
+O usuário notou que a maioria das **capas** (`image_url`, campo separado
+da galeria) tinha sido herdada de uma fase anterior do projeto e estava
+em resolução baixa. Só 4 produtos já tinham capa boa desde antes:
+**S18-002 (BMW R1300GS), S18-007 (Mazda 787B), S18-016 (Land Rover
+Discovery) e S18-017 (Aventador SVJ)**.
 
-Fluxo combinado: criei `site/public/covers-raw/` (mesmo padrão de
-`products-raw/`, um `README.md` geral + uma subpasta por SKU com slug
-idêntico ao de `products-raw/`) pros outros 13 produtos:
+Fluxo usado: `site/public/covers-raw/` (mesmo padrão de `products-raw/`)
+recebeu 1 foto de referência por SKU pros outros 13 produtos (S18-001,
+003, 004, 005, 006, 008, 009, 010, 011, 012, 013, 014, 015) — o usuário
+acabou subindo todas soltas na raiz da pasta em vez de dentro de cada
+subpasta, mas os nomes de arquivo deixavam claro qual SKU era cada uma.
+Cada capa nova foi gerada com o pipeline padrão (pixel-fidelity na foto
+de referência + cena padrão do site) e **sobrescreveu o arquivo
+`site/public/products/S18-0XX.jpg` com o mesmo nome** — como o nome do
+arquivo não mudou, não precisou de migration (o `image_url` no banco já
+apontava pro mesmo caminho).
 
-- S18-001, S18-003, S18-004, S18-005, S18-006, S18-008, S18-009, S18-010,
-  S18-011, S18-012, S18-013, S18-014, S18-015.
+**Lições desta rodada** (importantes se precisar refazer mais alguma
+capa no futuro):
 
-O usuário sobe 1+ foto(s) do produto no mesmo ângulo/pose da capa atual
-em cada subpasta. Pipeline pra gerar a capa nova é o mesmo já validado
-pras galerias (pixel-fidelity na foto de referência + cena padrão do
-site) — só que o resultado vai direto pra `site/public/products/S18-0XX.jpg`
-(sobrescrevendo a capa antiga, mesmo nome de arquivo) em vez de virar uma
-entrada nova em `image_urls`. Cada substituição de capa também pede uma
-migration `update products set image_url = ... where sku = ...` (a menos
-que o nome do arquivo continue exatamente igual, caso em que só
-sobrescrever o arquivo já basta — mas gerar a migration mesmo assim deixa
-rastro e cobre o caso de mudar o Supabase de storage local no futuro).
-
-**Nenhuma foto foi subida em `covers-raw/` ainda nesta sessão** — ao
-retomar, checar se o usuário já subiu alguma antes de perguntar de novo.
+1. **Não copiar detalhes da capa antiga/errada pro prompt.** No S18-001
+   (LP5000) e no S18-003 (Porsche 963) o prompt inicial descreveu
+   aerofólio/adesivos que eu lembrava da versão antiga do site, não os
+   que realmente apareciam na foto de referência nova — saiu aerofólio
+   preto em vez de branco, e sem os adesivos "RACEFORGE"/"GULY" corretos.
+   Sempre **olhar a foto de referência com atenção** (inclusive dar zoom
+   em detalhes pequenos como faróis) antes de escrever o prompt, em vez
+   de confiar na memória de como o produto "geralmente" é.
+2. **Portas abertas por padrão.** O modelo tende a gerar a porta
+   levantada/aberta mesmo sem pedir (aconteceu no S18-001 e no S18-011).
+   Se a referência mostra porta fechada, escrever explicitamente "door
+   CLOSED, normal closed position, do not show it lifted or open".
+3. **Iluminação de fundo pode variar entre gerações** mesmo usando a
+   mesma imagem de cena como referência (aconteceu no S18-008: saiu com
+   luzes da estante acesas/brilhantes, diferente do padrão apagado/quente
+   das outras capas). Se acontecer, adicionar instrução explícita tipo
+   "books softly lit from within the shelves, subtle low-key warm glow,
+   NOT bright overhead lights" e regenerar.
+4. **Farol/detalhe pequeno pode sumir na geração** mesmo com boa
+   referência — o Porsche 963 perdeu o conjunto de 4 elementos de LED do
+   farol dianteiro na primeira tentativa. Deu zoom na região específica
+   da referência, descrevi os elementos individualmente (quantidade,
+   forma, cor) e funcionou na segunda tentativa.
+5. Quando o usuário reprova um resultado e sobe uma referência nova
+   inteira (não uma correção de prompt), sempre regenerar do zero com a
+   nova imagem — foi o caso do S18-009 (Maserati) e do S18-010 (Fórmula
+   1, que tinha saído com a decalagem errada de outra equipe de F1 em vez
+   da decalagem própria REOBRIX do produto).
 
 ## ✅ S18-005 (Pagani Utopia) — resolvido em 31/08/2026
 
