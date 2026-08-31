@@ -34,7 +34,7 @@ de verdade visual pra cada ângulo.
 | S18-002 | Moto "BMW R1300GS" (GULY) | ✅ corrigida | ✅ 3 fotos (falta "frente", decisão do usuário) | `035` | Nome "BMW R1300GS" mantido no catálogo — decisão do usuário, não mexer |
 | S18-003 | Porsche 963 | ✅ já estava certa | ✅ 5 fotos (frente, lateral, traseira, aberto, caixa) | `032` | — |
 | S18-004 | BMW M4 GT4 | ✅ já estava certa | ✅ 6 fotos (frente, traseira, aberto, motor, interior, caixa) | `038` | Primeiro produto a usar a técnica de "detalhe com fundo trocado" (pipeline item 13) |
-| S18-005 | Pagani Utopia | ✅ já estava certa | ⏸️ **PAUSADO, RETOMAR** — ver seção dedicada abaixo | — | Único produto com trabalho pendente no meio |
+| S18-005 | Pagani Utopia | ✅ já estava certa | ✅ 5 fotos (lateral, traseira, aberto, interior, caixa) | `053` | Refeita com material novo do usuário (1new-5new); a tentativa anterior tinha saído com o topo/cockpit bege em vez de preto |
 | S18-006 | Lotus Exige Cup 430 | ✅ já estava certa | ✅ 6 fotos (frente, lateral, traseira, aberto, motor, caixa) | `041` | Marca real Lotus preservada (licenciada) |
 | S18-007 | Mazda 787B | ✅ corrigida (faltava marca "mazda") | ✅ 4 fotos (lateral, traseira, aberto, caixa) | `042` | Marca real Mazda preservada |
 | S18-008 | Lamborghini Centenario | ✅ já estava certa | ✅ 4 fotos (lateral, traseira, aberto, caixa) | `043` (nome) + `044` (galeria) | Nome corrigido: era "770-4 Touro Furioso"/"Pagani Huayra" |
@@ -58,27 +58,27 @@ atualizada — a lista completa está em `supabase/*.sql` (arquivos
 numerados, cada um comentado com qual migration ele espera já ter rodado
 antes).
 
-## ⏸️ S18-005 (Pagani Utopia) — retomar aqui primeiro
+## ✅ S18-005 (Pagani Utopia) — resolvido em 31/08/2026
 
-Este é o único produto com trabalho no meio. Histórico:
+Histórico completo (deixado como referência de lição aprendida):
 
 1. Tentativa inicial usou fotos brutas em 220x220 (baixa demais) → usuário
    rejeitou o resultado ("ficou distante do real").
-2. Usuário subiu 2 fotos novas em resolução boa:
-   `site/public/products-raw/S18-005-pagani-utopia/S18-005-behind.jpg` e
-   `S18-005-box.jpg` (as antigas em `.avif` 220x220 continuam na pasta,
-   ignorá-las).
-3. Gerei traseira e caixa a partir dessas 2 fotos boas (técnica: crop
-   removendo banner/dimensões antes de gerar, ver pipeline item 8/18) e
-   mostrei os links pro usuário — **ele não chegou a aprovar nem rejeitar
-   essas imagens**, decidiu pausar o S18-005 pra focar no S18-006 antes.
-4. **Ao retomar**: reenviar os 2 links (se ainda estiverem nos logs desta
-   sessão) ou gerar de novo a partir de `behind.jpg`/`box.jpg`, mostrar
-   pro usuário, e seguir o fluxo normal (aprovação → usuário sobe em
-   `products/` → eu converto/aplico). Capa (`S18-005.jpg`) já está correta,
-   não mexer. Considerar pedir mais fotos brutas em boa resolução (lateral,
-   aberto) se o usuário quiser uma galeria mais completa — hoje só teria
-   2 fotos (traseira, caixa) além da capa.
+2. Usuário subiu 2 fotos novas em resolução boa (`S18-005-behind.jpg` e
+   `S18-005-box.jpg`) → gerei traseira e caixa a partir delas, mas a
+   traseira saiu com o topo/cockpit bege em vez de preto (usuário reprovou
+   só essa; a caixa foi aprovada).
+3. Usuário subiu 5 fotos novas (`S18-005-1new` a `5new`): só a `1new.webp`
+   (1000x1000) tinha resolução boa — as outras 4 eram 220x220 (uma delas,
+   `S18-003-3new.avif`, com o SKU errado no nome, arquivo da pasta do
+   S18-005). Refiz a traseira a partir da `1new.webp` reforçando
+   explicitamente no prompt "roof/cabin BLACK, not beige" — resolveu.
+   Gerei mais 3 fotos a partir das de 220x220 (lateral, aberto, interior)
+   como teste e todas saíram boas dessa vez — 220x220 não é garantia de
+   resultado ruim, mas continua sendo um risco a avisar o usuário antes de
+   gastar créditos.
+4. Galeria final: lateral, traseira, aberto, interior, caixa (migration
+   `053`). Capa (`S18-005.jpg`) não foi mexida, já estava correta.
 
 ## Pipeline técnico (o que funciona)
 
@@ -248,31 +248,29 @@ Este ambiente **bloqueia egress para os domínios de storage da Higgsfield**
 - Trial converteu com sucesso pro plano Plus mensal ($49/mês, 1.000
   créditos/mês) em 27/08/2026. Checar saldo com `mcp__Higgsfield__balance`
   ao retomar (não checado nesta sessão, mas o plano cobre com folga o
-  restante do catálogo — só faltam S18-005, 014, 015, 017).
+  restante do catálogo — só faltam 014, 015, 017).
 
 ## Próximos passos ao retomar
 
-1. **Retomar S18-005 (Pagani Utopia)** — ver seção dedicada acima. É o
-   único produto com trabalho parado no meio.
-2. **S18-014 (Ferrari Enzo)**: fotos brutas já disponíveis
+1. **S18-014 (Ferrari Enzo)**: fotos brutas já disponíveis
    (`products-raw/S18-014-ferrari-enzo/`: angle.jpg, box.avif, front.avif,
    open.webp, scan.jpg — nunca vistas ainda, conferir qualidade/resolução
    antes de gerar). Vídeo já cadastrado (migration `047`).
-3. **S18-017 (Lamborghini Aventador SVJ)**: fotos brutas já disponíveis
+2. **S18-017 (Lamborghini Aventador SVJ)**: fotos brutas já disponíveis
    (`products-raw/S18-017-lamborghini-aventador-svj/`: behind.webp,
    box.avif, motor detail.webp, other angle.webp — nunca vistas ainda).
    Vídeo já cadastrado (migration `048`).
-4. **S18-015 (Ferrari SF90 XX Stradale)**: `products-raw/` só tem o
+3. **S18-015 (Ferrari SF90 XX Stradale)**: `products-raw/` só tem o
    README — **perguntar ao usuário se ele já tem fotos brutas pra subir**
    antes de tentar processar.
-5. Depois desses 4, o catálogo de 17 produtos estará com galeria completa.
+4. Depois desses 3, o catálogo de 17 produtos estará com galeria completa.
    Vale perguntar ao usuário se quer mais vídeos de produto pros que ainda
    não têm, ou se quer revisitar algum produto já feito.
-6. Seguir o mesmo pipeline validado (seção acima): ver fotos brutas →
+5. Seguir o mesmo pipeline validado (seção acima): ver fotos brutas →
    comparar com capa atual → corrigir capa só se necessário → identificar
    técnica certa por tipo de foto → gerar galeria → testar 1 imagem se for
    técnica nova/incerta → mostrar link pro usuário → usuário baixa e sobe
    no GitHub → puxar, converter, wire no `mockCatalog.ts` + migration SQL
    → commit e push → lembrar o usuário de rodar a migration no Supabase.
-7. **Perguntar ao usuário quais migrations (`030`–`052`) ele já rodou no
+6. **Perguntar ao usuário quais migrations (`030`–`053`) ele já rodou no
    Supabase** — não assumir que produção está sincronizada.
