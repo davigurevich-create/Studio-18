@@ -131,12 +131,18 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
                 </span>
                 {motorInStock && (
                   <span
-                    className="relative h-3.5 w-6 shrink-0 rounded-full transition-colors"
-                    style={{ background: withMotor ? 'var(--gold)' : 'var(--carbon-2)' }}
+                    className="relative h-3.5 w-6 shrink-0 rounded-full border transition-colors"
+                    style={{
+                      background: withMotor ? 'var(--gold)' : 'var(--carbon-1)',
+                      borderColor: withMotor ? 'var(--gold)' : 'var(--ink-muted)',
+                    }}
                   >
                     <span
-                      className="absolute top-0.5 h-2.5 w-2.5 rounded-full bg-white transition-transform"
-                      style={{ transform: withMotor ? 'translateX(12px)' : 'translateX(2px)' }}
+                      className="absolute top-0.5 h-2.5 w-2.5 rounded-full transition-transform"
+                      style={{
+                        background: withMotor ? '#0a0a0a' : 'var(--ink-muted)',
+                        transform: withMotor ? 'translateX(11px)' : 'translateX(1px)',
+                      }}
                     />
                   </span>
                 )}
