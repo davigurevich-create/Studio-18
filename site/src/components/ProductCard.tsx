@@ -123,10 +123,23 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
             >
               <span className="flex items-center gap-1.5" style={{ color: withMotor ? 'var(--gold-bright)' : 'var(--ink-secondary)' }}>
                 <Cog size={12} strokeWidth={2} />
-                Motor detalhado
+                Motor funcional
               </span>
-              <span className="tabular" style={{ color: withMotor ? 'var(--gold-bright)' : 'var(--ink-muted)' }}>
-                {motorInStock ? `+${formatBRL(product.motor_price_brl!)}` : 'indisponível'}
+              <span className="flex shrink-0 items-center gap-1.5">
+                <span className="tabular" style={{ color: withMotor ? 'var(--gold-bright)' : 'var(--ink-muted)' }}>
+                  {motorInStock ? `+${formatBRL(product.motor_price_brl!)}` : 'indisponível'}
+                </span>
+                {motorInStock && (
+                  <span
+                    className="relative h-3.5 w-6 shrink-0 rounded-full transition-colors"
+                    style={{ background: withMotor ? 'var(--gold)' : 'var(--carbon-2)' }}
+                  >
+                    <span
+                      className="absolute top-0.5 h-2.5 w-2.5 rounded-full bg-white transition-transform"
+                      style={{ transform: withMotor ? 'translateX(12px)' : 'translateX(2px)' }}
+                    />
+                  </span>
+                )}
               </span>
             </button>
           )}

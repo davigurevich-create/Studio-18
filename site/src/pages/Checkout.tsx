@@ -544,7 +544,7 @@ export function Checkout() {
               </div>
               <div className="text-xs" style={{ color: 'var(--ink-muted)' }}>
                 {product.manufacturer} · {product.scale}
-                {line.withMotor && ' · com motor detalhado'}
+                {line.withMotor && ' · com motor funcional'}
               </div>
             </div>
             <div className="tabular shrink-0 text-sm font-medium" style={{ color: 'var(--gold-bright)' }}>

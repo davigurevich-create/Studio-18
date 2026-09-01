@@ -91,7 +91,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                             style={{ color: line.withMotor ? 'var(--gold-bright)' : 'var(--ink-muted)' }}
                           >
                             <Cog size={11} strokeWidth={2} />
-                            {line.withMotor ? 'Com motor detalhado' : motorInStock ? `+ motor detalhado (+${formatBRL(product!.motor_price_brl!)})` : 'Motor indisponível'}
+                            {line.withMotor ? 'Com motor funcional' : motorInStock ? `+ motor funcional (+${formatBRL(product!.motor_price_brl!)})` : 'Motor indisponível'}
                           </button>
                         )}
                         <div className="mt-2 flex items-center gap-2">

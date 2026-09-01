@@ -1,4 +1,4 @@
--- Studio 18 — opcional de motor detalhado, com estoque próprio, pros 9
+-- Studio 18 — opcional de motor funcional, com estoque próprio, pros 9
 -- modelos que possuem essa opção. Rode no SQL Editor do Supabase.
 
 -- 1. Liga cada carro ao "produto" do motor correspondente (quando existir).
@@ -10,7 +10,7 @@ alter table products add column if not exists motor_product_id uuid references p
 -- aparecer como um item comprável separado na Coleção do site — só existe
 -- como opcional vinculado ao carro.
 insert into products (sku, name, category, manufacturer, sale_price_brl, image_url, active)
-select p.sku || '-MOTOR', 'Motor detalhado — ' || p.name, 'motor', p.manufacturer, m.motor_price, p.image_url, false
+select p.sku || '-MOTOR', 'Motor funcional — ' || p.name, 'motor', p.manufacturer, m.motor_price, p.image_url, false
 from (values
   ('S18-001', 387.64),
   ('S18-003', 246.12),

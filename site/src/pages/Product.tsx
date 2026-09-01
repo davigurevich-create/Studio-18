@@ -151,7 +151,7 @@ export function Product() {
                   <Cog size={16} strokeWidth={2} style={{ color: withMotor ? 'var(--gold-bright)' : 'var(--ink-secondary)' }} />
                   <span>
                     <span className="block text-sm font-medium" style={{ color: withMotor ? 'var(--gold-bright)' : 'var(--ink)' }}>
-                      Adicionar motor detalhado
+                      Adicionar motor funcional
                     </span>
                     <span className="block text-xs" style={{ color: 'var(--ink-muted)' }}>
                       {motorInStock ? 'Réplica funcional do motor, peça a peça' : 'Sem estoque no momento'}
