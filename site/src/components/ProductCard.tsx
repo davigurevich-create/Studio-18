@@ -138,10 +138,10 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
                     }}
                   >
                     <span
-                      className="absolute top-0.5 h-2.5 w-2.5 rounded-full transition-transform"
+                      className="absolute top-1/2 h-2.5 w-2.5 rounded-full transition-transform"
                       style={{
                         background: withMotor ? '#0a0a0a' : 'var(--ink-muted)',
-                        transform: withMotor ? 'translateX(11px)' : 'translateX(1px)',
+                        transform: withMotor ? 'translate(11px, -50%)' : 'translate(1px, -50%)',
                       }}
                     />
                   </span>
