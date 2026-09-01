@@ -149,13 +149,8 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
               <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
                 À VISTA NO PIX
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                  {formatBRL(pixPrice(effectivePrice))}
-                </span>
-                <span className="tabular text-xs line-through" style={{ color: 'var(--ink-muted)' }}>
-                  {formatBRL(effectivePrice)}
-                </span>
+              <div className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
+                {formatBRL(pixPrice(effectivePrice))}
               </div>
               <div className="tabular text-[11px]" style={{ color: 'var(--ink-muted)' }}>
                 ou {MAX_INSTALLMENTS}x de {formatBRL(installmentPrice(effectivePrice))} no cartão
