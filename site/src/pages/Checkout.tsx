@@ -17,7 +17,7 @@ import {
 } from '@/lib/api'
 import { ensureMercadoPagoInit, isMercadoPagoConfigured } from '@/lib/mercadopago'
 import { formatBRL } from '@/lib/format'
-import { pixPrice } from '@/lib/pricing'
+import { pixPrice, unitPriceWithMotor } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { useTurnstile } from '@/lib/useTurnstile'
@@ -124,7 +124,7 @@ export function Checkout() {
     [lines, catalog],
   )
 
-  const subtotal = items.reduce((t, i) => t + i.product.sale_price_brl * i.line.quantity, 0)
+  const subtotal = items.reduce((t, i) => t + unitPriceWithMotor(i.product, Boolean(i.line.withMotor)) * i.line.quantity, 0)
   const priceBeforeCoupon = method === 'pix' ? pixPrice(subtotal) : subtotal
   const productsTotal = appliedCoupon
     ? Math.round(priceBeforeCoupon * (1 - appliedCoupon.discountPct / 100) * 100) / 100
@@ -157,7 +157,7 @@ export function Checkout() {
   }, [])
 
   const checkoutItems = useMemo(
-    () => items.map((i) => ({ productId: i.product.id, quantity: i.line.quantity })),
+    () => items.map((i) => ({ productId: i.product.id, quantity: i.line.quantity, withMotor: Boolean(i.line.withMotor) })),
     [items],
   )
 
@@ -544,10 +544,11 @@ export function Checkout() {
               </div>
               <div className="text-xs" style={{ color: 'var(--ink-muted)' }}>
                 {product.manufacturer} · {product.scale}
+                {line.withMotor && ' · com motor detalhado'}
               </div>
             </div>
             <div className="tabular shrink-0 text-sm font-medium" style={{ color: 'var(--gold-bright)' }}>
-              {formatBRL(product.sale_price_brl * line.quantity)}
+              {formatBRL(unitPriceWithMotor(product, Boolean(line.withMotor)) * line.quantity)}
             </div>
           </div>
         ))}

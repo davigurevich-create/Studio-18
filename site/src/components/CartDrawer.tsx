@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Cog } from 'lucide-react'
 import { useCart } from '@/lib/cart'
 import { getCatalog } from '@/lib/api'
 import { formatBRL } from '@/lib/format'
+import { unitPriceWithMotor } from '@/lib/pricing'
 import type { CatalogProduct } from '@/types/catalog'
 
 export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { lines, setQuantity, removeItem } = useCart()
+  const { lines, setQuantity, removeItem, setMotor } = useCart()
   const [catalog, setCatalog] = useState<CatalogProduct[]>([])
   const navigate = useNavigate()
 
@@ -19,7 +21,10 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
     .map((l) => ({ line: l, product: catalog.find((p) => p.id === l.productId) }))
     .filter((i) => i.product)
 
-  const total = items.reduce((t, i) => t + (i.product!.sale_price_brl * i.line.quantity), 0)
+  const total = items.reduce(
+    (t, i) => t + unitPriceWithMotor(i.product!, Boolean(i.line.withMotor)) * i.line.quantity,
+    0,
+  )
 
   return (
     <AnimatePresence>
@@ -57,7 +62,10 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 </p>
               ) : (
                 <div className="flex flex-col gap-4">
-                  {items.map(({ line, product }) => (
+                  {items.map(({ line, product }) => {
+                    const hasMotorOption = Boolean(product!.motor_product_id && product!.motor_price_brl)
+                    const motorInStock = (product!.motor_quantity_available ?? 0) > 0
+                    return (
                     <div key={line.productId} className="flex gap-3">
                       <div
                         className="h-16 w-16 shrink-0 overflow-hidden rounded-lg"
@@ -72,8 +80,20 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                           {product!.name}
                         </div>
                         <div className="mt-0.5 text-xs" style={{ color: 'var(--ink-muted)' }}>
-                          {formatBRL(product!.sale_price_brl)}
+                          {formatBRL(unitPriceWithMotor(product!, Boolean(line.withMotor)))}
                         </div>
+                        {hasMotorOption && (
+                          <button
+                            type="button"
+                            onClick={() => motorInStock && setMotor(line.productId, !line.withMotor)}
+                            disabled={!motorInStock}
+                            className="mt-1.5 flex items-center gap-1 text-[11px] disabled:cursor-not-allowed disabled:opacity-50"
+                            style={{ color: line.withMotor ? 'var(--gold-bright)' : 'var(--ink-muted)' }}
+                          >
+                            <Cog size={11} strokeWidth={2} />
+                            {line.withMotor ? 'Com motor detalhado' : motorInStock ? `+ motor detalhado (+${formatBRL(product!.motor_price_brl!)})` : 'Motor indisponível'}
+                          </button>
+                        )}
                         <div className="mt-2 flex items-center gap-2">
                           <button
                             type="button"
@@ -105,7 +125,8 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                         </div>
                       </div>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>

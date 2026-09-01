@@ -78,6 +78,7 @@ interface Address {
 interface CheckoutItem {
   productId: string
   quantity: number
+  withMotor?: boolean
 }
 
 interface RequestBody {
@@ -178,12 +179,26 @@ Deno.serve(async (req) => {
     console.log('checkpoint: antes de buscar produtos')
     const { data: products, error: productsError } = await supabase
       .from('products')
-      .select('id, name, sale_price_brl')
+      .select('id, name, sale_price_brl, motor_product_id')
       .in('id', items.map((i) => i.productId))
     console.log('checkpoint: depois de buscar produtos', { productsError, count: products?.length })
     if (productsError || !products || products.length !== items.length) {
       return json({ error: 'Um ou mais produtos não foram encontrados.' }, 404)
     }
+
+    // Opcional de motor detalhado — busca os produtos de motor (têm estoque
+    // e preço próprios) dos itens que pediram a opção, nunca confiando no
+    // preço calculado no navegador.
+    const motorProductIds = items
+      .map((i) => {
+        if (!i.withMotor) return null
+        return products.find((p) => p.id === i.productId)?.motor_product_id ?? null
+      })
+      .filter((id): id is string => Boolean(id))
+
+    const { data: motorProducts } = motorProductIds.length
+      ? await supabase.from('products').select('id, name, sale_price_brl').in('id', motorProductIds)
+      : { data: [] as { id: string; name: string; sale_price_brl: number }[] }
 
     const lineItems = items.map((i) => {
       const product = products.find((p) => p.id === i.productId)!
@@ -191,6 +206,17 @@ Deno.serve(async (req) => {
       const unitPrice = paymentMethod === 'pix' ? pixPrice(fullUnitPrice) : fullUnitPrice
       return { product, quantity: i.quantity, unitPrice, fullUnitPrice }
     })
+
+    for (const i of items) {
+      if (!i.withMotor) continue
+      const product = products.find((p) => p.id === i.productId)!
+      if (!product.motor_product_id) continue
+      const motor = motorProducts?.find((m) => m.id === product.motor_product_id)
+      if (!motor) continue
+      const fullUnitPrice = Number(motor.sale_price_brl)
+      const unitPrice = paymentMethod === 'pix' ? pixPrice(fullUnitPrice) : fullUnitPrice
+      lineItems.push({ product: motor, quantity: i.quantity, unitPrice, fullUnitPrice })
+    }
 
     // Cupom de desconto (parcerias com influenciadores) — nunca confiamos no
     // desconto calculado no navegador, revalidamos aqui contra a tabela

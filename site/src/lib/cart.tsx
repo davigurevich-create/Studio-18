@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 export interface CartLine {
   productId: string
   quantity: number
+  withMotor?: boolean
 }
 
 interface Toast {
@@ -14,9 +15,10 @@ interface Toast {
 interface CartContextValue {
   lines: CartLine[]
   totalCount: number
-  addItem: (productId: string, quantity?: number, productName?: string) => void
+  addItem: (productId: string, quantity?: number, productName?: string, withMotor?: boolean) => void
   removeItem: (productId: string) => void
   setQuantity: (productId: string, quantity: number) => void
+  setMotor: (productId: string, withMotor: boolean) => void
   clear: () => void
 }
 
@@ -44,13 +46,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(lines))
   }, [lines])
 
-  const addItem = (productId: string, quantity = 1, productName?: string) => {
+  const addItem = (productId: string, quantity = 1, productName?: string, withMotor = false) => {
     setLines((prev) => {
       const existing = prev.find((l) => l.productId === productId)
       if (existing) {
-        return prev.map((l) => (l.productId === productId ? { ...l, quantity: l.quantity + quantity } : l))
+        return prev.map((l) =>
+          l.productId === productId ? { ...l, quantity: l.quantity + quantity, withMotor: l.withMotor || withMotor } : l,
+        )
       }
-      return [...prev, { productId, quantity }]
+      return [...prev, { productId, quantity, withMotor }]
     })
 
     if (productName) {
@@ -74,12 +78,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setLines((prev) => prev.map((l) => (l.productId === productId ? { ...l, quantity } : l)))
   }
 
+  const setMotor = (productId: string, withMotor: boolean) => {
+    setLines((prev) => prev.map((l) => (l.productId === productId ? { ...l, withMotor } : l)))
+  }
+
   const clear = () => setLines([])
 
   const totalCount = lines.reduce((t, l) => t + l.quantity, 0)
 
   return (
-    <CartContext.Provider value={{ lines, totalCount, addItem, removeItem, setQuantity, clear }}>
+    <CartContext.Provider value={{ lines, totalCount, addItem, removeItem, setQuantity, setMotor, clear }}>
       {children}
 
       <div className="pointer-events-none fixed inset-x-0 top-20 z-[60] flex flex-col items-center gap-2 px-4">

@@ -19,6 +19,10 @@ export interface CatalogProduct {
   height_cm: number | null
   width_cm: number | null
   quantity_available: number
+  motor_product_id?: string | null
+  motor_name?: string | null
+  motor_price_brl?: number | null
+  motor_quantity_available?: number | null
 }
 
 export type PaymentMethod = 'pix' | 'cartao' | 'boleto'
@@ -36,6 +40,7 @@ export interface CheckoutAddress {
 export interface CheckoutItem {
   productId: string
   quantity: number
+  withMotor?: boolean
 }
 
 export interface ShippingOption {

@@ -20,3 +20,13 @@ export function installmentPrice(fullPrice: number, installments = MAX_INSTALLME
 // Nível de estoque considerado baixo o suficiente para mostrar um aviso de
 // urgência na vitrine ("restam poucas unidades").
 export const LOW_STOCK_THRESHOLD = 5
+
+// Preço unitário efetivo de um produto, somando o opcional de motor
+// detalhado quando escolhido — usado em qualquer lugar que precise exibir
+// ou calcular o valor de um item (card, página de produto, carrinho).
+export function unitPriceWithMotor(
+  product: { sale_price_brl: number; motor_price_brl?: number | null },
+  withMotor: boolean,
+): number {
+  return product.sale_price_brl + (withMotor && product.motor_price_brl ? product.motor_price_brl : 0)
+}

@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowUpRight, Heart, ShoppingBag } from 'lucide-react'
+import { ArrowUpRight, Cog, Heart, ShoppingBag } from 'lucide-react'
 import { ProductArt } from '@/components/ProductArt'
 import { formatBRL } from '@/lib/format'
-import { installmentPrice, LOW_STOCK_THRESHOLD, MAX_INSTALLMENTS, pixPrice } from '@/lib/pricing'
+import { installmentPrice, LOW_STOCK_THRESHOLD, MAX_INSTALLMENTS, pixPrice, unitPriceWithMotor } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { useFavorites } from '@/lib/favorites'
@@ -16,9 +16,14 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
   const { isFavorite, toggleFavorite } = useFavorites()
   const navigate = useNavigate()
   const [justAdded, setJustAdded] = useState(false)
+  const [wantMotor, setWantMotor] = useState(false)
   const favorited = isFavorite(product.id)
   const outOfStock = product.quantity_available <= 0
   const lowStock = !outOfStock && product.quantity_available <= LOW_STOCK_THRESHOLD
+  const hasMotorOption = Boolean(product.motor_product_id && product.motor_price_brl)
+  const motorInStock = (product.motor_quantity_available ?? 0) > 0
+  const withMotor = hasMotorOption && motorInStock && wantMotor
+  const effectivePrice = unitPriceWithMotor(product, withMotor)
 
   return (
     <motion.div
@@ -101,6 +106,31 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
             </div>
           )}
 
+          {hasMotorOption && !outOfStock && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                if (motorInStock) setWantMotor((v) => !v)
+              }}
+              disabled={!motorInStock}
+              className="mt-3 flex w-full items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-left text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              style={{
+                borderColor: withMotor ? 'var(--gold-dim)' : 'var(--hairline)',
+                background: withMotor ? 'var(--gold-wash)' : 'transparent',
+              }}
+            >
+              <span className="flex items-center gap-1.5" style={{ color: withMotor ? 'var(--gold-bright)' : 'var(--ink-secondary)' }}>
+                <Cog size={12} strokeWidth={2} />
+                Motor detalhado
+              </span>
+              <span className="tabular" style={{ color: withMotor ? 'var(--gold-bright)' : 'var(--ink-muted)' }}>
+                {motorInStock ? `+${formatBRL(product.motor_price_brl!)}` : 'indisponível'}
+              </span>
+            </button>
+          )}
+
           <div className="mt-4 flex items-center justify-between gap-2 border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
             <div>
               <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
@@ -108,14 +138,14 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                  {formatBRL(pixPrice(product.sale_price_brl))}
+                  {formatBRL(pixPrice(effectivePrice))}
                 </span>
                 <span className="tabular text-xs line-through" style={{ color: 'var(--ink-muted)' }}>
-                  {formatBRL(product.sale_price_brl)}
+                  {formatBRL(effectivePrice)}
                 </span>
               </div>
               <div className="tabular text-[11px]" style={{ color: 'var(--ink-muted)' }}>
-                ou {MAX_INSTALLMENTS}x de {formatBRL(installmentPrice(product.sale_price_brl))} no cartão
+                ou {MAX_INSTALLMENTS}x de {formatBRL(installmentPrice(effectivePrice))} no cartão
               </div>
             </div>
             {outOfStock ? (
@@ -131,7 +161,7 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
-                  addItem(product.id, 1, product.name)
+                  addItem(product.id, 1, product.name, withMotor)
                   setJustAdded(true)
                 }}
                 className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium"

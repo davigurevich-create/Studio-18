@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Heart, Truck } from 'lucide-react'
+import { Cog, Heart, Truck } from 'lucide-react'
 import { ProductGallery } from '@/components/ProductGallery'
 import { RestockWaitlistForm } from '@/components/RestockWaitlistForm'
 import { getProduct, getShippingOptions } from '@/lib/api'
 import { formatBRL } from '@/lib/format'
-import { installmentPrice, LOW_STOCK_THRESHOLD, MAX_INSTALLMENTS, pixPrice } from '@/lib/pricing'
+import { installmentPrice, LOW_STOCK_THRESHOLD, MAX_INSTALLMENTS, pixPrice, unitPriceWithMotor } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { useFavorites } from '@/lib/favorites'
@@ -21,6 +21,7 @@ export function Product() {
   const [product, setProduct] = useState<CatalogProduct | null | undefined>(undefined)
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
+  const [wantMotor, setWantMotor] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -41,6 +42,11 @@ export function Product() {
       </div>
     )
   }
+
+  const hasMotorOption = Boolean(product.motor_product_id && product.motor_price_brl)
+  const motorInStock = (product.motor_quantity_available ?? 0) > 0
+  const withMotor = hasMotorOption && motorInStock && wantMotor
+  const effectivePrice = unitPriceWithMotor(product, withMotor)
 
   return (
     <div className="mx-auto max-w-6xl px-6 pb-24 pt-32">
@@ -130,6 +136,45 @@ export function Product() {
               </div>
             )}
 
+            {hasMotorOption && (
+              <button
+                type="button"
+                onClick={() => motorInStock && setWantMotor((v) => !v)}
+                disabled={!motorInStock}
+                className="mb-4 flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                style={{
+                  borderColor: withMotor ? 'var(--gold-dim)' : 'var(--hairline)',
+                  background: withMotor ? 'var(--gold-wash)' : 'transparent',
+                }}
+              >
+                <span className="flex items-center gap-2">
+                  <Cog size={16} strokeWidth={2} style={{ color: withMotor ? 'var(--gold-bright)' : 'var(--ink-secondary)' }} />
+                  <span>
+                    <span className="block text-sm font-medium" style={{ color: withMotor ? 'var(--gold-bright)' : 'var(--ink)' }}>
+                      Adicionar motor detalhado
+                    </span>
+                    <span className="block text-xs" style={{ color: 'var(--ink-muted)' }}>
+                      {motorInStock ? 'Réplica funcional do motor, peça a peça' : 'Sem estoque no momento'}
+                    </span>
+                  </span>
+                </span>
+                <span className="flex items-center gap-2 shrink-0">
+                  <span className="tabular text-sm font-medium" style={{ color: withMotor ? 'var(--gold-bright)' : 'var(--ink-secondary)' }}>
+                    +{formatBRL(product.motor_price_brl!)}
+                  </span>
+                  <span
+                    className="relative h-5 w-9 shrink-0 rounded-full transition-colors"
+                    style={{ background: withMotor ? 'var(--gold)' : 'var(--carbon-2)' }}
+                  >
+                    <span
+                      className="absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform"
+                      style={{ transform: withMotor ? 'translateX(18px)' : 'translateX(2px)' }}
+                    />
+                  </span>
+                </span>
+              </button>
+            )}
+
             <div className="flex items-end justify-between">
               <div>
                 <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
@@ -137,14 +182,14 @@ export function Product() {
                 </div>
                 <div className="flex items-baseline gap-3">
                   <span className="tabular text-3xl font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                    {formatBRL(pixPrice(product.sale_price_brl))}
+                    {formatBRL(pixPrice(effectivePrice))}
                   </span>
                   <span className="tabular text-sm line-through" style={{ color: 'var(--ink-muted)' }}>
-                    {formatBRL(product.sale_price_brl)}
+                    {formatBRL(effectivePrice)}
                   </span>
                 </div>
                 <div className="mt-1 text-xs" style={{ color: 'var(--ink-muted)' }}>
-                  ou {MAX_INSTALLMENTS}x de {formatBRL(installmentPrice(product.sale_price_brl))} no cartão, ou boleto
+                  ou {MAX_INSTALLMENTS}x de {formatBRL(installmentPrice(effectivePrice))} no cartão, ou boleto
                 </div>
               </div>
 
@@ -178,7 +223,7 @@ export function Product() {
                 <button
                   type="button"
                   onClick={() => {
-                    addItem(product.id, quantity, product.name)
+                    addItem(product.id, quantity, product.name, withMotor)
                     setAdded(true)
                     setTimeout(() => setAdded(false), 2000)
                   }}
@@ -190,7 +235,7 @@ export function Product() {
                 <button
                   type="button"
                   onClick={() => {
-                    addItem(product.id, quantity)
+                    addItem(product.id, quantity, undefined, withMotor)
                     navigate('/checkout')
                   }}
                   className="flex-1 rounded-full px-8 py-3 text-sm font-medium tracking-wide"
