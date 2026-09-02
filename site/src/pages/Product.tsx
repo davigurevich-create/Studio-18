@@ -47,6 +47,7 @@ export function Product() {
   const motorInStock = (product.motor_quantity_available ?? 0) > 0
   const withMotor = hasMotorOption && motorInStock && wantMotor
   const effectivePrice = unitPriceWithMotor(product, withMotor)
+  const priceUnknown = product.sale_price_brl <= 0
 
   return (
     <div className="mx-auto max-w-6xl px-6 pb-24 pt-32">
@@ -177,20 +178,28 @@ export function Product() {
 
             <div className="flex items-end justify-between">
               <div>
-                <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-                  À VISTA NO PIX
-                </div>
-                <div className="flex items-baseline gap-3">
-                  <span className="tabular text-3xl font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                    {formatBRL(pixPrice(effectivePrice))}
-                  </span>
-                  <span className="tabular text-sm line-through" style={{ color: 'var(--ink-muted)' }}>
-                    {formatBRL(effectivePrice)}
-                  </span>
-                </div>
-                <div className="mt-1 text-xs" style={{ color: 'var(--ink-muted)' }}>
-                  ou {MAX_INSTALLMENTS}x de {formatBRL(installmentPrice(effectivePrice))} no cartão, ou boleto
-                </div>
+                {priceUnknown ? (
+                  <div className="text-lg font-medium" style={{ color: 'var(--ink-secondary)' }}>
+                    Preço em breve
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+                      À VISTA NO PIX
+                    </div>
+                    <div className="flex items-baseline gap-3">
+                      <span className="tabular text-3xl font-semibold" style={{ color: 'var(--gold-bright)' }}>
+                        {formatBRL(pixPrice(effectivePrice))}
+                      </span>
+                      <span className="tabular text-sm line-through" style={{ color: 'var(--ink-muted)' }}>
+                        {formatBRL(effectivePrice)}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-xs" style={{ color: 'var(--ink-muted)' }}>
+                      ou {MAX_INSTALLMENTS}x de {formatBRL(installmentPrice(effectivePrice))} no cartão, ou boleto
+                    </div>
+                  </>
+                )}
               </div>
 
               {product.quantity_available > 0 && (

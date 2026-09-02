@@ -18,6 +18,7 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
   const [justAdded, setJustAdded] = useState(false)
   const [wantMotor, setWantMotor] = useState(false)
   const favorited = isFavorite(product.id)
+  const priceUnknown = product.sale_price_brl <= 0
   const outOfStock = product.quantity_available <= 0
   const lowStock = !outOfStock && product.quantity_available <= LOW_STOCK_THRESHOLD
   const hasMotorOption = Boolean(product.motor_product_id && product.motor_price_brl)
@@ -152,15 +153,23 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
 
           <div className="mt-4 flex items-center justify-between gap-2 border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
             <div>
-              <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-                À VISTA NO PIX
-              </div>
-              <div className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                {formatBRL(pixPrice(effectivePrice))}
-              </div>
-              <div className="tabular text-[11px]" style={{ color: 'var(--ink-muted)' }}>
-                ou {MAX_INSTALLMENTS}x de {formatBRL(installmentPrice(effectivePrice))} no cartão
-              </div>
+              {priceUnknown ? (
+                <div className="text-sm font-medium" style={{ color: 'var(--ink-secondary)' }}>
+                  Preço em breve
+                </div>
+              ) : (
+                <>
+                  <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+                    À VISTA NO PIX
+                  </div>
+                  <div className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
+                    {formatBRL(pixPrice(effectivePrice))}
+                  </div>
+                  <div className="tabular text-[11px]" style={{ color: 'var(--ink-muted)' }}>
+                    ou {MAX_INSTALLMENTS}x de {formatBRL(installmentPrice(effectivePrice))} no cartão
+                  </div>
+                </>
+              )}
             </div>
             {outOfStock ? (
               <span
