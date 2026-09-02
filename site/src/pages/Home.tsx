@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, useScroll } from 'framer-motion'
 import { HeroCar } from '@/components/HeroCar'
 import { ProductCard } from '@/components/ProductCard'
+import { CollectionRail } from '@/components/CollectionRail'
 import { getCatalog } from '@/lib/api'
 import type { CatalogProduct } from '@/types/catalog'
 
@@ -72,6 +73,22 @@ export function Home() {
     }
     return sorted
   }, [products, tag, search, sortBy])
+
+  // vitrine em trilhos por coleção — só faz sentido na visão "padrão"
+  // (sem filtro, sem busca, sem ordenação custom); qualquer refinamento
+  // do usuário cai pra grade única, que é melhor pra comparar/varrer
+  const showRails = tag === 'todos' && !search.trim() && sortBy === 'nome'
+
+  const railGroups = useMemo(() => {
+    if (!showRails) return []
+    const map = new Map<string, CatalogProduct[]>()
+    for (const p of products) {
+      const key = p.collection_tag ?? 'Novidades'
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(p)
+    }
+    return Array.from(map.entries())
+  }, [products, showRails])
 
   return (
     <div>
@@ -194,6 +211,12 @@ export function Home() {
               <p className="text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
                 Nenhum modelo encontrado com esses filtros.
               </p>
+            ) : showRails ? (
+              <div className="flex flex-col gap-14">
+                {railGroups.map(([groupTag, items]) => (
+                  <CollectionRail key={groupTag} title={groupTag} products={items} />
+                ))}
+              </div>
             ) : (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredProducts.map((p, i) => (
