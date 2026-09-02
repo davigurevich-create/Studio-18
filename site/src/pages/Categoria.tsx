@@ -86,14 +86,18 @@ export function Categoria() {
       </div>
 
       <section className="mx-auto max-w-6xl px-6 py-16">
-        <motion.h1
+        {/* título fica só no banner (já incorporado na imagem) — aqui, uma
+            frase curta que dá contexto/significado à categoria, sem repetir
+            o nome */}
+        <h1 className="sr-only">{category.title}</h1>
+        <motion.p
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-2 text-3xl sm:text-4xl"
+          className="mb-2 max-w-2xl text-xl leading-snug sm:text-3xl"
         >
-          {category.title}
-        </motion.h1>
+          {category.tagline}
+        </motion.p>
         <p className="mb-10 text-sm" style={{ color: 'var(--ink-muted)' }}>
           {categoryProducts.length} {categoryProducts.length === 1 ? 'modelo disponível' : 'modelos disponíveis'} nessa
           coleção.

@@ -4,6 +4,7 @@
 export interface CategoryDef {
   slug: string
   title: string
+  tagline: string
   banner: string
   bannerMobile: string
   skus: string[]
@@ -13,6 +14,7 @@ export const categories: CategoryDef[] = [
   {
     slug: 'supercarros',
     title: 'Supercarros',
+    tagline: 'O topo da engenharia automotiva, em escala.',
     banner: '/banner-supercarros.png',
     bannerMobile: '/banner-supercarros-mobile.png',
     skus: [
@@ -35,6 +37,7 @@ export const categories: CategoryDef[] = [
   {
     slug: 'lemans-gt',
     title: 'Lemans & GT',
+    tagline: 'Resistência e velocidade das pistas lendárias.',
     banner: '/banner-lemans-gt.png',
     bannerMobile: '/banner-lemans-gt-mobile.png',
     skus: [
@@ -46,6 +49,7 @@ export const categories: CategoryDef[] = [
   {
     slug: 'formula',
     title: 'Fórmula',
+    tagline: 'A precisão da categoria mais rápida das pistas.',
     banner: '/banner-formula.png',
     bannerMobile: '/banner-formula-mobile.png',
     skus: [
@@ -55,6 +59,7 @@ export const categories: CategoryDef[] = [
   {
     slug: 'off-road',
     title: 'Off-Road',
+    tagline: 'Força bruta pra encarar qualquer terreno.',
     banner: '/banner-offroad.png',
     bannerMobile: '/banner-offroad-mobile.png',
     skus: [
@@ -64,6 +69,7 @@ export const categories: CategoryDef[] = [
   {
     slug: 'motos',
     title: 'Motos',
+    tagline: 'Duas rodas, adrenalina pura.',
     banner: '/banner-motos.png',
     bannerMobile: '/banner-motos-mobile.png',
     skus: [
