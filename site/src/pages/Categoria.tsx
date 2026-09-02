@@ -77,7 +77,7 @@ export function Categoria() {
         />
         <Link
           to="/"
-          className="absolute left-6 top-20 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium tracking-wide backdrop-blur-sm transition sm:left-10 sm:top-10"
+          className="absolute left-6 top-20 z-[60] flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium tracking-wide backdrop-blur-sm transition sm:left-10 sm:top-24"
           style={{ background: 'rgba(6,6,6,0.55)', color: 'var(--ink-secondary)', border: '1px solid var(--hairline)' }}
         >
           <ArrowLeft size={14} strokeWidth={2} />
