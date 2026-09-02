@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, useScroll } from 'framer-motion'
 import { HeroCar } from '@/components/HeroCar'
 import { CategoryBanner } from '@/components/CategoryBanner'
+import { SpotifySection } from '@/components/SpotifySection'
 import { categories } from '@/lib/categories'
 import { getCatalog } from '@/lib/api'
 import type { CatalogProduct } from '@/types/catalog'
@@ -169,6 +170,8 @@ export function Home() {
           </motion.div>
         </div>
       </section>
+
+      <SpotifySection />
     </div>
   )
 }
