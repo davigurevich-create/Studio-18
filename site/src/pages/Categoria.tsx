@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
-import { ProductCard } from '@/components/ProductCard'
+import { ProductRail } from '@/components/ProductRail'
 import { getCategoryBySlug } from '@/lib/categories'
 import { getCatalog } from '@/lib/api'
 import type { CatalogProduct } from '@/types/catalog'
@@ -136,11 +136,7 @@ export function Categoria() {
                 Nenhum modelo encontrado com esses filtros.
               </p>
             ) : (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {categoryProducts.map((p, i) => (
-                  <ProductCard key={p.id} product={p} index={i} />
-                ))}
-              </div>
+              <ProductRail products={categoryProducts} />
             )}
           </>
         )}
