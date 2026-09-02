@@ -5,6 +5,7 @@ export interface CategoryDef {
   slug: string
   title: string
   banner: string
+  bannerMobile: string
   skus: string[]
 }
 
@@ -13,6 +14,7 @@ export const categories: CategoryDef[] = [
     slug: 'supercarros',
     title: 'Supercarros',
     banner: '/banner-supercarros.png',
+    bannerMobile: '/banner-supercarros-mobile.png',
     skus: [
       'S18-001', // Lamborghini LP5000
       'S18-005', // Pagani Utopia
@@ -34,6 +36,7 @@ export const categories: CategoryDef[] = [
     slug: 'lemans-gt',
     title: 'Lemans & GT',
     banner: '/banner-lemans-gt.png',
+    bannerMobile: '/banner-lemans-gt-mobile.png',
     skus: [
       'S18-003', // Porsche 963
       'S18-007', // Mazda 787B
@@ -44,6 +47,7 @@ export const categories: CategoryDef[] = [
     slug: 'formula',
     title: 'Fórmula',
     banner: '/banner-formula.png',
+    bannerMobile: '/banner-formula-mobile.png',
     skus: [
       'S18-010', // Fórmula 1 Edição Especial
     ],
@@ -52,6 +56,7 @@ export const categories: CategoryDef[] = [
     slug: 'off-road',
     title: 'Off-Road',
     banner: '/banner-offroad.png',
+    bannerMobile: '/banner-offroad-mobile.png',
     skus: [
       'S18-016', // Land Rover Defender
     ],
@@ -60,6 +65,7 @@ export const categories: CategoryDef[] = [
     slug: 'motos',
     title: 'Motos',
     banner: '/banner-motos.png',
+    bannerMobile: '/banner-motos-mobile.png',
     skus: [
       'S18-002', // BMW R1300GS
       'S18-019', // Zero Pulse

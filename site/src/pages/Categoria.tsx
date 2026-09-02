@@ -66,15 +66,18 @@ export function Categoria() {
     <div>
       {/* banner de abertura — mesma imagem do card na home, funcionando
           como "introdução" visual à categoria */}
-      <div className="relative h-[46vh] min-h-[300px] w-full overflow-hidden sm:h-[56vh]" style={{ maxHeight: 560 }}>
-        <img src={category.banner} alt={category.title} className="absolute inset-0 h-full w-full object-cover" />
+      <div className="relative aspect-[4/5] w-full overflow-hidden sm:aspect-auto sm:h-[56vh] sm:max-h-[560px]">
+        <picture>
+          <source media="(max-width: 639px)" srcSet={category.bannerMobile} />
+          <img src={category.banner} alt={category.title} className="absolute inset-0 h-full w-full object-cover" />
+        </picture>
         <div
           className="pointer-events-none absolute inset-0"
           style={{ background: 'linear-gradient(to top, var(--carbon-0), transparent 55%)' }}
         />
         <Link
           to="/"
-          className="absolute left-6 top-6 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium tracking-wide backdrop-blur-sm transition sm:left-10 sm:top-10"
+          className="absolute left-6 top-20 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium tracking-wide backdrop-blur-sm transition sm:left-10 sm:top-10"
           style={{ background: 'rgba(6,6,6,0.55)', color: 'var(--ink-secondary)', border: '1px solid var(--hairline)' }}
         >
           <ArrowLeft size={14} strokeWidth={2} />

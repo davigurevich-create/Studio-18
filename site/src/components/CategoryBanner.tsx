@@ -15,15 +15,20 @@ export function CategoryBanner({ category, count }: { category: CategoryDef; cou
       <motion.div
         ref={wrapRef}
         whileTap={{ scale: 0.985 }}
-        className="relative h-[62vh] min-h-[380px] w-full overflow-hidden sm:h-[75vh] sm:min-h-[520px]"
-        style={{ maxHeight: 720 }}
+        className="relative aspect-[4/5] w-full overflow-hidden sm:aspect-auto sm:h-[75vh] sm:min-h-[520px] sm:max-h-[720px]"
       >
-        <motion.img
-          src={category.banner}
-          alt={category.title}
-          className="pointer-events-none absolute inset-0 h-[120%] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-          style={{ top: '-10%', y: parallaxY }}
-        />
+        {/* imagem mobile é 4:5, mesma proporção do container — cabe inteira,
+            sem corte; a desktop é bem mais larga, por isso usa o truque de
+            altura extra + offset pra cobrir o container sem distorcer */}
+        <picture>
+          <source media="(max-width: 639px)" srcSet={category.bannerMobile} />
+          <motion.img
+            src={category.banner}
+            alt={category.title}
+            className="pointer-events-none absolute left-0 right-0 top-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 sm:top-[-10%] sm:h-[120%]"
+            style={{ y: parallaxY }}
+          />
+        </picture>
 
         {/* escurecimento extra sutil no hover, pra dar contraste ao CTA que desliza pra dentro */}
         <div
