@@ -1,3 +1,26 @@
+## 🆕 4 novos SKUs "placeholder" para teste de interesse (01/09/2026)
+
+O usuário quer testar interesse em 4 modelos novos **antes de decidir
+importar no próximo container** — não é estoque real ainda. Pastas de fotos
+brutas já criadas, aguardando upload do usuário:
+
+- `S18-018-audi-rs6-avant/` — Audi RS6 Avant (CADA)
+- `S18-019-zero-pulse/` — moto Zero Pulse (GULY)
+- `S18-020-mclaren-senna-gtr/` — McLaren Senna GTR (GULY)
+- `S18-021-aston-martin-valour/` — Aston Martin Valour (NIFELIZ)
+
+Plano: assim que o usuário subir as fotos brutas de cada um, gerar pelo
+menos a **capa** ambientada (cenário padrão) — a galeria completa é
+opcional aqui, já que o objetivo não é o produto estar pronto pra venda,
+é só captar interesse. Depois, criar os 4 produtos via migration SQL com
+`active = true` e **zero estoque** (sem `inventory_movements` de entrada)
+— eles aparecem no site automaticamente como "Esgotado no lote atual" com
+o botão "Avise-me" (lista de espera), que é o mecanismo real usado pra
+medir demanda antes de importar. Preço de venda: pedir ao usuário uma
+estimativa (pode ajustar depois quando o produto virar estoque real).
+
+---
+
 # Projeto: galerias de fotos ambientadas dos produtos Studio 18
 
 **Status em 31/08/2026: catálogo completo — todos os 17 produtos têm
