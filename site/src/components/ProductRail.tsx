@@ -8,7 +8,7 @@ function RailCard({ product, index, active }: { product: CatalogProduct; index: 
   return (
     <div
       data-rail-card
-      className="w-[74vw] shrink-0 snap-center sm:w-[320px]"
+      className="w-[74vw] shrink-0 snap-start sm:w-[320px]"
       style={{
         transform: active ? 'scale(1) translateY(0)' : 'scale(0.92) translateY(6px)',
         opacity: active ? 1 : 0.68,
@@ -27,9 +27,13 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
   const [canScroll, setCanScroll] = useState(false)
   const [sweepDone, setSweepDone] = useState(false)
 
-  // mesma lógica geométrica dos trilhos da home: o card "ativo" é o mais
-  // próximo do centro visível, com as pontas (início/fim do scroll, ou
-  // quando não há nada pra rolar) forçadas pro primeiro/último card
+  // cards alinham (snap-start) pela borda esquerda, então o card "ativo" é
+  // simplesmente o que está com a borda esquerda mais próxima do scrollLeft
+  // atual — ao contrário de "mais próximo do centro do container", isso
+  // funciona igual não importa quantos cards cabem na tela ao mesmo tempo
+  // (era o bug: num trilho largo no desktop, com vários cards visíveis, o
+  // centro do CONTAINER fica longe do centro de qualquer card individual
+  // perto das pontas, fazendo o cálculo "pular" pro card errado)
   useEffect(() => {
     const el = scrollerRef.current
     if (!el) return
@@ -50,12 +54,10 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
         return
       }
 
-      const containerCenter = el.scrollLeft + el.clientWidth / 2
       let closestIndex = 0
       let closestDistance = Infinity
       cards.forEach((card, i) => {
-        const cardCenter = card.offsetLeft + card.offsetWidth / 2
-        const distance = Math.abs(cardCenter - containerCenter)
+        const distance = Math.abs(card.offsetLeft - el.scrollLeft)
         if (distance < closestDistance) {
           closestDistance = distance
           closestIndex = i
@@ -118,7 +120,6 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
         <div
           ref={scrollerRef}
           className="no-scrollbar flex snap-x snap-mandatory gap-5 overflow-x-auto pb-3"
-          style={{ scrollPaddingLeft: 24, scrollPaddingRight: 24 }}
         >
           {products.map((p, i) => (
             <RailCard key={p.id} product={p} index={i} active={i === activeIndex} />
