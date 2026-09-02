@@ -33,6 +33,11 @@ type DragSample = { t: number; x: number }
 // parecer travado logo no primeiro cliquezinho de rolagem.
 const SETTLE_DELAY = 120
 
+// distância mínima de movimento pra um pointerdown virar "arraste" — abaixo
+// disso é tratado como clique normal (deixa o navegador abrir o produto);
+// só a partir daqui a gente chama setPointerCapture/mexe no scrollLeft.
+const DRAG_THRESHOLD = 6
+
 export function ProductRail({ products }: { products: CatalogProduct[] }) {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -40,9 +45,17 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
   const [interacted, setInteracted] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
 
-  const dragRef = useRef<{ active: boolean; samples: DragSample[] }>({ active: false, samples: [] })
+  const dragRef = useRef<{ down: boolean; dragging: boolean; pointerId: number; startX: number; startY: number; samples: DragSample[] }>({
+    down: false,
+    dragging: false,
+    pointerId: 0,
+    startX: 0,
+    startY: 0,
+    samples: [],
+  })
   const momentumRaf = useRef(0)
   const settleTimer = useRef(0)
+  const suppressClickRef = useRef(false)
 
   const markInteracted = () => setInteracted(true)
 
@@ -96,7 +109,7 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
     // ajuste fino: só roda depois que a rolagem (touch, wheel, drag ou o
     // momentum do mouse) já ficou parada por um instante
     const settle = () => {
-      if (dragRef.current.active) return
+      if (dragRef.current.dragging) return
       const cards = el.querySelectorAll<HTMLElement>('[data-rail-card]')
       if (cards.length === 0) return
       const index = closestIndex(cards)
@@ -126,22 +139,40 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
 
   // arrastar com o mouse (clique e segure) pra rolar livremente, com
   // inércia ao soltar — o touch já rola com momentum nativo do navegador,
-  // então esse handler só entra em ação pra ponteiro tipo "mouse"
+  // então esse handler só entra em ação pra ponteiro tipo "mouse". Só vira
+  // "arraste" de verdade depois que o ponteiro anda mais que DRAG_THRESHOLD
+  // — um clique normal (sem mover o mouse) nunca chama setPointerCapture
+  // nem mexe no scroll, e por isso não atrapalha o link do card abrir o
+  // produto (era o bug: capturar o ponteiro em TODO clique, mesmo sem
+  // arrastar, fazia o navegador não disparar o "click" no link).
   const onPointerDown = (e: React.PointerEvent) => {
-    markInteracted()
     if (e.pointerType === 'touch') return
-    const el = scrollerRef.current
-    if (!el) return
     cancelAnimationFrame(momentumRaf.current)
-    el.setPointerCapture(e.pointerId)
-    dragRef.current = { active: true, samples: [{ t: performance.now(), x: e.clientX }] }
-    setIsDragging(true)
+    dragRef.current = {
+      down: true,
+      dragging: false,
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      samples: [{ t: performance.now(), x: e.clientX }],
+    }
   }
 
   const onPointerMove = (e: React.PointerEvent) => {
     const el = scrollerRef.current
     const drag = dragRef.current
-    if (!el || !drag.active) return
+    if (!el || !drag.down) return
+
+    if (!drag.dragging) {
+      const dx = e.clientX - drag.startX
+      const dy = e.clientY - drag.startY
+      if (Math.abs(dx) < DRAG_THRESHOLD || Math.abs(dx) < Math.abs(dy)) return
+      drag.dragging = true
+      el.setPointerCapture(drag.pointerId)
+      setIsDragging(true)
+      markInteracted()
+    }
+
     const samples = drag.samples
     const last = samples[samples.length - 1]
     el.scrollLeft -= e.clientX - last.x
@@ -154,9 +185,13 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
   const endDrag = (e: React.PointerEvent) => {
     const el = scrollerRef.current
     const drag = dragRef.current
-    if (!el || !drag.active) return
-    drag.active = false
+    if (!el || !drag.down) return
+    drag.down = false
+    if (!drag.dragging) return // foi só um clique — deixa o link do card abrir normalmente
+
+    drag.dragging = false
     setIsDragging(false)
+    suppressClickRef.current = true
     try {
       el.releasePointerCapture(e.pointerId)
     } catch {
@@ -184,19 +219,30 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
     momentumRaf.current = requestAnimationFrame(step)
   }
 
+  // depois de um arraste de verdade, o navegador ainda dispara um "click"
+  // no elemento solto por baixo do cursor — sem isso, arrastar um card
+  // acabaria abrindo a página do produto por engano
+  const onClickCapture = (e: React.MouseEvent) => {
+    if (suppressClickRef.current) {
+      e.preventDefault()
+      e.stopPropagation()
+      suppressClickRef.current = false
+    }
+  }
+
   return (
     <div className="relative">
       <div className="relative -mx-6 px-6 sm:mx-0 sm:px-0">
         {/* esmaecimento nas bordas — só aparece do lado em que realmente
             existe um card espiando (senão cobre uma fatia do próprio card
             ativo quando ele está encostado numa ponta) */}
-        {activeIndex > 0 && (
+        {canScroll && activeIndex > 0 && (
           <div
             className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 sm:left-0 sm:w-16"
             style={{ background: 'linear-gradient(to right, var(--carbon-0), transparent)' }}
           />
         )}
-        {activeIndex < products.length - 1 && (
+        {canScroll && activeIndex < products.length - 1 && (
           <div
             className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 sm:right-0 sm:w-16"
             style={{ background: 'linear-gradient(to left, var(--carbon-0), transparent)' }}
@@ -222,6 +268,7 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
           onPointerMove={onPointerMove}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
+          onClickCapture={onClickCapture}
           onWheel={markInteracted}
           onDragStart={(e) => e.preventDefault()}
           className={`no-scrollbar flex gap-5 overflow-x-auto pb-3 ${
@@ -229,7 +276,7 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
           }`}
         >
           {products.map((p, i) => (
-            <RailCard key={p.id} product={p} index={i} active={i === activeIndex} />
+            <RailCard key={p.id} product={p} index={i} active={!canScroll || i === activeIndex} />
           ))}
         </div>
       </div>
