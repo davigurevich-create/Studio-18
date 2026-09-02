@@ -74,15 +74,11 @@ export function Home() {
         </div>
       </div>
 
-      {/* Transição suave entre o preto puro da hero e o fundo (levemente
-          mais claro) do resto do site — sem isso havia uma linha nítida
-          onde as duas cores se encontravam. */}
-      <div className="pointer-events-none relative -mt-24 h-24" style={{ background: 'linear-gradient(to bottom, #000000, var(--carbon-0))' }} />
-
       {/* COLEÇÃO / MARKETPLACE — vem direto depois da hero, sem bloco de
-          transição intermediário. 5 banners empilhados, um por categoria,
-          cada um levando pra sua própria página de coleção. */}
-      <section id="colecao">
+          transição intermediário. Fundo 100% preto (igual à hero) até o
+          fim da seção — só depois dela volta pro carbon-0 levemente mais
+          claro do resto do site. */}
+      <section id="colecao" style={{ background: '#000000' }}>
         <div className="mx-auto max-w-6xl px-6 pb-14 pt-24">
           <motion.p variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="eyebrow mb-3 text-center">
             Esculturas de engenharia, pelas suas próprias mãos.
