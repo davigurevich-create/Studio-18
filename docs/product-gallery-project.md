@@ -1,23 +1,23 @@
-## 🆕 4 novos SKUs "placeholder" para teste de interesse (01/09/2026)
+## ✅ 4 novos SKUs "placeholder" para teste de interesse (02/09/2026)
 
-O usuário quer testar interesse em 4 modelos novos **antes de decidir
-importar no próximo container** — não é estoque real ainda. Pastas de fotos
-brutas já criadas, aguardando upload do usuário:
+Concluído. Capas ambientadas geradas (pipeline padrão, cenário
+`S18-016.jpg`), aprovadas pelo usuário e subidas em `site/public/products/`.
+Produtos criados com `active = true`, **zero estoque** (sem
+`inventory_movements` de entrada) e `sale_price_brl = 0` (usuário ainda não
+definiu preço — front-end mostra "Preço em breve" em vez de "R$ 0,00",
+ver `ProductCard.tsx`/`Product.tsx`). Aparecem no site como "Esgotado no
+lote atual" com botão "Avise-me" (lista de espera) — mecanismo real usado
+pra medir demanda antes de importar.
 
-- `S18-018-audi-rs6-avant/` — Audi RS6 Avant (CADA)
-- `S18-019-zero-pulse/` — moto Zero Pulse (GULY)
-- `S18-020-mclaren-senna-gtr/` — McLaren Senna GTR (GULY)
-- `S18-021-aston-martin-valour/` — Aston Martin Valour (NIFELIZ)
+- `S18-018` — Audi RS6 Avant (CADA) — migration `061`
+- `S18-019` — Zero Pulse, moto (GULY) — migration `061`
+- `S18-020` — McLaren Senna GTR (GULY) — migration `061`
+- `S18-021` — Aston Martin Valour (NIFELIZ) — migration `061`
 
-Plano: assim que o usuário subir as fotos brutas de cada um, gerar pelo
-menos a **capa** ambientada (cenário padrão) — a galeria completa é
-opcional aqui, já que o objetivo não é o produto estar pronto pra venda,
-é só captar interesse. Depois, criar os 4 produtos via migration SQL com
-`active = true` e **zero estoque** (sem `inventory_movements` de entrada)
-— eles aparecem no site automaticamente como "Esgotado no lote atual" com
-o botão "Avise-me" (lista de espera), que é o mecanismo real usado pra
-medir demanda antes de importar. Preço de venda: pedir ao usuário uma
-estimativa (pode ajustar depois quando o produto virar estoque real).
+Só capa por enquanto (sem galeria de fotos extras) — objetivo aqui é medir
+interesse, não vender de fato. Se o usuário decidir importar de verdade,
+aí sim vale gerar a galeria completa e pedir preço real, seguindo o
+pipeline normal.
 
 ---
 
