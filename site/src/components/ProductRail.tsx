@@ -8,7 +8,7 @@ function RailCard({ product, index, active }: { product: CatalogProduct; index: 
   return (
     <div
       data-rail-card
-      className="w-[74vw] shrink-0 snap-center sm:w-[480px]"
+      className="w-[74vw] shrink-0 sm:w-[480px]"
       style={{
         transform: active ? 'scale(1) translateY(0)' : 'scale(0.92) translateY(6px)',
         opacity: active ? 1 : 0.68,
@@ -26,6 +26,13 @@ function RailCard({ product, index, active }: { product: CatalogProduct; index: 
 // último movimento) deixa a estimativa mais estável
 type DragSample = { t: number; x: number }
 
+// tempo sem nenhum evento de scroll pra considerar que o trilho "parou" —
+// só então fazemos o ajuste fino (snap) pro card mais próximo. Sem isso
+// (ou usando scroll-snap-type do CSS), o navegador tenta corrigir a
+// posição a cada pixel rolado, brigando com o momentum e fazendo tudo
+// parecer travado logo no primeiro cliquezinho de rolagem.
+const SETTLE_DELAY = 120
+
 export function ProductRail({ products }: { products: CatalogProduct[] }) {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -33,21 +40,42 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
   const [interacted, setInteracted] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
 
-  const dragRef = useRef<{ active: boolean; startScrollLeft: number; samples: DragSample[] }>({
-    active: false,
-    startScrollLeft: 0,
-    samples: [],
-  })
+  const dragRef = useRef<{ active: boolean; samples: DragSample[] }>({ active: false, samples: [] })
   const momentumRaf = useRef(0)
+  const settleTimer = useRef(0)
 
-  // card "ativo" = o mais próximo do centro do trilho — com um card grande
-  // e só uma pequena pontinha do vizinho de cada lado, o centro do
-  // container corresponde de fato ao card centralizado no momento
+  const markInteracted = () => setInteracted(true)
+
   useEffect(() => {
     const el = scrollerRef.current
     if (!el) return
 
     let raf = 0
+    const getTargetLeft = (index: number, cards: NodeListOf<HTMLElement>) => {
+      const card = cards[index]
+      if (!card) return 0
+      const target = card.offsetLeft + card.offsetWidth / 2 - el.clientWidth / 2
+      return Math.max(0, Math.min(target, el.scrollWidth - el.clientWidth))
+    }
+
+    // card "ativo" = o mais próximo do centro do trilho — com um card
+    // grande e só uma pontinha do vizinho de cada lado, o centro do
+    // container corresponde de fato ao card centralizado no momento
+    const closestIndex = (cards: NodeListOf<HTMLElement>) => {
+      const containerCenter = el.scrollLeft + el.clientWidth / 2
+      let closest = 0
+      let closestDistance = Infinity
+      cards.forEach((card, i) => {
+        const cardCenter = card.offsetLeft + card.offsetWidth / 2
+        const distance = Math.abs(cardCenter - containerCenter)
+        if (distance < closestDistance) {
+          closestDistance = distance
+          closest = i
+        }
+      })
+      return closest
+    }
+
     const updateActive = () => {
       raf = 0
       const scrollable = el.scrollWidth > el.clientWidth + 1
@@ -62,25 +90,24 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
         setActiveIndex(cards.length - 1)
         return
       }
+      setActiveIndex(closestIndex(cards))
+    }
 
-      const containerCenter = el.scrollLeft + el.clientWidth / 2
-      let closestIndex = 0
-      let closestDistance = Infinity
-      cards.forEach((card, i) => {
-        const cardCenter = card.offsetLeft + card.offsetWidth / 2
-        const distance = Math.abs(cardCenter - containerCenter)
-        if (distance < closestDistance) {
-          closestDistance = distance
-          closestIndex = i
-        }
-      })
-      setActiveIndex(closestIndex)
+    // ajuste fino: só roda depois que a rolagem (touch, wheel, drag ou o
+    // momentum do mouse) já ficou parada por um instante
+    const settle = () => {
+      if (dragRef.current.active) return
+      const cards = el.querySelectorAll<HTMLElement>('[data-rail-card]')
+      if (cards.length === 0) return
+      const index = closestIndex(cards)
+      el.scrollTo({ left: getTargetLeft(index, cards), behavior: 'smooth' })
     }
 
     const onScroll = () => {
-      setInteracted(true)
       if (raf) return
       raf = requestAnimationFrame(updateActive)
+      window.clearTimeout(settleTimer.current)
+      settleTimer.current = window.setTimeout(settle, SETTLE_DELAY)
     }
 
     updateActive()
@@ -91,6 +118,7 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
       el.removeEventListener('scroll', onScroll)
       resizeObserver.disconnect()
       if (raf) cancelAnimationFrame(raf)
+      window.clearTimeout(settleTimer.current)
     }
   }, [products.length])
 
@@ -100,13 +128,13 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
   // inércia ao soltar — o touch já rola com momentum nativo do navegador,
   // então esse handler só entra em ação pra ponteiro tipo "mouse"
   const onPointerDown = (e: React.PointerEvent) => {
+    markInteracted()
     if (e.pointerType === 'touch') return
     const el = scrollerRef.current
     if (!el) return
     cancelAnimationFrame(momentumRaf.current)
-    el.style.scrollSnapType = 'none'
     el.setPointerCapture(e.pointerId)
-    dragRef.current = { active: true, startScrollLeft: el.scrollLeft, samples: [{ t: performance.now(), x: e.clientX }] }
+    dragRef.current = { active: true, samples: [{ t: performance.now(), x: e.clientX }] }
     setIsDragging(true)
   }
 
@@ -121,7 +149,6 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
     samples.push({ t: now, x: e.clientX })
     // guarda só os últimos ~120ms de histórico — o suficiente pra medir o "flick"
     while (samples.length > 2 && now - samples[0].t > 120) samples.shift()
-    setInteracted(true)
   }
 
   const endDrag = (e: React.PointerEvent) => {
@@ -135,7 +162,6 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
     } catch {
       // ignora — o ponteiro pode já ter perdido a captura (ex: saiu pela borda)
     }
-    el.style.scrollSnapType = 'x mandatory'
 
     const samples = drag.samples
     const first = samples[0]
@@ -144,9 +170,9 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
     // px/ms de velocidade no instante em que soltou, a partir da janela recente
     let velocity = dt > 0 ? ((last.x - first.x) / dt) * 16 : 0 // aproxima pra px por frame (~16ms)
 
-    const friction = 0.945
+    const friction = 0.955
     const step = () => {
-      if (Math.abs(velocity) < 0.4) {
+      if (Math.abs(velocity) < 0.3) {
         momentumRaf.current = 0
         return
       }
@@ -196,11 +222,11 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
           onPointerMove={onPointerMove}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
+          onWheel={markInteracted}
           onDragStart={(e) => e.preventDefault()}
-          className={`no-scrollbar flex snap-x snap-mandatory gap-5 overflow-x-auto pb-3 ${
+          className={`no-scrollbar flex gap-5 overflow-x-auto pb-3 ${
             isDragging ? 'cursor-grabbing select-none' : 'sm:cursor-grab'
           }`}
-          style={{ scrollSnapType: 'x mandatory' }}
         >
           {products.map((p, i) => (
             <RailCard key={p.id} product={p} index={i} active={i === activeIndex} />

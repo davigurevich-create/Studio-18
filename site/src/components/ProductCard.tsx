@@ -42,14 +42,6 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
       >
         <div className="relative">
           <ProductArt product={product} className="h-52 w-full" />
-          {product.collection_tag && (
-            <span
-              className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-widest"
-              style={{ background: 'rgba(6,6,6,0.7)', color: 'var(--gold-bright)', border: '1px solid var(--gold-dim)' }}
-            >
-              {product.collection_tag.toUpperCase()}
-            </span>
-          )}
           <span
             className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide opacity-90 transition-opacity group-hover:opacity-100"
             style={{ background: 'rgba(6,6,6,0.7)', color: 'var(--ink-secondary)', border: '1px solid var(--hairline)' }}
