@@ -153,27 +153,42 @@ export function Layout() {
           </div>
         </div>
 
-        <AnimatePresence>
-          {menuOpen && (
-            <motion.nav
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden sm:hidden"
-              style={{ borderTop: '1px solid var(--hairline)' }}
-            >
-              <div className="flex flex-col px-6 py-2 text-base" style={{ color: 'var(--ink-secondary)' }}>
-                {navLinks.map((l) => (
-                  <Link key={l.href} to={l.href} className="border-b py-3" style={{ borderColor: 'var(--hairline)' }}>
+      </header>
+
+      {/* menu mobile — overlay em tela cheia com os itens grandes e
+          centralizados (inspirado no menu mobile da Nifeliz), mas com
+          fonte um pouco menor que a referência já que temos mais itens */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-40 flex flex-col items-center justify-center sm:hidden"
+            style={{ background: '#000000' }}
+          >
+            <nav className="flex flex-col items-center">
+              {navLinks.map((l, i) => (
+                <motion.div
+                  key={l.href}
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.04 * i, duration: 0.3, ease: 'easeOut' }}
+                >
+                  <Link
+                    to={l.href}
+                    className="block px-6 py-2.5 text-center text-3xl font-bold uppercase tracking-tight"
+                    style={{ color: 'var(--ink)' }}
+                  >
                     {l.label}
                   </Link>
-                ))}
-              </div>
-            </motion.nav>
-          )}
-        </AnimatePresence>
-      </header>
+                </motion.div>
+              ))}
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main>
         <Outlet />
