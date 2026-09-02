@@ -4,6 +4,7 @@ import { AuthProvider } from '@/lib/auth'
 import { FavoritesProvider } from '@/lib/favorites'
 import { Layout } from '@/components/Layout'
 import { Home } from '@/pages/Home'
+import { Categoria } from '@/pages/Categoria'
 import { Product } from '@/pages/Product'
 import { Checkout } from '@/pages/Checkout'
 import { Rastreio } from '@/pages/Rastreio'
@@ -27,6 +28,7 @@ function App() {
             <Routes>
               <Route element={<Layout />}>
                 <Route path="/" element={<Home />} />
+                <Route path="/colecao/:slug" element={<Categoria />} />
                 <Route path="/produto/:id" element={<Product />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/rastreio" element={<Rastreio />} />

@@ -1,21 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll } from 'framer-motion'
 import { HeroCar } from '@/components/HeroCar'
-import { ProductCard } from '@/components/ProductCard'
-import { CollectionRail } from '@/components/CollectionRail'
+import { CategoryBanner } from '@/components/CategoryBanner'
+import { categories } from '@/lib/categories'
 import { getCatalog } from '@/lib/api'
 import type { CatalogProduct } from '@/types/catalog'
-
-type SortKey = 'nome' | 'preco-asc' | 'preco-desc' | 'pecas-asc' | 'pecas-desc'
-
-const sortOptions: { value: SortKey; label: string }[] = [
-  { value: 'nome', label: 'Nome (A–Z)' },
-  { value: 'preco-asc', label: 'Investimento (menor primeiro)' },
-  { value: 'preco-desc', label: 'Investimento (maior primeiro)' },
-  { value: 'pecas-asc', label: 'Peças (menos primeiro)' },
-  { value: 'pecas-desc', label: 'Peças (mais primeiro)' },
-]
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -25,9 +15,6 @@ const fadeUp = {
 export function Home() {
   const [products, setProducts] = useState<CatalogProduct[]>([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [tag, setTag] = useState<string>('todos')
-  const [sortBy, setSortBy] = useState<SortKey>('nome')
 
   const heroWrapRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress: heroDarken } = useScroll({
@@ -41,54 +28,6 @@ export function Home() {
       setLoading(false)
     })
   }, [])
-
-  const tags = useMemo(() => {
-    const present = new Set(products.map((p) => p.collection_tag).filter((t): t is string => Boolean(t)))
-    return ['todos', ...Array.from(present).sort()]
-  }, [products])
-
-  const filteredProducts = useMemo(() => {
-    let list = products
-    if (tag !== 'todos') list = list.filter((p) => p.collection_tag === tag)
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
-      list = list.filter((p) => p.name.toLowerCase().includes(q) || p.manufacturer?.toLowerCase().includes(q))
-    }
-    const sorted = [...list]
-    switch (sortBy) {
-      case 'preco-asc':
-        sorted.sort((a, b) => a.sale_price_brl - b.sale_price_brl)
-        break
-      case 'preco-desc':
-        sorted.sort((a, b) => b.sale_price_brl - a.sale_price_brl)
-        break
-      case 'pecas-asc':
-        sorted.sort((a, b) => (a.piece_count ?? 0) - (b.piece_count ?? 0))
-        break
-      case 'pecas-desc':
-        sorted.sort((a, b) => (b.piece_count ?? 0) - (a.piece_count ?? 0))
-        break
-      default:
-        sorted.sort((a, b) => a.name.localeCompare(b.name))
-    }
-    return sorted
-  }, [products, tag, search, sortBy])
-
-  // vitrine em trilhos por coleção — só faz sentido na visão "padrão"
-  // (sem filtro, sem busca, sem ordenação custom); qualquer refinamento
-  // do usuário cai pra grade única, que é melhor pra comparar/varrer
-  const showRails = tag === 'todos' && !search.trim() && sortBy === 'nome'
-
-  const railGroups = useMemo(() => {
-    if (!showRails) return []
-    const map = new Map<string, CatalogProduct[]>()
-    for (const p of products) {
-      const key = p.collection_tag ?? 'Novidades'
-      if (!map.has(key)) map.set(key, [])
-      map.get(key)!.push(p)
-    }
-    return Array.from(map.entries())
-  }, [products, showRails])
 
   return (
     <div>
@@ -141,90 +80,39 @@ export function Home() {
       <div className="pointer-events-none relative -mt-24 h-24" style={{ background: 'linear-gradient(to bottom, #000000, var(--carbon-0))' }} />
 
       {/* COLEÇÃO / MARKETPLACE — vem direto depois da hero, sem bloco de
-          transição intermediário. */}
-      <section id="colecao" className="mx-auto max-w-6xl px-6 py-24">
-        <motion.p variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="eyebrow mb-3 text-center">
-          Esculturas de engenharia, pelas suas próprias mãos.
-        </motion.p>
-        <motion.h2
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true }}
-          className="mx-auto mb-4 max-w-3xl text-center text-3xl sm:text-4xl"
-        >
-          Curadoria de sets técnicos de blocos de montar em escala 1:8, a pronta entrega no Brasil.
-        </motion.h2>
-        <p className="mx-auto mb-14 max-w-xl text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
-          Dê o seu primeiro passo nesse universo. Colecione. Presenteie parentes e amigos. Faça parte da
-          comunidade Studio 18.
-        </p>
+          transição intermediário. 5 banners empilhados, um por categoria,
+          cada um levando pra sua própria página de coleção. */}
+      <section id="colecao">
+        <div className="mx-auto max-w-6xl px-6 pb-14 pt-24">
+          <motion.p variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="eyebrow mb-3 text-center">
+            Esculturas de engenharia, pelas suas próprias mãos.
+          </motion.p>
+          <motion.h2
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            className="mx-auto mb-4 max-w-3xl text-center text-3xl sm:text-4xl"
+          >
+            Curadoria de sets técnicos de blocos de montar em escala 1:8, a pronta entrega no Brasil.
+          </motion.h2>
+          <p className="mx-auto max-w-xl text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
+            Dê o seu primeiro passo nesse universo. Colecione. Presenteie parentes e amigos. Faça parte da
+            comunidade Studio 18.
+          </p>
+        </div>
 
         {loading ? (
-          <p className="text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
+          <p className="pb-24 text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
             Carregando coleção...
           </p>
         ) : (
-          <>
-            <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-              <div className="flex flex-1 flex-wrap gap-2">
-                {tags.map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setTag(t)}
-                    className="rounded-full border px-4 py-1.5 text-xs font-medium tracking-wide transition"
-                    style={{
-                      borderColor: tag === t ? 'var(--gold)' : 'var(--hairline)',
-                      background: tag === t ? 'var(--gold-wash)' : 'transparent',
-                      color: tag === t ? 'var(--gold-bright)' : 'var(--ink-secondary)',
-                    }}
-                  >
-                    {t === 'todos' ? 'Todos' : t.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:justify-end">
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar por nome ou fabricante..."
-                  className="w-full rounded-lg border bg-transparent px-4 py-2 text-sm outline-none sm:w-64"
-                  style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
-                />
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortKey)}
-                  className="rounded-lg border px-4 py-2 text-sm outline-none"
-                  style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)', color: 'var(--ink)' }}
-                >
-                  {sortOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {filteredProducts.length === 0 ? (
-              <p className="text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
-                Nenhum modelo encontrado com esses filtros.
-              </p>
-            ) : showRails ? (
-              <div className="flex flex-col gap-14">
-                {railGroups.map(([groupTag, items]) => (
-                  <CollectionRail key={groupTag} title={groupTag} products={items} />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredProducts.map((p, i) => (
-                  <ProductCard key={p.id} product={p} index={i} />
-                ))}
-              </div>
-            )}
-          </>
+          <div className="flex flex-col gap-1">
+            {categories.map((cat) => {
+              const count = products.filter((p) => cat.skus.includes(p.sku)).length
+              return <CategoryBanner key={cat.slug} category={cat} count={count} />
+            })}
+          </div>
         )}
       </section>
 
