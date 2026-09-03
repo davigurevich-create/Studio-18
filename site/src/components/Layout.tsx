@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth'
 
 const navLinks = [
   { href: '/#colecao', label: 'Coleção' },
+  { href: '/recomendador', label: 'Recomendação IA' },
   { href: '/quem-somos', label: 'Quem Somos' },
   { href: '/manifesto', label: 'Manifesto' },
   { href: '/diferenciais', label: 'Diferenciais' },
