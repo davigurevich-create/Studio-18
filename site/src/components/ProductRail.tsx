@@ -261,18 +261,34 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
   const goToPrev = () => scrollToIndex(pendingIndexRef.current - 1)
   const goToNext = () => scrollToIndex(pendingIndexRef.current + 1)
 
-  // seta do teclado com o trilho focado navega card a card — sem isso, o
-  // navegador rola o container por um valor fixo de pixels (foco nativo em
-  // região rolável), o que parece um arraste solto em vez de um passo certeiro
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowLeft') {
+  // setas do teclado navegam card a card sem precisar clicar/arrastar o
+  // trilho antes — o listener é global e só age quando ESTE trilho é o que
+  // está visível no centro da tela, então não depende de foco nenhum (e não
+  // atropela outro trilho nem um campo de texto que esteja em uso)
+  useEffect(() => {
+    const onWindowKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+      const target = e.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+
+      const el = scrollerRef.current
+      if (!el) return
+      // "este é o trilho que a pessoa está olhando" = ele ocupa parte da
+      // metade central da tela — não precisa estar exatamente centralizado,
+      // só visivelmente em foco (e não apenas uma pontinha espiando na borda)
+      const rect = el.getBoundingClientRect()
+      const midTop = window.innerHeight * 0.25
+      const midBottom = window.innerHeight * 0.75
+      if (rect.bottom < midTop || rect.top > midBottom) return
+
       e.preventDefault()
-      goToPrev()
-    } else if (e.key === 'ArrowRight') {
-      e.preventDefault()
-      goToNext()
+      if (e.key === 'ArrowLeft') goToPrev()
+      else goToNext()
     }
-  }
+    window.addEventListener('keydown', onWindowKeyDown)
+    return () => window.removeEventListener('keydown', onWindowKeyDown)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="relative">
@@ -338,9 +354,7 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
           onClickCapture={onClickCapture}
           onWheel={markInteracted}
           onDragStart={(e) => e.preventDefault()}
-          onKeyDown={onKeyDown}
-          tabIndex={canScroll ? 0 : -1}
-          className={`no-scrollbar flex gap-5 overflow-x-auto pb-3 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--gold-dim)] ${
+          className={`no-scrollbar flex gap-5 overflow-x-auto pb-3 ${
             isDragging ? 'cursor-grabbing select-none' : 'sm:cursor-grab'
           }`}
         >

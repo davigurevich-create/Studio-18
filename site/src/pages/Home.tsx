@@ -45,6 +45,25 @@ export function Home() {
     })
   }, [])
 
+  // voltando da página de um produto (botão "Voltar para a coleção"), rola
+  // de volta exatamente até o card em que a pessoa clicou — em vez do topo
+  // da página ou de onde o navegador "achar" que estava (ver Layout.tsx)
+  useEffect(() => {
+    if (loading) return
+    const lastViewedId = sessionStorage.getItem('lastViewedProduct')
+    if (!lastViewedId) return
+    sessionStorage.removeItem('lastViewedProduct')
+
+    const scrollToCard = () => {
+      const el = document.getElementById(`product-${lastViewedId}`)
+      el?.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' })
+    }
+    // o layout ainda pode mudar de altura enquanto imagens/trilhos terminam
+    // de montar, então repetimos a rolagem algumas vezes logo em seguida
+    const timers = [0, 150, 400].map((delay) => window.setTimeout(scrollToCard, delay))
+    return () => timers.forEach((timer) => window.clearTimeout(timer))
+  }, [loading])
+
   // com busca/ordenação ativas não dá pra manter os trilhos por categoria
   // (deixariam de bater com o filtro), então nesse caso a vitrine vira uma
   // grade única com todos os modelos que combinam

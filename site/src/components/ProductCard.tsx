@@ -34,11 +34,13 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
       transition={{ duration: 0.5, delay: (index % 6) * 0.05 }}
     >
       <Link
+        id={`product-${product.id}`}
         to={`/produto/${product.id}`}
         className="group block overflow-hidden rounded-xl border transition-colors"
         style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}
         onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--gold-dim)')}
         onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--hairline)')}
+        onClick={() => sessionStorage.setItem('lastViewedProduct', product.id)}
       >
         <div className="relative">
           <ProductArt product={product} className="h-52 w-full" />

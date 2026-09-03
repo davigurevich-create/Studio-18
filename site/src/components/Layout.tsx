@@ -56,6 +56,11 @@ export function Layout() {
       return () => timers.forEach((timer) => window.clearTimeout(timer))
     }
 
+    // voltando de um produto pra Home, quem cuida da rolagem é o próprio
+    // Home.tsx (rola até o card certo assim que o catálogo recarrega) —
+    // forçar o topo aqui brigaria com essa restauração
+    if (location.pathname === '/' && sessionStorage.getItem('lastViewedProduct')) return
+
     window.scrollTo(0, 0)
   }, [location.pathname, location.hash])
 
