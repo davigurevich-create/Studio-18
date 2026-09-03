@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { AiRecommender } from '@/components/AiRecommender'
-import { GoldLight } from '@/components/GoldLight'
 import { getCatalog } from '@/lib/api'
 import type { CatalogProduct } from '@/types/catalog'
 
@@ -28,17 +27,15 @@ export function Recomendador() {
           style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.75) 85%, #000000 100%)' }}
         />
       </div>
-      <GoldLight>
-        <div className="pt-10 sm:pt-14">
-          {loading ? (
-            <p className="py-24 text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
-              Carregando...
-            </p>
-          ) : (
-            <AiRecommender products={products} />
-          )}
-        </div>
-      </GoldLight>
+      <div className="pt-10 sm:pt-14">
+        {loading ? (
+          <p className="py-24 text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
+            Carregando...
+          </p>
+        ) : (
+          <AiRecommender products={products} />
+        )}
+      </div>
     </div>
   )
 }
