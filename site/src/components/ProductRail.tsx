@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Move } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Move } from 'lucide-react'
 import { ProductCard } from '@/components/ProductCard'
 import type { CatalogProduct } from '@/types/catalog'
 
@@ -230,8 +230,46 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
     }
   }
 
+  // navegação por seta — mesma lógica de centralização usada pelo
+  // ajuste fino automático (settle), só que disparada por clique
+  const scrollToIndex = (index: number) => {
+    const el = scrollerRef.current
+    if (!el) return
+    const cards = el.querySelectorAll<HTMLElement>('[data-rail-card]')
+    const clamped = Math.max(0, Math.min(index, cards.length - 1))
+    const card = cards[clamped]
+    if (!card) return
+    const target = card.offsetLeft + card.offsetWidth / 2 - el.clientWidth / 2
+    const left = Math.max(0, Math.min(target, el.scrollWidth - el.clientWidth))
+    el.scrollTo({ left, behavior: 'smooth' })
+    markInteracted()
+  }
+
   return (
     <div className="relative">
+      {canScroll && (
+        <div className="mb-3 flex justify-end gap-2">
+          <button
+            type="button"
+            aria-label="Modelo anterior"
+            onClick={() => scrollToIndex(activeIndex - 1)}
+            disabled={activeIndex === 0}
+            className="glass-pill flex h-9 w-9 items-center justify-center disabled:opacity-30"
+          >
+            <ChevronLeft size={16} strokeWidth={2.5} className="relative z-10" style={{ color: 'var(--ink-secondary)' }} />
+          </button>
+          <button
+            type="button"
+            aria-label="Próximo modelo"
+            onClick={() => scrollToIndex(activeIndex + 1)}
+            disabled={activeIndex === products.length - 1}
+            className="glass-pill flex h-9 w-9 items-center justify-center disabled:opacity-30"
+          >
+            <ChevronRight size={16} strokeWidth={2.5} className="relative z-10" style={{ color: 'var(--ink-secondary)' }} />
+          </button>
+        </div>
+      )}
+
       <div className="relative -mx-6 px-6 sm:mx-0 sm:px-0">
         {/* esmaecimento nas bordas — só aparece do lado em que realmente
             existe um card espiando (senão cobre uma fatia do próprio card
