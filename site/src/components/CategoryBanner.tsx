@@ -1,7 +1,6 @@
 import { useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
 import type { CategoryDef } from '@/lib/categories'
 
 export function CategoryBanner({ category, count }: { category: CategoryDef; count: number }) {
@@ -30,7 +29,7 @@ export function CategoryBanner({ category, count }: { category: CategoryDef; cou
           />
         </picture>
 
-        {/* escurecimento extra sutil no hover, pra dar contraste ao CTA que desliza pra dentro */}
+        {/* escurecimento extra sutil no hover, reforça que o banner é clicável */}
         <div
           className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
           style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55), transparent 45%)' }}
@@ -54,14 +53,6 @@ export function CategoryBanner({ category, count }: { category: CategoryDef; cou
           style={{ background: 'rgba(6,6,6,0.55)', color: 'var(--ink-secondary)', border: '1px solid var(--hairline)' }}
         >
           {count} {count === 1 ? 'MODELO' : 'MODELOS'}
-        </span>
-
-        <span
-          className="absolute right-6 top-6 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold tracking-wide backdrop-blur-sm transition-all duration-400 ease-out sm:right-10 sm:top-10 sm:-translate-y-2 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100"
-          style={{ background: 'var(--gold)', color: '#0a0a0a' }}
-        >
-          Explorar coleção
-          <ArrowRight size={14} strokeWidth={2.5} />
         </span>
       </motion.div>
     </Link>

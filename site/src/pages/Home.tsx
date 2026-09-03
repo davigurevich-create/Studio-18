@@ -98,6 +98,23 @@ export function Home() {
             Dê o seu primeiro passo nesse universo. Colecione. Presenteie parentes e amigos. Faça parte da
             comunidade Studio 18.
           </p>
+
+          <motion.nav
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:gap-x-8"
+          >
+            {categories.flatMap((cat, i) => [
+              i > 0 ? (
+                <span key={`${cat.slug}-div`} className="h-4 w-px" style={{ background: 'var(--hairline-strong)' }} />
+              ) : null,
+              <Link key={cat.slug} to={`/#${cat.slug}`} className="text-sm font-bold uppercase tracking-wide hover:text-[var(--gold)]">
+                {cat.title}
+              </Link>,
+            ])}
+          </motion.nav>
         </div>
 
         {loading ? (
@@ -112,7 +129,7 @@ export function Home() {
                 .sort((a, b) => a.name.localeCompare(b.name))
               if (catProducts.length === 0) return null
               return (
-                <div key={cat.slug}>
+                <div key={cat.slug} id={cat.slug}>
                   <CategoryBanner category={cat} count={catProducts.length} />
                   <div className="mx-auto max-w-6xl px-6 pt-8">
                     <ProductRail products={catProducts} />
