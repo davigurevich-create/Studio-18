@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, useScroll } from 'framer-motion'
 import { HeroCar } from '@/components/HeroCar'
 import { CategoryBanner } from '@/components/CategoryBanner'
+import { ProductRail } from '@/components/ProductRail'
 import { SpotifySection } from '@/components/SpotifySection'
 import { categories } from '@/lib/categories'
 import { getCatalog } from '@/lib/api'
@@ -104,10 +105,20 @@ export function Home() {
             Carregando coleção...
           </p>
         ) : (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-16 pb-20">
             {categories.map((cat) => {
-              const count = products.filter((p) => cat.skus.includes(p.sku)).length
-              return <CategoryBanner key={cat.slug} category={cat} count={count} />
+              const catProducts = products
+                .filter((p) => cat.skus.includes(p.sku))
+                .sort((a, b) => a.name.localeCompare(b.name))
+              if (catProducts.length === 0) return null
+              return (
+                <div key={cat.slug}>
+                  <CategoryBanner category={cat} count={catProducts.length} />
+                  <div className="mx-auto max-w-6xl px-6 pt-8">
+                    <ProductRail products={catProducts} />
+                  </div>
+                </div>
+              )
             })}
           </div>
         )}

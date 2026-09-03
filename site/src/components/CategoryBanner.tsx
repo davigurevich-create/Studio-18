@@ -15,17 +15,17 @@ export function CategoryBanner({ category, count }: { category: CategoryDef; cou
       <motion.div
         ref={wrapRef}
         whileTap={{ scale: 0.985 }}
-        className="relative aspect-[4/5] w-full overflow-hidden sm:aspect-auto sm:h-[75vh] sm:min-h-[520px] sm:max-h-[720px]"
+        className="relative aspect-[1080/560] w-full overflow-hidden sm:aspect-[2400/500]"
       >
-        {/* imagem mobile é 4:5, mesma proporção do container — cabe inteira,
-            sem corte; a desktop é bem mais larga, por isso usa o truque de
-            altura extra + offset pra cobrir o container sem distorcer */}
+        {/* faixa baixa (banner "abertura de seção", não mais tela cheia) —
+            mobile e desktop usam a mesma imagem esticada por object-cover,
+            já que a proporção do container é bem próxima da dos arquivos */}
         <picture>
           <source media="(max-width: 639px)" srcSet={category.bannerMobile} />
           <motion.img
             src={category.banner}
             alt={category.title}
-            className="pointer-events-none absolute left-0 right-0 top-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 sm:top-[-10%] sm:h-[120%]"
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             style={{ y: parallaxY }}
           />
         </picture>
