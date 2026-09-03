@@ -78,7 +78,3 @@ export const categories: CategoryDef[] = [
     ],
   },
 ]
-
-export function getCategoryBySlug(slug: string | undefined): CategoryDef | undefined {
-  return categories.find((c) => c.slug === slug)
-}
