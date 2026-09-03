@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll } from 'framer-motion'
-import { Search } from 'lucide-react'
+import { ChevronDown, Search } from 'lucide-react'
 import { HeroCar } from '@/components/HeroCar'
 import { CategoryBanner } from '@/components/CategoryBanner'
 import { ProductCard } from '@/components/ProductCard'
@@ -95,29 +95,18 @@ export function Home() {
             >
               ROLE PARA EXPLORAR A COLEÇÃO
             </motion.div>
-            {/* Linha condutora, em duas partes:
-                1) a "pontinha" — fica no fluxo normal, sempre visível dentro
-                   da hero junto do texto, sinalizando com clareza que dá
-                   pra rolar.
-                2) a extensão — sai de fora do fluxo a partir do fim da
-                   pontinha e se estende para além da hero, entrando na zona
-                   de transição até quase encostar na Coleção. */}
             <motion.div
-              className="relative mt-2 h-4 w-px"
-              style={{ background: 'linear-gradient(to bottom, #ffffff, rgba(255,255,255,0.35))' }}
-              animate={{ opacity: [0.6, 1, 0.6] }}
+              className="mt-2"
+              animate={{ y: [0, 4, 0], opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <div
-                className="absolute left-1/2 top-full h-[264px] w-px -translate-x-1/2 sm:h-[186px]"
-                style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.35), transparent)' }}
-              />
+              <ChevronDown size={18} strokeWidth={2.5} style={{ color: '#ffffff' }} />
             </motion.div>
           </section>
           {/* espaçador — distância fixa de rolagem (imune a variações de svh
               mobile) para o escurecimento terminar em preto total antes do
               bloco seguinte aparecer */}
-          <div className="h-[220px]" />
+          <div className="h-[110px]" />
         </div>
       </div>
 
