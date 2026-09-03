@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll } from 'framer-motion'
+import { Search } from 'lucide-react'
 import { HeroCar } from '@/components/HeroCar'
 import { CategoryBanner } from '@/components/CategoryBanner'
+import { ProductCard } from '@/components/ProductCard'
 import { ProductRail } from '@/components/ProductRail'
 import { SpotifySection } from '@/components/SpotifySection'
 import { categories } from '@/lib/categories'
@@ -14,9 +16,21 @@ const fadeUp = {
   show: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 }
 
+type SortKey = 'nome' | 'preco-asc' | 'preco-desc' | 'pecas-asc' | 'pecas-desc'
+
+const sortOptions: { value: SortKey; label: string }[] = [
+  { value: 'nome', label: 'Nome (A–Z)' },
+  { value: 'preco-asc', label: 'Preço: menor primeiro' },
+  { value: 'preco-desc', label: 'Preço: maior primeiro' },
+  { value: 'pecas-asc', label: 'Peças: menos primeiro' },
+  { value: 'pecas-desc', label: 'Peças: mais primeiro' },
+]
+
 export function Home() {
   const [products, setProducts] = useState<CatalogProduct[]>([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState<SortKey>('nome')
 
   const heroWrapRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress: heroDarken } = useScroll({
@@ -30,6 +44,37 @@ export function Home() {
       setLoading(false)
     })
   }, [])
+
+  // com busca/ordenação ativas não dá pra manter os trilhos por categoria
+  // (deixariam de bater com o filtro), então nesse caso a vitrine vira uma
+  // grade única com todos os modelos que combinam
+  const hasActiveFilter = search.trim() !== '' || sortBy !== 'nome'
+
+  const filteredProducts = useMemo(() => {
+    let list = products
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      list = list.filter((p) => p.name.toLowerCase().includes(q) || p.manufacturer?.toLowerCase().includes(q))
+    }
+    const sorted = [...list]
+    switch (sortBy) {
+      case 'preco-asc':
+        sorted.sort((a, b) => a.sale_price_brl - b.sale_price_brl)
+        break
+      case 'preco-desc':
+        sorted.sort((a, b) => b.sale_price_brl - a.sale_price_brl)
+        break
+      case 'pecas-asc':
+        sorted.sort((a, b) => (a.piece_count ?? 0) - (b.piece_count ?? 0))
+        break
+      case 'pecas-desc':
+        sorted.sort((a, b) => (b.piece_count ?? 0) - (a.piece_count ?? 0))
+        break
+      default:
+        sorted.sort((a, b) => a.name.localeCompare(b.name))
+    }
+    return sorted
+  }, [products, search, sortBy])
 
   return (
     <div>
@@ -99,28 +144,82 @@ export function Home() {
             comunidade Studio 18.
           </p>
 
-          <motion.nav
+          {/* busca + ordenação — discreto, sem caixas/bordas pesadas, só um
+              traço embaixo de cada campo */}
+          <motion.div
             variants={fadeUp}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
-            className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:gap-x-8"
+            className="mt-8 flex flex-wrap items-center justify-center gap-5 sm:gap-8"
           >
-            {categories.flatMap((cat, i) => [
-              i > 0 ? (
-                <span key={`${cat.slug}-div`} className="h-4 w-px" style={{ background: 'var(--hairline-strong)' }} />
-              ) : null,
-              <Link key={cat.slug} to={`/#${cat.slug}`} className="text-sm font-bold uppercase tracking-wide hover:text-[var(--gold)]">
-                {cat.title}
-              </Link>,
-            ])}
-          </motion.nav>
+            <div className="relative">
+              <Search
+                size={13}
+                strokeWidth={2}
+                className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2"
+                style={{ color: 'var(--ink-muted)' }}
+              />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nome ou fabricante"
+                className="w-52 border-b bg-transparent py-1.5 pl-5 text-sm outline-none sm:w-64"
+                style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+              />
+            </div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortKey)}
+              className="border-b bg-transparent py-1.5 text-sm outline-none"
+              style={{ borderColor: 'var(--hairline)', color: 'var(--ink-secondary)' }}
+            >
+              {sortOptions.map((o) => (
+                <option key={o.value} value={o.value} style={{ background: '#0a0a0a' }}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </motion.div>
+
+          {!hasActiveFilter && (
+            <motion.nav
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true }}
+              className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:gap-x-8"
+            >
+              {categories.flatMap((cat, i) => [
+                i > 0 ? (
+                  <span key={`${cat.slug}-div`} className="h-4 w-px" style={{ background: 'var(--hairline-strong)' }} />
+                ) : null,
+                <Link key={cat.slug} to={`/#${cat.slug}`} className="text-sm font-bold uppercase tracking-wide hover:text-[var(--gold)]">
+                  {cat.title}
+                </Link>,
+              ])}
+            </motion.nav>
+          )}
         </div>
 
         {loading ? (
           <p className="pb-24 text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
             Carregando coleção...
           </p>
+        ) : hasActiveFilter ? (
+          filteredProducts.length === 0 ? (
+            <p className="pb-24 text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
+              Nenhum modelo encontrado com esses filtros.
+            </p>
+          ) : (
+            <div className="mx-auto max-w-6xl px-6 pb-20">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredProducts.map((p, i) => (
+                  <ProductCard key={p.id} product={p} index={i} />
+                ))}
+              </div>
+            </div>
+          )
         ) : (
           <div className="flex flex-col gap-16 pb-20">
             {categories.map((cat) => {
