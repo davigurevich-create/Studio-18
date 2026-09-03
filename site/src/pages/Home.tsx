@@ -150,16 +150,22 @@ export function Home() {
               initial="hidden"
               whileInView="show"
               viewport={{ once: true }}
-              className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:gap-x-8"
+              className="mt-8 flex flex-wrap items-center justify-center gap-3"
             >
-              {categories.flatMap((cat, i) => [
-                i > 0 ? (
-                  <span key={`${cat.slug}-div`} className="h-4 w-px" style={{ background: 'var(--hairline-strong)' }} />
-                ) : null,
-                <Link key={cat.slug} to={`/#${cat.slug}`} className="text-sm font-bold uppercase tracking-wide hover:text-[var(--gold)]">
+              {categories.map((cat) => (
+                <Link
+                  key={cat.slug}
+                  to={`/#${cat.slug}`}
+                  className="rounded-full border px-5 py-2 text-xs font-bold uppercase tracking-wide backdrop-blur-md transition hover:border-[var(--gold-dim)] hover:text-[var(--gold-bright)]"
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    borderColor: 'var(--hairline-strong)',
+                    color: 'var(--ink-secondary)',
+                  }}
+                >
                   {cat.title}
-                </Link>,
-              ])}
+                </Link>
+              ))}
             </motion.nav>
           )}
 

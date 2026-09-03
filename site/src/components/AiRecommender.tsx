@@ -75,8 +75,12 @@ export function AiRecommender({ products }: { products: CatalogProduct[] }) {
           <button
             type="submit"
             disabled={loading || products.length === 0}
-            className="flex shrink-0 items-center gap-2 rounded-full px-6 py-2.5 text-sm font-medium tracking-wide disabled:opacity-50"
-            style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+            className="flex shrink-0 items-center gap-2 rounded-full border px-6 py-2.5 text-sm font-medium tracking-wide backdrop-blur-md transition hover:border-[var(--gold-dim)] disabled:opacity-50"
+            style={{
+              background: 'rgba(255,255,255,0.05)',
+              borderColor: 'var(--hairline-strong)',
+              color: 'var(--gold-bright)',
+            }}
           >
             <Sparkles size={14} strokeWidth={2} />
             {loading ? 'Buscando...' : 'Recomendar'}
