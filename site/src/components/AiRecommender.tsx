@@ -54,7 +54,7 @@ export function AiRecommender({ products }: { products: CatalogProduct[] }) {
   }
 
   return (
-    <section className="px-6 py-24">
+    <section className="px-6 pb-24 pt-8">
       <div ref={turnstileRef} />
       <div className="mx-auto max-w-3xl text-center">
         <p className="eyebrow mb-3">IA proprietária Studio 18</p>
