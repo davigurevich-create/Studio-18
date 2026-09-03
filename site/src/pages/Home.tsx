@@ -233,6 +233,9 @@ export function Home() {
               const catProducts = products
                 .filter((p) => cat.skus.includes(p.sku))
                 .sort((a, b) => a.name.localeCompare(b.name))
+                // esgotados sempre por último — ainda navegáveis, só não
+                // atrapalham quem quer ver o que tem disponível de cara
+                .sort((a, b) => Number(a.quantity_available <= 0) - Number(b.quantity_available <= 0))
               if (catProducts.length === 0) return null
               return (
                 <div key={cat.slug} id={cat.slug}>
