@@ -124,14 +124,11 @@ export function Home() {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
-            className="mx-auto mb-4 max-w-3xl text-center text-3xl sm:text-4xl"
+            className="mx-auto max-w-3xl text-center text-3xl sm:text-4xl"
           >
-            Curadoria de sets técnicos de blocos de montar em escala 1:8, a pronta entrega no Brasil.
+            Os melhores sets técnicos em escala 1:8, selecionados para entusiastas e colecionadores, a pronta
+            entrega no Brasil.
           </motion.h2>
-          <p className="mx-auto max-w-xl text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
-            Dê o seu primeiro passo nesse universo. Colecione. Presenteie parentes e amigos. Faça parte da
-            comunidade Studio 18.
-          </p>
 
           {!hasActiveFilter && (
             <motion.nav
