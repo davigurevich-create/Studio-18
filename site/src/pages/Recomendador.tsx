@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AiRecommender } from '@/components/AiRecommender'
+import { GoldLight } from '@/components/GoldLight'
 import { getCatalog } from '@/lib/api'
 import type { CatalogProduct } from '@/types/catalog'
 
@@ -15,8 +16,9 @@ export function Recomendador() {
   }, [])
 
   return (
-    <div style={{ background: '#000000', minHeight: '100vh' }}>
-      <div className="pt-28 sm:pt-32">
+    <div className="relative" style={{ background: '#000000', minHeight: '100vh' }}>
+      <GoldLight />
+      <div className="relative z-10 pt-28 sm:pt-32">
         {loading ? (
           <p className="py-24 text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
             Carregando...
