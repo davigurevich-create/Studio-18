@@ -56,6 +56,11 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
   const momentumRaf = useRef(0)
   const settleTimer = useRef(0)
   const suppressClickRef = useRef(false)
+  // índice "alvo" da navegação por seta/teclado — separado do activeIndex
+  // (que só é atualizado de forma assíncrona pelo scroll-spy) pra cliques
+  // em sequência rápida sempre avançarem a partir de onde a última
+  // navegação pediu pra ir, e não do que já tinha renderizado na tela
+  const pendingIndexRef = useRef(0)
 
   const markInteracted = () => setInteracted(true)
 
@@ -89,21 +94,23 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
       return closest
     }
 
+    // índice "ativo" pra uma posição de scroll dada — nas pontas o centro
+    // geométrico do container não coincide com o centro do card extremo
+    // (o container é mais largo que um card só), então closestIndex por si
+    // só erraria a ponta pro vizinho; por isso as pontas são tratadas à parte
+    const resolveIndex = (cards: NodeListOf<HTMLElement>, scrollLeft: number) => {
+      if (cards.length === 0) return 0
+      if (scrollLeft <= 2) return 0
+      if (scrollLeft + el.clientWidth >= el.scrollWidth - 2) return cards.length - 1
+      return closestIndex(cards)
+    }
+
     const updateActive = () => {
       raf = 0
       const scrollable = el.scrollWidth > el.clientWidth + 1
       setCanScroll(scrollable)
-
       const cards = el.querySelectorAll<HTMLElement>('[data-rail-card]')
-      if (!scrollable || el.scrollLeft <= 2) {
-        setActiveIndex(0)
-        return
-      }
-      if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 2) {
-        setActiveIndex(cards.length - 1)
-        return
-      }
-      setActiveIndex(closestIndex(cards))
+      setActiveIndex(scrollable ? resolveIndex(cards, el.scrollLeft) : 0)
     }
 
     // ajuste fino: só roda depois que a rolagem (touch, wheel, drag ou o
@@ -112,7 +119,12 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
       if (dragRef.current.dragging) return
       const cards = el.querySelectorAll<HTMLElement>('[data-rail-card]')
       if (cards.length === 0) return
-      const index = closestIndex(cards)
+      const index = resolveIndex(cards, el.scrollLeft)
+      // só agora (com a rolagem já parada de vez) é seguro sincronizar o
+      // índice-alvo da navegação por seta — fazer isso a cada evento de
+      // scroll sobrescreveria o alvo com posições intermediárias da própria
+      // animação disparada pela seta, quebrando cliques em sequência rápida
+      pendingIndexRef.current = index
       el.scrollTo({ left: getTargetLeft(index, cards), behavior: 'smooth' })
     }
 
@@ -230,19 +242,36 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
     }
   }
 
-  // navegação por seta — mesma lógica de centralização usada pelo
-  // ajuste fino automático (settle), só que disparada por clique
+  // navegação por seta/teclado — mesma lógica de centralização usada pelo
+  // ajuste fino automático (settle), só que disparada por clique/tecla
   const scrollToIndex = (index: number) => {
     const el = scrollerRef.current
     if (!el) return
     const cards = el.querySelectorAll<HTMLElement>('[data-rail-card]')
     const clamped = Math.max(0, Math.min(index, cards.length - 1))
+    pendingIndexRef.current = clamped
     const card = cards[clamped]
     if (!card) return
     const target = card.offsetLeft + card.offsetWidth / 2 - el.clientWidth / 2
     const left = Math.max(0, Math.min(target, el.scrollWidth - el.clientWidth))
     el.scrollTo({ left, behavior: 'smooth' })
     markInteracted()
+  }
+
+  const goToPrev = () => scrollToIndex(pendingIndexRef.current - 1)
+  const goToNext = () => scrollToIndex(pendingIndexRef.current + 1)
+
+  // seta do teclado com o trilho focado navega card a card — sem isso, o
+  // navegador rola o container por um valor fixo de pixels (foco nativo em
+  // região rolável), o que parece um arraste solto em vez de um passo certeiro
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault()
+      goToPrev()
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault()
+      goToNext()
+    }
   }
 
   return (
@@ -252,7 +281,7 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
           <button
             type="button"
             aria-label="Modelo anterior"
-            onClick={() => scrollToIndex(activeIndex - 1)}
+            onClick={goToPrev}
             disabled={activeIndex === 0}
             className="glass-pill flex h-9 w-9 items-center justify-center disabled:opacity-30"
           >
@@ -261,7 +290,7 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
           <button
             type="button"
             aria-label="Próximo modelo"
-            onClick={() => scrollToIndex(activeIndex + 1)}
+            onClick={goToNext}
             disabled={activeIndex === products.length - 1}
             className="glass-pill flex h-9 w-9 items-center justify-center disabled:opacity-30"
           >
@@ -309,7 +338,9 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
           onClickCapture={onClickCapture}
           onWheel={markInteracted}
           onDragStart={(e) => e.preventDefault()}
-          className={`no-scrollbar flex gap-5 overflow-x-auto pb-3 ${
+          onKeyDown={onKeyDown}
+          tabIndex={canScroll ? 0 : -1}
+          className={`no-scrollbar flex gap-5 overflow-x-auto pb-3 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--gold-dim)] ${
             isDragging ? 'cursor-grabbing select-none' : 'sm:cursor-grab'
           }`}
         >
