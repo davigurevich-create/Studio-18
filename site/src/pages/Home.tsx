@@ -144,6 +144,25 @@ export function Home() {
             comunidade Studio 18.
           </p>
 
+          {!hasActiveFilter && (
+            <motion.nav
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true }}
+              className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:gap-x-8"
+            >
+              {categories.flatMap((cat, i) => [
+                i > 0 ? (
+                  <span key={`${cat.slug}-div`} className="h-4 w-px" style={{ background: 'var(--hairline-strong)' }} />
+                ) : null,
+                <Link key={cat.slug} to={`/#${cat.slug}`} className="text-sm font-bold uppercase tracking-wide hover:text-[var(--gold)]">
+                  {cat.title}
+                </Link>,
+              ])}
+            </motion.nav>
+          )}
+
           {/* busca + ordenação — discreto, sem caixas/bordas pesadas, só um
               traço embaixo de cada campo */}
           <motion.div
@@ -151,7 +170,7 @@ export function Home() {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
-            className="mt-8 flex flex-wrap items-center justify-center gap-5 sm:gap-8"
+            className="mt-6 flex flex-wrap items-center justify-center gap-5 sm:gap-8"
           >
             <div className="relative">
               <Search
@@ -181,25 +200,6 @@ export function Home() {
               ))}
             </select>
           </motion.div>
-
-          {!hasActiveFilter && (
-            <motion.nav
-              variants={fadeUp}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true }}
-              className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:gap-x-8"
-            >
-              {categories.flatMap((cat, i) => [
-                i > 0 ? (
-                  <span key={`${cat.slug}-div`} className="h-4 w-px" style={{ background: 'var(--hairline-strong)' }} />
-                ) : null,
-                <Link key={cat.slug} to={`/#${cat.slug}`} className="text-sm font-bold uppercase tracking-wide hover:text-[var(--gold)]">
-                  {cat.title}
-                </Link>,
-              ])}
-            </motion.nav>
-          )}
         </div>
 
         {loading ? (
