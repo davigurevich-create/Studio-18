@@ -213,6 +213,26 @@ export async function sendChatMessage(messages: ChatMessage[], turnstileToken?: 
   return data.reply
 }
 
+export interface RecommendationPick {
+  sku: string
+  reason: string
+}
+
+/**
+ * IA proprietária que sugere 1 a 3 sets do catálogo a partir de uma
+ * descrição livre do cliente ("um carro esportivo italiano, pra exibir na
+ * sala"). A Edge Function já valida que os SKUs retornados existem de
+ * verdade no catálogo — aqui só repassa a lista.
+ */
+export async function recommendSets(query: string, turnstileToken?: string | null): Promise<RecommendationPick[]> {
+  if (!supabase) {
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    return []
+  }
+  const data = await invokeEdgeFunction<{ picks: RecommendationPick[] }>('recommend-sets', { query, turnstileToken })
+  return data.picks ?? []
+}
+
 // ---------------------------------------------------------------------------
 // Blog
 // ---------------------------------------------------------------------------

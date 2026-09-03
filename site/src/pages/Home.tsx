@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, useScroll } from 'framer-motion'
 import { Search } from 'lucide-react'
 import { HeroCar } from '@/components/HeroCar'
+import { AiRecommender } from '@/components/AiRecommender'
 import { CategoryBanner } from '@/components/CategoryBanner'
 import { ProductCard } from '@/components/ProductCard'
 import { ProductRail } from '@/components/ProductRail'
@@ -120,6 +121,11 @@ export function Home() {
           <div className="h-[220px]" />
         </div>
       </div>
+
+      {/* IA proprietária — recomendação de sets a partir de uma descrição
+          livre do cliente. Fundo preto, continua o mesmo fluxo visual da
+          hero até a Coleção, sem costura entre as seções. */}
+      <AiRecommender products={products} />
 
       {/* COLEÇÃO / MARKETPLACE — vem direto depois da hero, sem bloco de
           transição intermediário. Fundo 100% preto (igual à hero) até o
