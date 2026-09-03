@@ -124,7 +124,7 @@ export function Home() {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
-            className="mx-auto max-w-3xl text-center text-3xl sm:text-4xl"
+            className="mx-auto max-w-3xl text-center text-xl sm:text-4xl"
           >
             Os melhores sets técnicos em escala 1:8, selecionados para entusiastas e colecionadores, a pronta
             entrega no Brasil.
