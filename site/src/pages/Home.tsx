@@ -156,14 +156,10 @@ export function Home() {
                 <Link
                   key={cat.slug}
                   to={`/#${cat.slug}`}
-                  className="rounded-full border px-5 py-2 text-xs font-bold uppercase tracking-wide backdrop-blur-md transition hover:border-[var(--gold-dim)] hover:text-[var(--gold-bright)]"
-                  style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    borderColor: 'var(--hairline-strong)',
-                    color: 'var(--ink-secondary)',
-                  }}
+                  className="glass-pill px-6 py-3 text-xs font-bold uppercase tracking-wide hover:text-[var(--gold-bright)]"
+                  style={{ color: 'var(--ink-secondary)' }}
                 >
-                  {cat.title}
+                  <span className="relative z-10">{cat.title}</span>
                 </Link>
               ))}
             </motion.nav>
