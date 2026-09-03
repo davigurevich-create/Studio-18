@@ -16,17 +16,18 @@ export function Recomendador() {
   }, [])
 
   return (
-    <div className="relative" style={{ background: '#000000', minHeight: '100vh' }}>
-      <GoldLight />
-      <div className="relative z-10 pt-28 sm:pt-32">
-        {loading ? (
-          <p className="py-24 text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
-            Carregando...
-          </p>
-        ) : (
-          <AiRecommender products={products} />
-        )}
-      </div>
+    <div style={{ background: '#000000', minHeight: '100vh' }}>
+      <GoldLight>
+        <div className="pt-28 sm:pt-32">
+          {loading ? (
+            <p className="py-24 text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
+              Carregando...
+            </p>
+          ) : (
+            <AiRecommender products={products} />
+          )}
+        </div>
+      </GoldLight>
     </div>
   )
 }
