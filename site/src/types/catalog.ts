@@ -59,6 +59,19 @@ export interface CheckoutCard {
   securityCode: string
 }
 
+// dados do navegador do cliente, usados pelo 3DS 2.0 "frictionless" —
+// o banco emissor usa isso pra avaliar o risco da transação em segundo
+// plano, sem pedir nenhuma confirmação extra ao cliente
+export interface CheckoutDevice {
+  colorDepth: number
+  javaEnabled: boolean
+  language: string
+  screenHeight: number
+  screenWidth: number
+  timeZoneOffset: number
+  userAgent: string
+}
+
 export interface CheckoutInput {
   items: CheckoutItem[]
   customerName: string
@@ -69,6 +82,7 @@ export interface CheckoutInput {
   // só para cartão — a Rede não tem tokenização no navegador como o
   // Mercado Pago tinha, então os dados crus vão direto pra Edge Function
   card?: CheckoutCard
+  device?: CheckoutDevice
   installments?: number
   address: CheckoutAddress
   couponCode?: string

@@ -103,6 +103,19 @@ interface CardInput {
   securityCode: string
 }
 
+// dados do navegador do cliente, usados pelo 3DS 2.0 "frictionless" (o
+// banco emissor decide se autentica em segundo plano sem pedir nada ao
+// cliente) — sem isso o 3DS não tem como avaliar o risco da transação
+interface DeviceFingerprint {
+  colorDepth: number
+  javaEnabled: boolean
+  language: string
+  screenHeight: number
+  screenWidth: number
+  timeZoneOffset: number
+  userAgent: string
+}
+
 interface RequestBody {
   items: CheckoutItem[]
   customerName: string
@@ -112,6 +125,7 @@ interface RequestBody {
   paymentMethod: PaymentMethod
   // só para cartão — nunca fica salvo, só repassado pra Rede
   card?: CardInput
+  device?: DeviceFingerprint
   installments?: number
   address: Address
   couponCode?: string
@@ -185,6 +199,7 @@ Deno.serve(async (req) => {
       customerPhone,
       paymentMethod,
       card,
+      device,
       installments,
       address,
       couponCode,
@@ -371,6 +386,14 @@ Deno.serve(async (req) => {
         qrCode: { 'Date timeExpiration': expiration.toISOString().slice(0, 19) },
       }
     } else {
+      // IP público do cliente — vem do header que a infra da Supabase
+      // repassa; a Rede só aceita IPv4, então descarta qualquer IPv6
+      const forwardedFor = req.headers.get('x-forwarded-for')
+      const clientIp = forwardedFor
+        ?.split(',')
+        .map((ip) => ip.trim())
+        .find((ip) => /^\d{1,3}(\.\d{1,3}){3}$/.test(ip))
+
       redeBody = {
         capture: true,
         kind: 'credit',
@@ -382,6 +405,40 @@ Deno.serve(async (req) => {
         expirationMonth: card!.expirationMonth,
         expirationYear: card!.expirationYear,
         securityCode: card!.securityCode,
+        // 3DS 2.0 "frictionless" — manda os dados do navegador pro banco
+        // avaliar o risco em segundo plano, sem pedir nada ao cliente.
+        // onFailure "continue" garante que, se o banco pedir confirmação
+        // ativa (challenge) — fluxo que ainda não construímos na tela —,
+        // a cobrança segue normal em vez de travar o checkout.
+        threeDSecure: {
+          embedded: true,
+          onFailure: 'continue',
+          userAgent: device?.userAgent ?? req.headers.get('user-agent') ?? '',
+          ipAddress: clientIp ?? '0.0.0.0',
+          responseMode: 'event',
+          device: {
+            colorDepth: device?.colorDepth ?? 24,
+            deviceType3ds: 'BROWSER',
+            javaEnabled: device?.javaEnabled ?? false,
+            language: device?.language ?? 'pt-BR',
+            screenHeight: device?.screenHeight ?? 1080,
+            screenWidth: device?.screenWidth ?? 1920,
+            timeZoneOffset: device?.timeZoneOffset ?? -3,
+          },
+          billing: {
+            address: `${address.streetName}, ${address.streetNumber}`,
+            city: address.city,
+            postalcode: address.zipCode.replace(/\D/g, ''),
+            state: address.federalUnit,
+            country: 'Brasil',
+            emailAddress: customerEmail,
+            phoneNumber: customerPhone.replace(/\D/g, ''),
+          },
+        },
+        urls: [
+          { kind: 'threeDSecureSuccess', url: `${SITE_URL}/checkout` },
+          { kind: 'threeDSecureFailure', url: `${SITE_URL}/checkout` },
+        ],
       }
     }
 

@@ -314,6 +314,17 @@ export function Checkout() {
             expirationYear,
             securityCode: cardCvv,
           },
+          device: {
+            colorDepth: window.screen.colorDepth,
+            javaEnabled: typeof navigator.javaEnabled === 'function' ? navigator.javaEnabled() : false,
+            language: navigator.language || 'pt-BR',
+            screenHeight: window.screen.height,
+            screenWidth: window.screen.width,
+            // getTimezoneOffset() é minutos A OESTE de UTC (Brasil = 180);
+            // a Rede espera o oposto (Brasil = -3), por isso o sinal invertido
+            timeZoneOffset: -(new Date().getTimezoneOffset() / 60),
+            userAgent: navigator.userAgent,
+          },
           installments: cardInstallments,
           address: { zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit },
           couponCode: appliedCoupon?.code,
