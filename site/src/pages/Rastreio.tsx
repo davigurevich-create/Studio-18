@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { OrderTrackingSteps } from '@/components/OrderTrackingSteps'
+import { TrackingCode } from '@/components/TrackingCode'
 import { getOrderStatus, isDemoMode, type OrderStatus } from '@/lib/api'
 
 export function Rastreio() {
@@ -79,6 +80,12 @@ export function Rastreio() {
           </div>
 
           <OrderTrackingSteps status={order.status} />
+
+          {order.shipping_tracking_code && (
+            <div className="mt-6">
+              <TrackingCode code={order.shipping_tracking_code} service={order.shipping_service} />
+            </div>
+          )}
 
           {order.shipping_city && (
             <p className="mt-6 text-xs" style={{ color: 'var(--ink-muted)' }}>

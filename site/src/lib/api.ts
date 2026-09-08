@@ -115,6 +115,8 @@ export interface OrderStatus {
   status: string
   shipping_city: string | null
   shipping_federal_unit: string | null
+  shipping_tracking_code: string | null
+  shipping_service: string | null
   product_names: string[]
 }
 
@@ -271,6 +273,8 @@ export interface MyOrder {
   shipping_street_number: string | null
   shipping_complement: string | null
   shipping_neighborhood: string | null
+  shipping_tracking_code: string | null
+  shipping_service: string | null
   customer_name: string | null
   items: MyOrderItem[]
 }
@@ -288,6 +292,8 @@ const demoOrders: MyOrder[] = [
     shipping_street_number: '1000',
     shipping_complement: 'Apto 52',
     shipping_neighborhood: 'Bela Vista',
+    shipping_tracking_code: 'OJ123456789BR',
+    shipping_service: 'Correios SEDEX',
     customer_name: 'Cliente Demonstração',
     items: [{ product_name: 'Bugatti Tourbillon', quantity: 1, unit_price_brl: 1366.43 }],
   },
@@ -303,6 +309,8 @@ const demoOrders: MyOrder[] = [
     shipping_street_number: '1000',
     shipping_complement: 'Apto 52',
     shipping_neighborhood: 'Bela Vista',
+    shipping_tracking_code: 'OJ987654321BR',
+    shipping_service: 'Correios PAC',
     customer_name: 'Cliente Demonstração',
     items: [{ product_name: 'Ferrari Enzo', quantity: 1, unit_price_brl: 1491.03 }],
   },

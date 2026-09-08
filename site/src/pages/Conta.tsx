@@ -29,6 +29,7 @@ import {
 } from '@/lib/api'
 import { PartRequestForm, formatOrderTotal } from '@/components/PartRequestForm'
 import { OrderTrackingSteps } from '@/components/OrderTrackingSteps'
+import { TrackingCode } from '@/components/TrackingCode'
 import { formatBRL } from '@/lib/format'
 
 const statusLabel: Record<string, string> = {
@@ -386,8 +387,9 @@ function OrdersTab({ orders }: { orders: MyOrder[] }) {
                   {isExpanded ? 'Ocultar rastreio' : 'Ver rastreio'}
                 </button>
                 {isExpanded && (
-                  <div className="mt-4">
+                  <div className="mt-4 flex flex-col gap-4">
                     <OrderTrackingSteps status={o.status} />
+                    {o.shipping_tracking_code && <TrackingCode code={o.shipping_tracking_code} service={o.shipping_service} />}
                   </div>
                 )}
               </div>
