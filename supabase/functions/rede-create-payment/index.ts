@@ -361,9 +361,10 @@ Deno.serve(async (req) => {
         kind: 'pix',
         reference: shortReference,
         amount: amountInCents,
-        // nome de campo exatamente como documentado pela Rede (com espaço
-        // no meio — não é typo nosso, é assim mesmo na API deles)
-        qrCode: { 'Date timeExpiration': expiration.toISOString().slice(0, 19) },
+        // nome de campo confirmado pela mensagem de erro real da Rede
+        // ("QrCode: Expiration Date parameter missing") — a doc em PDF
+        // tinha esse campo grafado errado ("Date timeExpiration")
+        qrCode: { 'Expiration Date': expiration.toISOString().slice(0, 19) },
       }
     } else {
       redeBody = {
