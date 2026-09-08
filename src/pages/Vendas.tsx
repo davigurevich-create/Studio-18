@@ -363,23 +363,10 @@ function ShippingLabelCell({ sale, onGenerated }: { sale: Sale; onGenerated: () 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  if (sale.shipping_label_url) {
-    return (
-      <div className="flex flex-col gap-1 text-xs">
-        <a href={sale.shipping_label_url} target="_blank" rel="noreferrer" style={{ color: 'var(--series-1)' }}>
-          Ver etiqueta
-        </a>
-        {sale.shipping_tracking_code && (
-          <span style={{ color: 'var(--text-muted)' }}>Rastreio: {sale.shipping_tracking_code}</span>
-        )}
-      </div>
-    )
-  }
-
-  if (sale.status !== 'pago' && sale.status !== 'enviado') {
-    return <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
-  }
-
+  // Mesma chamada serve pra gerar a etiqueta e pra tentar de novo buscar o
+  // código de rastreio depois — a Melhor Envio só atribui o código quando o
+  // objeto é postado de verdade na transportadora, não na hora de gerar a
+  // etiqueta, então às vezes é preciso reconsultar mais tarde.
   const generate = async () => {
     setLoading(true)
     setError(null)
@@ -391,6 +378,36 @@ function ShippingLabelCell({ sale, onGenerated }: { sale: Sale; onGenerated: () 
     } finally {
       setLoading(false)
     }
+  }
+
+  if (sale.shipping_label_url) {
+    return (
+      <div className="flex flex-col gap-1 text-xs">
+        <a href={sale.shipping_label_url} target="_blank" rel="noreferrer" style={{ color: 'var(--series-1)' }}>
+          Ver etiqueta
+        </a>
+        {sale.shipping_tracking_code ? (
+          <span style={{ color: 'var(--text-muted)' }}>Rastreio: {sale.shipping_tracking_code}</span>
+        ) : (
+          <button
+            type="button"
+            onClick={generate}
+            disabled={loading}
+            className="text-left underline"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            {loading ? 'Consultando...' : 'Sem rastreio ainda — atualizar'}
+          </button>
+        )}
+        {error && (
+          <span style={{ color: 'var(--status-critical)' }}>{error}</span>
+        )}
+      </div>
+    )
+  }
+
+  if (sale.status !== 'pago' && sale.status !== 'enviado') {
+    return <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
   }
 
   return (

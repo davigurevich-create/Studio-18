@@ -71,6 +71,24 @@ function emailShell(title: string, bodyHtml: string): string {
   </div>`
 }
 
+async function sendShippedEmail(saleId: string, customerName: string | null, customerContact: string, trackingCode: string): Promise<void> {
+  await sendEmail(
+    customerContact,
+    `Seu pedido saiu para entrega — Studio 18 #${saleId.slice(0, 8)}`,
+    emailShell(
+      'Seu pedido está a caminho!',
+      `<p>Olá, ${String(customerName ?? '').split(' ')[0] || 'tudo bem'}! O pedido <strong>#${saleId.slice(0, 8)}</strong> já foi postado e está a caminho.</p>
+       <div style="margin:20px 0;padding:16px;border:1px solid rgba(255,255,255,0.08);border-radius:8px;">
+         <div style="font-size:12px;color:#7a766d;letter-spacing:0.05em;">CÓDIGO DE RASTREIO</div>
+         <div style="margin-top:4px;font-size:16px;color:#e6c778;font-family:monospace;">${trackingCode}</div>
+       </div>
+       <p style="margin-top:20px;">
+         <a href="${SITE_URL}/rastreio" style="color:#e6c778;">Acompanhe a entrega em ${SITE_URL}/rastreio</a>
+       </p>`,
+    ),
+  )
+}
+
 const DEFAULT_BOX_CM = { length: 50, width: 35, height: 12 }
 
 // Dados do remetente (Studio 18) que vão em toda etiqueta gerada. Sem o
@@ -164,9 +182,21 @@ Deno.serve(async (req) => {
     if (saleError || !sale) return json({ error: 'Pedido não encontrado.' }, 404)
 
     // Trava de segurança: se já tem etiqueta gerada, devolve a existente em
-    // vez de comprar (e cobrar) outra de novo.
+    // vez de comprar (e cobrar) outra de novo — mas se ainda não tem código
+    // de rastreio (a Melhor Envio só atribui depois que o objeto é
+    // efetivamente postado na transportadora, não na hora de gerar a
+    // etiqueta), tenta buscar de novo, sem gastar saldo nenhum.
     if (sale.shipping_label_url) {
-      return json({ labelUrl: sale.shipping_label_url, trackingCode: sale.shipping_tracking_code, alreadyGenerated: true })
+      let trackingCode: string | null = sale.shipping_tracking_code
+      if (!trackingCode && sale.melhor_envio_order_id) {
+        const tracking = await meFetch('shipment/tracking', { orders: [sale.melhor_envio_order_id] })
+        trackingCode = tracking.data?.[sale.melhor_envio_order_id]?.tracking ?? null
+        if (trackingCode) {
+          await supabase.from('sales').update({ shipping_tracking_code: trackingCode }).eq('id', saleId)
+          if (sale.customer_contact) await sendShippedEmail(saleId, sale.customer_name, sale.customer_contact, trackingCode)
+        }
+      }
+      return json({ labelUrl: sale.shipping_label_url, trackingCode, alreadyGenerated: true })
     }
 
     if (sale.status !== 'pago' && sale.status !== 'enviado') {
@@ -315,21 +345,7 @@ Deno.serve(async (req) => {
       .eq('id', saleId)
 
     if (trackingCode && sale.customer_contact) {
-      await sendEmail(
-        sale.customer_contact,
-        `Seu pedido saiu para entrega — Studio 18 #${saleId.slice(0, 8)}`,
-        emailShell(
-          'Seu pedido está a caminho!',
-          `<p>Olá, ${String(sale.customer_name ?? '').split(' ')[0] || 'tudo bem'}! O pedido <strong>#${saleId.slice(0, 8)}</strong> já foi postado e está a caminho.</p>
-           <div style="margin:20px 0;padding:16px;border:1px solid rgba(255,255,255,0.08);border-radius:8px;">
-             <div style="font-size:12px;color:#7a766d;letter-spacing:0.05em;">CÓDIGO DE RASTREIO</div>
-             <div style="margin-top:4px;font-size:16px;color:#e6c778;font-family:monospace;">${trackingCode}</div>
-           </div>
-           <p style="margin-top:20px;">
-             <a href="${SITE_URL}/rastreio" style="color:#e6c778;">Acompanhe a entrega em ${SITE_URL}/rastreio</a>
-           </p>`,
-        ),
-      )
+      await sendShippedEmail(saleId, sale.customer_name, sale.customer_contact, trackingCode)
     }
 
     return json({ labelUrl, trackingCode })
