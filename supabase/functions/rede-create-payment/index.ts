@@ -79,14 +79,18 @@ function pixPrice(fullPrice: number): number {
   return Math.round(fullPrice * (1 - PIX_DISCOUNT) * 100) / 100
 }
 
-// Acréscimo pra parcelas de 7x a 12x no cartão — mesma regra e mesmo valor
-// do front-end (site/src/lib/pricing.ts): repassa a diferença de taxa que a
-// Rede cobra da loja nessas parcelas mais longas (uniforme entre bandeiras).
-// De 1x a 6x não tem acréscimo, fica por conta da loja.
+// De 1x a 6x não tem juros (fica por conta da loja). De 7x a 12x aplica
+// juros compostos de 1,99% ao mês (padrão de varejo online) pela tabela
+// Price — quanto mais parcelas, maior o total pago. Mesma regra e mesmos
+// valores do front-end (site/src/lib/pricing.ts).
 const INSTALLMENT_SURCHARGE_FROM = 7
-const INSTALLMENT_SURCHARGE_RATE = 0.0126
+const INSTALLMENT_MONTHLY_INTEREST_RATE = 0.0199
 function installmentTotal(total: number, installments: number): number {
-  return installments >= INSTALLMENT_SURCHARGE_FROM ? Math.round(total * (1 + INSTALLMENT_SURCHARGE_RATE) * 100) / 100 : total
+  if (installments < INSTALLMENT_SURCHARGE_FROM) return total
+  const i = INSTALLMENT_MONTHLY_INTEREST_RATE
+  const factor = (i * (1 + i) ** installments) / ((1 + i) ** installments - 1)
+  const value = Math.round(total * factor * 100) / 100
+  return Math.round(value * installments * 100) / 100
 }
 
 interface Address {

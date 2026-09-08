@@ -15,7 +15,7 @@ import {
   type CreatePaymentResult,
 } from '@/lib/api'
 import { formatBRL } from '@/lib/format'
-import { INSTALLMENT_SURCHARGE_FROM, installmentTotal, pixPrice, unitPriceWithMotor } from '@/lib/pricing'
+import { INSTALLMENT_SURCHARGE_FROM, installmentTotal, installmentValue, pixPrice, unitPriceWithMotor } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { useTurnstile } from '@/lib/useTurnstile'
@@ -645,7 +645,7 @@ export function Checkout() {
                       >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
                           <option key={n} value={n} style={{ background: '#0a0a0a' }}>
-                            {n}x de {formatBRL(installmentTotal(total, n) / n)}
+                            {n}x de {formatBRL(installmentValue(total, n))}
                             {n === 1 ? ' à vista' : n >= INSTALLMENT_SURCHARGE_FROM ? ' com juros' : ' sem juros'}
                           </option>
                         ))}
