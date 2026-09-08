@@ -23,6 +23,13 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const MELHOR_ENVIO_ENV = Deno.env.get('MELHOR_ENVIO_ENV') ?? 'producao'
 const MELHOR_ENVIO_BASE_URL = MELHOR_ENVIO_ENV === 'sandbox' ? 'https://sandbox.melhorenvio.com.br' : 'https://www.melhorenvio.com.br'
 const MELHOR_ENVIO_TOKEN = (MELHOR_ENVIO_ENV === 'sandbox' ? Deno.env.get('MELHOR_ENVIO_SANDBOX_TOKEN') : Deno.env.get('MELHOR_ENVIO_TOKEN'))!
+// Mesma secret que a emit-invoice usa — 'homologacao' (padrão) emite uma
+// NF-e de teste, que a SEFAZ nunca autoriza de verdade. O Melhor Envio real
+// (produção) rejeita a chave dessa nota de teste com "a nota fiscal deve
+// ser modelo 55" (mensagem genérica — na prática é porque a nota não existe
+// de verdade na SEFAZ, não porque o modelo esteja errado). Por isso só
+// anexa a chave da nota quando FOCUS_NFE_ENV = 'producao'.
+const FOCUS_NFE_ENV = Deno.env.get('FOCUS_NFE_ENV') ?? 'homologacao'
 
 const DEFAULT_BOX_CM = { length: 50, width: 35, height: 12 }
 
@@ -191,6 +198,11 @@ Deno.serve(async (req) => {
       country_id: ORIGIN.country_id,
     }
 
+    // Só usa a chave da nota se ela for de uma NF-e real (produção) — uma
+    // chave de homologação nunca existiu de verdade na SEFAZ, então o
+    // Melhor Envio real rejeita ela (ver comentário no FOCUS_NFE_ENV acima).
+    const usableInvoiceKey = FOCUS_NFE_ENV === 'producao' ? sale.invoice_key : null
+
     // 1. Adiciona ao carrinho do Melhor Envio.
     const cart = await meFetch('cart', {
       service: Number(sale.shipping_service_id),
@@ -205,11 +217,11 @@ Deno.serve(async (req) => {
         // envio é classificado como "não comercial" (declaração de
         // conteúdo) e o seguro trava em R$1.000; com ela, cobre o valor
         // integral do pedido.
-        insurance_value: sale.invoice_key ? insuranceValue : Math.min(insuranceValue, 1000),
+        insurance_value: usableInvoiceKey ? insuranceValue : Math.min(insuranceValue, 1000),
         receipt: false,
         own_hand: false,
-        non_commercial: !sale.invoice_key,
-        ...(sale.invoice_key ? { invoice: { key: sale.invoice_key } } : {}),
+        non_commercial: !usableInvoiceKey,
+        ...(usableInvoiceKey ? { invoice: { key: usableInvoiceKey } } : {}),
         platform: 'Studio 18',
       },
     })
