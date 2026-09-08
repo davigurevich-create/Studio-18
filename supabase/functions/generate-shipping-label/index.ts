@@ -90,7 +90,7 @@ async function sendShippedEmail(saleId: string, customerName: string | null, cus
          <div style="margin-top:4px;font-size:16px;color:#e6c778;font-family:monospace;">${trackingCode}</div>
        </div>
        <p style="margin-top:20px;">
-         <a href="${SITE_URL}/rastreio" style="color:#e6c778;">Acompanhe a entrega em ${SITE_URL}/rastreio</a>
+         <a href="${SITE_URL}/conta" style="color:#e6c778;">Acompanhe a entrega em Minha Conta</a>
        </p>`,
     ),
   )
