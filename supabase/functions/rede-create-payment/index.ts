@@ -25,10 +25,22 @@ const REDE_ENV = Deno.env.get('REDE_ENV') ?? 'sandbox'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
+// PIX usa /v1/transactions (endpoint diferente do cartão, que é /v2) —
+// confirmado visualmente no exemplo oficial do PDF da Rede ("QR Code
+// request example", POST /v1/transactions) depois que o corpo já batia
+// exatamente com a doc e mesmo assim dava erro 3076 batendo em /v2.
 const REDE_URLS =
   REDE_ENV === 'production'
-    ? { auth: 'https://api.userede.com.br/redelabs/oauth2/token', transactions: 'https://api.userede.com.br/erede/v2/transactions' }
-    : { auth: 'https://rl7-sandbox-api.useredecloud.com.br/oauth2/token', transactions: 'https://sandbox-erede.useredecloud.com.br/v2/transactions' }
+    ? {
+        auth: 'https://api.userede.com.br/redelabs/oauth2/token',
+        transactions: 'https://api.userede.com.br/erede/v2/transactions',
+        pixTransactions: 'https://api.userede.com.br/erede/v1/transactions',
+      }
+    : {
+        auth: 'https://rl7-sandbox-api.useredecloud.com.br/oauth2/token',
+        transactions: 'https://sandbox-erede.useredecloud.com.br/v2/transactions',
+        pixTransactions: 'https://sandbox-erede.useredecloud.com.br/v1/transactions',
+      }
 
 // --- E-mail transacional (Resend) ------------------------------------------
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
@@ -474,16 +486,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Log temporário — já tentamos dois nomes de campo diferentes pro PIX e
-    // os dois deram o mesmo erro "Expiration Date parameter missing", o que
-    // não bate com o corpo já conferido contra o exemplo oficial do PDF.
-    // Precisa ver o corpo exato enviado e a resposta completa pra achar a
-    // causa real, em vez de continuar adivinhando.
+    const transactionsUrl = paymentMethod === 'pix' ? REDE_URLS.pixTransactions : REDE_URLS.transactions
+
     if (paymentMethod === 'pix') {
       console.log('Corpo enviado pra Rede (PIX):', JSON.stringify(redeBody))
     }
 
-    let redeResponse = await fetch(REDE_URLS.transactions, {
+    let redeResponse = await fetch(transactionsUrl, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
