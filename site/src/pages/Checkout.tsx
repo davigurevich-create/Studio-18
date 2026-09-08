@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Gift, Truck } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Gift, Lock, Truck } from 'lucide-react'
 import { SpotifySection } from '@/components/SpotifySection'
 import {
   createPayment,
@@ -46,7 +46,7 @@ export function Checkout() {
   const [neighborhood, setNeighborhood] = useState('')
   const [city, setCity] = useState('')
   const [federalUnit, setFederalUnit] = useState('')
-  const [step, setStep] = useState<'form' | 'card' | 'done'>('form')
+  const [step, setStep] = useState<'form' | 'done'>('form')
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<CreatePaymentResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -63,17 +63,7 @@ export function Checkout() {
   const [cardExpiry, setCardExpiry] = useState('')
   const [cardCvv, setCardCvv] = useState('')
   const [cardInstallments, setCardInstallments] = useState(1)
-  const cardNumberRef = useRef<HTMLInputElement>(null)
   const { containerRef: turnstileRef, getToken: getTurnstileToken } = useTurnstile()
-
-  // ao entrar na tela de cartão, a rolagem ficava onde a pessoa parou no
-  // formulário anterior (às vezes lá embaixo) — sobe pro topo e já foca no
-  // primeiro campo, como se fosse uma tela nova de verdade
-  useEffect(() => {
-    if (step !== 'card') return
-    window.scrollTo({ top: 0, behavior: 'auto' })
-    cardNumberRef.current?.focus()
-  }, [step])
 
   const copyToClipboard = useCallback((field: 'order' | 'pix', text: string) => {
     navigator.clipboard.writeText(text)
@@ -96,11 +86,11 @@ export function Checkout() {
     Promise.all([getMyProfile(), getMyAddresses(), getMyOrders()])
       .then(([profile, addresses, orders]) => {
         if (profile.fullName) setName(profile.fullName)
-        if (profile.cpf) setCpf(profile.cpf)
+        if (profile.cpf) setCpf(formatCPF(profile.cpf))
 
         const defaultAddress = addresses.find((a) => a.is_default) ?? addresses[0]
         if (defaultAddress) {
-          setZipCode(defaultAddress.zip_code)
+          setZipCode(formatCEP(defaultAddress.zip_code))
           setStreetName(defaultAddress.street_name)
           setStreetNumber(defaultAddress.street_number)
           setComplement(defaultAddress.complement ?? '')
@@ -113,7 +103,7 @@ export function Checkout() {
         const last = orders[0]
         if (!last) return
         if (!profile.fullName && last.customer_name) setName(last.customer_name)
-        if (last.shipping_zip_code) setZipCode(last.shipping_zip_code)
+        if (last.shipping_zip_code) setZipCode(formatCEP(last.shipping_zip_code))
         if (last.shipping_street_name) setStreetName(last.shipping_street_name)
         if (last.shipping_street_number) setStreetNumber(last.shipping_street_number)
         if (last.shipping_complement) setComplement(last.shipping_complement)
@@ -169,72 +159,69 @@ export function Checkout() {
     [items],
   )
 
-  const calculateShipping = useCallback(async () => {
-    const digits = zipCode.replace(/\D/g, '')
-    if (digits.length !== 8 || checkoutItems.length === 0) return
-    setShippingLoading(true)
-    setShippingMessage(null)
-    setSelectedShipping(null)
-    setShippingOptions(null)
-    try {
-      const res = await getShippingOptions(zipCode, checkoutItems)
-      setShippingOptions(res.options)
-      if (res.options.length === 0) setShippingMessage(res.message ?? 'Nenhuma opção de frete disponível para este CEP.')
-      else if (res.options.length === 1) setSelectedShipping(res.options[0])
-    } catch {
-      setShippingOptions([])
-      setShippingMessage('Não foi possível calcular o frete agora. Tente novamente.')
-    } finally {
-      setShippingLoading(false)
-    }
-  }, [zipCode, checkoutItems])
-
-  // Se o CEP mudar depois de já ter calculado, o frete anterior não vale
-  // mais — obriga a recalcular antes de conseguir prosseguir.
-  useEffect(() => {
-    setShippingOptions(null)
-    setSelectedShipping(null)
-    setShippingMessage(null)
-  }, [zipCode])
-
-  // Preenche rua, bairro, cidade e estado automaticamente a partir do CEP
-  // (ViaCEP, gratuito e sem chave de API) assim que os 8 dígitos forem
-  // digitados — depois só falta o número, que o CEP não tem como saber.
-  useEffect(() => {
-    const digits = zipCode.replace(/\D/g, '')
-    if (digits.length !== 8) {
+  // busca endereço (ViaCEP) e cota o frete (Melhor Envio) em paralelo, assim
+  // que o CEP completa 8 dígitos — nenhuma das duas depende de clique
+  const lookupAddressAndShipping = useCallback(
+    async (cep: string) => {
+      const digits = cep.replace(/\D/g, '')
+      if (digits.length !== 8) return
+      setCepLoading(true)
       setCepNotFound(false)
-      return
-    }
-    let cancelled = false
-    setCepLoading(true)
-    setCepNotFound(false)
-    fetch(`https://viacep.com.br/ws/${digits}/json/`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return
-        if (data.erro) {
-          setCepNotFound(true)
-          return
-        }
+      setShippingLoading(true)
+      setShippingMessage(null)
+      setShippingOptions(null)
+      setSelectedShipping(null)
+
+      const [viaCepResult, shippingResult] = await Promise.allSettled([
+        fetch(`https://viacep.com.br/ws/${digits}/json/`).then((r) => r.json()),
+        getShippingOptions(cep, checkoutItems),
+      ])
+
+      if (viaCepResult.status === 'fulfilled' && !viaCepResult.value.erro) {
+        const data = viaCepResult.value
         setStreetName(data.logradouro || '')
         setNeighborhood(data.bairro || '')
         setCity(data.localidade || '')
         setFederalUnit(data.uf || '')
         streetNumberRef.current?.focus()
-      })
-      .catch(() => {
-        if (!cancelled) setCepNotFound(true)
-      })
-      .finally(() => {
-        if (!cancelled) setCepLoading(false)
-      })
-    return () => {
-      cancelled = true
+      } else {
+        setCepNotFound(true)
+      }
+
+      if (shippingResult.status === 'fulfilled') {
+        setShippingOptions(shippingResult.value.options)
+        if (shippingResult.value.options.length === 0) {
+          setShippingMessage(shippingResult.value.message ?? 'Nenhuma opção de frete disponível para este CEP.')
+        } else if (shippingResult.value.options.length === 1) {
+          setSelectedShipping(shippingResult.value.options[0])
+        }
+      } else {
+        setShippingOptions([])
+        setShippingMessage('Não foi possível calcular o frete agora. Tente novamente.')
+      }
+
+      setCepLoading(false)
+      setShippingLoading(false)
+    },
+    [checkoutItems],
+  )
+
+  // Se o CEP mudar, o endereço/frete anteriores não valem mais — limpa e,
+  // assim que os 8 dígitos estiverem completos, dispara a busca sozinha.
+  useEffect(() => {
+    setShippingOptions(null)
+    setSelectedShipping(null)
+    setShippingMessage(null)
+    const digits = zipCode.replace(/\D/g, '')
+    if (digits.length !== 8) {
+      setCepNotFound(false)
+      return
     }
+    lookupAddressAndShipping(zipCode)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zipCode])
 
-  const handleContactSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (items.length === 0) return
     if (cpf.replace(/\D/g, '').length !== 11) {
@@ -253,13 +240,20 @@ export function Checkout() {
       setError('Calcule e escolha uma opção de frete antes de continuar.')
       return
     }
-    setError(null)
 
+    let card: { number: string; holderName: string; expirationMonth: number; expirationYear: number; securityCode: string } | undefined
     if (method === 'cartao') {
-      setStep('card')
-      return
+      const [expMonthStr, expYearStr] = cardExpiry.split('/').map((v) => v.trim())
+      const expirationMonth = Number(expMonthStr)
+      const expirationYear = Number(expYearStr?.length === 2 ? `20${expYearStr}` : expYearStr)
+      if (!cardNumber.replace(/\D/g, '') || !cardHolderName || !expirationMonth || !expirationYear || !cardCvv) {
+        setError('Preencha todos os dados do cartão.')
+        return
+      }
+      card = { number: cardNumber.replace(/\D/g, ''), holderName: cardHolderName, expirationMonth, expirationYear, securityCode: cardCvv }
     }
 
+    setError(null)
     setSubmitting(true)
     try {
       const turnstileToken = await getTurnstileToken()
@@ -270,6 +264,22 @@ export function Checkout() {
         customerCpf: cpf,
         customerPhone: phone,
         paymentMethod: method,
+        card,
+        device:
+          method === 'cartao'
+            ? {
+                colorDepth: window.screen.colorDepth,
+                javaEnabled: typeof navigator.javaEnabled === 'function' ? navigator.javaEnabled() : false,
+                language: navigator.language || 'pt-BR',
+                screenHeight: window.screen.height,
+                screenWidth: window.screen.width,
+                // getTimezoneOffset() é minutos A OESTE de UTC (Brasil = 180);
+                // a Rede espera o oposto (Brasil = -3), por isso o sinal invertido
+                timeZoneOffset: -(new Date().getTimezoneOffset() / 60),
+                userAgent: navigator.userAgent,
+              }
+            : undefined,
+        installments: method === 'cartao' ? cardInstallments : undefined,
         address: { zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit },
         couponCode: appliedCoupon?.code,
         shipping: selectedShipping,
@@ -279,91 +289,11 @@ export function Checkout() {
       setStep('done')
       clear()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível registrar o pedido agora. Tente novamente em instantes.')
+      setError(err instanceof Error ? err.message : 'Não foi possível processar seu pedido agora. Tente novamente.')
     } finally {
       setSubmitting(false)
     }
   }
-
-  const handleCardSubmit = useCallback(
-    async (e: FormEvent) => {
-      e.preventDefault()
-      if (checkoutItems.length === 0 || !selectedShipping) return
-      const [expMonthStr, expYearStr] = cardExpiry.split('/').map((v) => v.trim())
-      const expirationMonth = Number(expMonthStr)
-      const expirationYear = Number(expYearStr?.length === 2 ? `20${expYearStr}` : expYearStr)
-      if (!cardNumber.replace(/\D/g, '') || !cardHolderName || !expirationMonth || !expirationYear || !cardCvv) {
-        setError('Preencha todos os dados do cartão.')
-        return
-      }
-      setSubmitting(true)
-      setError(null)
-      try {
-        const turnstileToken = await getTurnstileToken()
-        const res = await createPayment({
-          items: checkoutItems,
-          customerName: name,
-          customerEmail: email,
-          customerCpf: cpf,
-          customerPhone: phone,
-          paymentMethod: 'cartao',
-          card: {
-            number: cardNumber.replace(/\D/g, ''),
-            holderName: cardHolderName,
-            expirationMonth,
-            expirationYear,
-            securityCode: cardCvv,
-          },
-          device: {
-            colorDepth: window.screen.colorDepth,
-            javaEnabled: typeof navigator.javaEnabled === 'function' ? navigator.javaEnabled() : false,
-            language: navigator.language || 'pt-BR',
-            screenHeight: window.screen.height,
-            screenWidth: window.screen.width,
-            // getTimezoneOffset() é minutos A OESTE de UTC (Brasil = 180);
-            // a Rede espera o oposto (Brasil = -3), por isso o sinal invertido
-            timeZoneOffset: -(new Date().getTimezoneOffset() / 60),
-            userAgent: navigator.userAgent,
-          },
-          installments: cardInstallments,
-          address: { zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit },
-          couponCode: appliedCoupon?.code,
-          shipping: selectedShipping,
-          turnstileToken,
-        })
-        setResult(res)
-        setStep('done')
-        clear()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Não foi possível processar o pagamento agora. Tente novamente.')
-      } finally {
-        setSubmitting(false)
-      }
-    },
-    [
-      checkoutItems,
-      name,
-      email,
-      cpf,
-      phone,
-      zipCode,
-      streetName,
-      streetNumber,
-      complement,
-      neighborhood,
-      city,
-      federalUnit,
-      clear,
-      appliedCoupon,
-      selectedShipping,
-      getTurnstileToken,
-      cardNumber,
-      cardHolderName,
-      cardExpiry,
-      cardCvv,
-      cardInstallments,
-    ],
-  )
 
   const cardBrand = useMemo(() => detectCardBrand(cardNumber), [cardNumber])
 
@@ -539,7 +469,7 @@ export function Checkout() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-6 pb-24 pt-32">
+    <div className="mx-auto max-w-5xl px-6 pb-24 pt-32">
       <div ref={turnstileRef} />
       <button onClick={() => navigate(-1)} className="mb-8 text-sm" style={{ color: 'var(--ink-muted)' }}>
         ← Voltar
@@ -557,102 +487,63 @@ export function Checkout() {
         </div>
       )}
 
-      <div className="mb-8 flex flex-col gap-3 rounded-xl border p-4" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}>
-        {items.map(({ line, product }) => (
-          <div key={product.id} className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-sm" style={{ color: 'var(--ink)' }}>
-                {line.quantity}x {product.name}
-              </div>
-              <div className="text-xs" style={{ color: 'var(--ink-muted)' }}>
-                {product.manufacturer} · {product.scale}
-                {line.withMotor && ' · com motor funcional'}
-              </div>
-            </div>
-            <div className="tabular shrink-0 text-sm font-medium" style={{ color: 'var(--gold-bright)' }}>
-              {formatBRL(unitPriceWithMotor(product, Boolean(line.withMotor)) * line.quantity)}
-            </div>
-          </div>
-        ))}
-        <div className="border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
-          <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-            CUPOM DE DESCONTO
-          </label>
-          {appliedCoupon ? (
-            <div
-              className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs"
-              style={{ background: 'rgba(143,206,143,0.1)', border: '1px solid rgba(143,206,143,0.3)', color: '#8fce8f' }}
-            >
-              <span>
-                ✓ Cupom <strong>{appliedCoupon.code}</strong> aplicado — {appliedCoupon.discountPct}% de desconto
-              </span>
-              <button type="button" onClick={removeCoupon} className="underline" style={{ color: '#8fce8f' }}>
-                Remover
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <input
-                value={couponInput}
-                onChange={(e) => {
-                  setCouponInput(e.target.value.toUpperCase())
-                  if (couponStatus === 'invalid') setCouponStatus('idle')
-                }}
-                placeholder="Ex: GARAGEM8"
-                className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm uppercase outline-none"
-                style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+      <div className="lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-12">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-8 lg:col-start-1">
+          <section className="flex flex-col gap-6">
+            <SectionLabel>Dados pessoais</SectionLabel>
+            <Field label="Nome completo" value={name} onChange={setName} required autoComplete="name" />
+            <Field label="E-mail" value={email} onChange={setEmail} type="email" required autoComplete="email" />
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="CPF" value={cpf} onChange={(v) => setCpf(formatCPF(v))} required placeholder="000.000.000-00" />
+              <Field
+                label="Telefone (com DDD)"
+                value={phone}
+                onChange={(v) => setPhone(formatPhone(v))}
+                required
+                placeholder="(11) 98100-8013"
+                autoComplete="tel"
               />
-              <button
-                type="button"
-                onClick={applyCoupon}
-                disabled={couponStatus === 'checking' || !couponInput.trim()}
-                className="shrink-0 rounded-lg border px-4 py-2 text-xs font-medium disabled:opacity-50"
-                style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
-              >
-                {couponStatus === 'checking' ? 'Validando...' : 'Aplicar'}
-              </button>
             </div>
-          )}
-          {couponStatus === 'invalid' && (
-            <p className="mt-2 text-xs" style={{ color: '#e88b8b' }}>
-              Cupom inválido, expirado ou esgotado.
-            </p>
-          )}
-        </div>
 
-        {selectedShipping && (
-          <div className="flex items-center justify-between border-t pt-3 text-xs" style={{ borderColor: 'var(--hairline)', color: 'var(--ink-secondary)' }}>
-            <span>
-              Frete — {selectedShipping.company} {selectedShipping.service}
-            </span>
-            <span className="tabular">{formatBRL(selectedShipping.price)}</span>
-          </div>
-        )}
+            <div className="grid grid-cols-2 gap-4">
+              <Field
+                label="CEP"
+                value={zipCode}
+                onChange={(v) => setZipCode(formatCEP(v))}
+                required
+                placeholder="00000-000"
+                autoComplete="postal-code"
+                hint={cepLoading ? 'Buscando endereço e frete...' : cepNotFound ? 'CEP não encontrado — preencha manualmente.' : undefined}
+              />
+              <Field label="Número" value={streetNumber} onChange={setStreetNumber} required ref={streetNumberRef} />
+              <div className="col-span-2">
+                <Field label="Rua" value={streetName} onChange={setStreetName} required autoComplete="address-line1" />
+              </div>
+              <div className="col-span-2">
+                <Field
+                  label="Complemento (opcional)"
+                  value={complement}
+                  onChange={setComplement}
+                  placeholder="Apto, bloco, casa..."
+                  autoComplete="address-line2"
+                />
+              </div>
+              <Field label="Bairro" value={neighborhood} onChange={setNeighborhood} required />
+              <Field label="Cidade" value={city} onChange={setCity} required autoComplete="address-level2" />
+              <Field
+                label="Estado (UF)"
+                value={federalUnit}
+                onChange={setFederalUnit}
+                required
+                placeholder="SP"
+                autoComplete="address-level1"
+              />
+            </div>
+          </section>
 
-        <div className="flex items-center justify-between border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
-          <span className="text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-            {method === 'pix' ? 'TOTAL À VISTA NO PIX' : 'TOTAL'}
-          </span>
-          <div className="flex items-baseline gap-2">
-            {(method === 'pix' || appliedCoupon) && (
-              <span className="tabular text-xs line-through" style={{ color: 'var(--ink-muted)' }}>
-                {formatBRL(subtotal)}
-              </span>
-            )}
-            <span className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-              {formatBRL(total)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {step === 'form' && (
-        <form onSubmit={handleContactSubmit} className="flex flex-col gap-6">
-          <div>
-            <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-              FORMA DE PAGAMENTO
-            </label>
-            <div className="grid grid-cols-3 gap-3">
+          <section className="flex flex-col gap-4">
+            <SectionLabel>Forma de pagamento</SectionLabel>
+            <div className="grid grid-cols-2 gap-3">
               {methods.map((m) => (
                 <button
                   key={m.id}
@@ -681,66 +572,127 @@ export function Checkout() {
                 </button>
               ))}
             </div>
-          </div>
 
-          <Field label="Nome completo" value={name} onChange={setName} required />
-          <Field label="E-mail" value={email} onChange={setEmail} type="email" required />
-          <Field label="CPF" value={cpf} onChange={setCpf} required placeholder="000.000.000-00" />
-          <Field label="Telefone (com DDD)" value={phone} onChange={setPhone} required placeholder="(11) 98100-8013" />
+            <AnimatePresence initial={false}>
+              {method === 'cartao' && (
+                <motion.div
+                  key="card-fields"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: 'easeInOut' }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex flex-col gap-4 rounded-xl border p-4" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}>
+                    <div>
+                      <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+                        NÚMERO DO CARTÃO
+                      </label>
+                      <div className="relative">
+                        <input
+                          required={method === 'cartao'}
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="cc-number"
+                          placeholder="0000 0000 0000 0000"
+                          value={cardNumber}
+                          onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                          className="w-full rounded-lg border bg-transparent px-4 py-2.5 pr-16 text-sm outline-none"
+                          style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+                        />
+                        {cardBrand && (
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <CardBrandIcon brand={cardBrand} />
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <Field
+                      label="Nome impresso no cartão"
+                      value={cardHolderName}
+                      onChange={setCardHolderName}
+                      required={method === 'cartao'}
+                      autoComplete="cc-name"
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <Field
+                        label="Validade (MM/AA)"
+                        value={cardExpiry}
+                        onChange={(v) => setCardExpiry(formatCardExpiry(v))}
+                        required={method === 'cartao'}
+                        placeholder="12/28"
+                        autoComplete="cc-exp"
+                      />
+                      <Field
+                        label="CVV"
+                        value={cardCvv}
+                        onChange={(v) => setCardCvv(v.replace(/\D/g, '').slice(0, 4))}
+                        required={method === 'cartao'}
+                        placeholder="123"
+                        autoComplete="cc-csc"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+                        PARCELAS
+                      </label>
+                      <select
+                        value={cardInstallments}
+                        onChange={(e) => setCardInstallments(Number(e.target.value))}
+                        className="w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm outline-none"
+                        style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+                      >
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+                          <option key={n} value={n} style={{ background: '#0a0a0a' }}>
+                            {n}x de {formatBRL(total / n)}
+                            {n === 1 ? ' à vista' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <p className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--ink-muted)' }}>
+                      <Lock size={11} strokeWidth={2} />
+                      Pagamento processado com segurança pela Rede — seus dados de cartão nunca ficam salvos aqui.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          <div>
-            <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-              ENDEREÇO DE ENTREGA
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              <Field
-                label="CEP"
-                value={zipCode}
-                onChange={setZipCode}
-                required
-                placeholder="00000-000"
-                hint={cepLoading ? 'Buscando endereço...' : cepNotFound ? 'CEP não encontrado — preencha manualmente.' : undefined}
-              />
-              <Field label="Número" value={streetNumber} onChange={setStreetNumber} required ref={streetNumberRef} />
-              <div className="col-span-2">
-                <Field label="Rua" value={streetName} onChange={setStreetName} required />
-              </div>
-              <div className="col-span-2">
-                <Field
-                  label="Complemento (opcional)"
-                  value={complement}
-                  onChange={setComplement}
-                  placeholder="Apto, bloco, casa..."
-                />
-              </div>
-              <Field label="Bairro" value={neighborhood} onChange={setNeighborhood} required />
-              <Field label="Cidade" value={city} onChange={setCity} required />
-              <Field label="Estado (UF)" value={federalUnit} onChange={setFederalUnit} required placeholder="SP" />
-            </div>
-          </div>
+            {method === 'pix' && (
+              <PaymentNote text={`Após confirmar, geramos o QR Code / código PIX copia-e-cola para pagamento — com 10% de desconto já aplicado (${formatBRL(total)}).`} />
+            )}
+          </section>
 
-          <div>
-            <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-              FRETE
-            </label>
-            <button
-              type="button"
-              onClick={calculateShipping}
-              disabled={shippingLoading || zipCode.replace(/\D/g, '').length !== 8}
-              className="w-full rounded-lg border px-4 py-2.5 text-sm font-medium disabled:opacity-50"
-              style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
-            >
-              {shippingLoading ? 'Calculando frete...' : 'Calcular frete'}
-            </button>
+          <section className="flex flex-col gap-3">
+            <SectionLabel>Frete</SectionLabel>
 
-            {shippingMessage && (
-              <p className="mt-2 text-xs" style={{ color: '#e88b8b' }}>
-                {shippingMessage}
+            {!zipCode && <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>Informe o CEP acima pra calcular o frete.</p>}
+
+            {shippingLoading && (
+              <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>
+                Calculando frete...
               </p>
             )}
 
+            {shippingMessage && (
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs" style={{ color: '#e88b8b' }}>
+                  {shippingMessage}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => lookupAddressAndShipping(zipCode)}
+                  className="shrink-0 text-xs underline"
+                  style={{ color: 'var(--ink-muted)' }}
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            )}
+
             {shippingOptions && shippingOptions.length > 0 && (
-              <div className="mt-3 flex flex-col gap-2">
+              <div className="flex flex-col gap-2">
                 {shippingOptions.map((opt) => (
                   <button
                     key={`${opt.company}-${opt.service}`}
@@ -767,105 +719,13 @@ export function Checkout() {
                 ))}
               </div>
             )}
-          </div>
-
-          {method === 'pix' && (
-            <PaymentNote text={`Após confirmar, geramos o QR Code / código PIX copia-e-cola para pagamento — com 10% de desconto já aplicado (${formatBRL(total)}).`} />
-          )}
-          {method === 'cartao' && <PaymentNote text="Após confirmar, você preenche os dados do cartão na próxima tela." />}
+          </section>
 
           {error && (
             <div className="rounded-lg px-4 py-3 text-sm" style={{ background: 'rgba(208,59,59,0.12)', color: '#e88b8b' }}>
               {error}
             </div>
           )}
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="mt-2 rounded-full px-8 py-3 text-sm font-medium tracking-wide disabled:opacity-50"
-            style={{ background: 'var(--gold)', color: '#0a0a0a' }}
-          >
-            {submitting
-              ? 'Registrando pedido...'
-              : method === 'cartao'
-                ? 'Continuar para pagamento'
-                : `Confirmar pedido — ${formatBRL(total)}`}
-          </button>
-        </form>
-      )}
-
-      {step === 'card' && (
-        <form onSubmit={handleCardSubmit} className="flex flex-col gap-6">
-          {error && (
-            <div className="rounded-lg px-4 py-3 text-sm" style={{ background: 'rgba(208,59,59,0.12)', color: '#e88b8b' }}>
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-              NÚMERO DO CARTÃO
-            </label>
-            <div className="relative">
-              <input
-                ref={cardNumberRef}
-                required
-                type="text"
-                inputMode="numeric"
-                placeholder="0000 0000 0000 0000"
-                value={cardNumber}
-                onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                className="w-full rounded-lg border bg-transparent px-4 py-2.5 pr-16 text-sm outline-none"
-                style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
-              />
-              {cardBrand && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <CardBrandIcon brand={cardBrand} />
-                </span>
-              )}
-            </div>
-          </div>
-          <Field label="Nome impresso no cartão" value={cardHolderName} onChange={setCardHolderName} required />
-          <div className="grid grid-cols-2 gap-4">
-            <Field
-              label="Validade (MM/AA)"
-              value={cardExpiry}
-              onChange={(v) => setCardExpiry(formatCardExpiry(v))}
-              required
-              placeholder="12/28"
-            />
-            <Field
-              label="CVV"
-              value={cardCvv}
-              onChange={(v) => setCardCvv(v.replace(/\D/g, '').slice(0, 4))}
-              required
-              placeholder="123"
-            />
-          </div>
-          <div>
-            <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-              PARCELAS
-            </label>
-            <select
-              value={cardInstallments}
-              onChange={(e) => setCardInstallments(Number(e.target.value))}
-              className="w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm outline-none"
-              style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
-            >
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
-                <option key={n} value={n} style={{ background: '#0a0a0a' }}>
-                  {n}x de {formatBRL(total / n)}
-                  {n === 1 ? ' à vista' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <p className="text-[11px]" style={{ color: 'var(--ink-muted)' }}>
-            Seus dados de cartão são enviados direto e com segurança para o processamento do pagamento — nunca
-            ficam salvos em nossos servidores.
-          </p>
 
           <button
             type="submit"
@@ -873,19 +733,112 @@ export function Checkout() {
             className="rounded-full px-8 py-3 text-sm font-medium tracking-wide disabled:opacity-50"
             style={{ background: 'var(--gold)', color: '#0a0a0a' }}
           >
-            {submitting ? 'Processando pagamento...' : `Pagar ${formatBRL(total)}`}
-          </button>
-          <button
-            type="button"
-            onClick={() => setStep('form')}
-            className="text-sm"
-            style={{ color: 'var(--ink-muted)' }}
-          >
-            ← Voltar
+            {submitting
+              ? 'Processando pedido...'
+              : method === 'cartao'
+                ? `Pagar ${formatBRL(total)}`
+                : `Confirmar pedido — ${formatBRL(total)}`}
           </button>
         </form>
-      )}
+
+        <div className="mt-10 flex flex-col gap-3 rounded-xl border p-4 lg:sticky lg:top-28 lg:col-start-2 lg:row-start-1 lg:mt-0" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}>
+          {items.map(({ line, product }) => (
+            <div key={product.id} className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-sm" style={{ color: 'var(--ink)' }}>
+                  {line.quantity}x {product.name}
+                </div>
+                <div className="text-xs" style={{ color: 'var(--ink-muted)' }}>
+                  {product.manufacturer} · {product.scale}
+                  {line.withMotor && ' · com motor funcional'}
+                </div>
+              </div>
+              <div className="tabular shrink-0 text-sm font-medium" style={{ color: 'var(--gold-bright)' }}>
+                {formatBRL(unitPriceWithMotor(product, Boolean(line.withMotor)) * line.quantity)}
+              </div>
+            </div>
+          ))}
+          <div className="border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
+            <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+              CUPOM DE DESCONTO
+            </label>
+            {appliedCoupon ? (
+              <div
+                className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs"
+                style={{ background: 'rgba(143,206,143,0.1)', border: '1px solid rgba(143,206,143,0.3)', color: '#8fce8f' }}
+              >
+                <span>
+                  ✓ Cupom <strong>{appliedCoupon.code}</strong> aplicado — {appliedCoupon.discountPct}% de desconto
+                </span>
+                <button type="button" onClick={removeCoupon} className="underline" style={{ color: '#8fce8f' }}>
+                  Remover
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  value={couponInput}
+                  onChange={(e) => {
+                    setCouponInput(e.target.value.toUpperCase())
+                    if (couponStatus === 'invalid') setCouponStatus('idle')
+                  }}
+                  placeholder="Ex: GARAGEM8"
+                  className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm uppercase outline-none"
+                  style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+                />
+                <button
+                  type="button"
+                  onClick={applyCoupon}
+                  disabled={couponStatus === 'checking' || !couponInput.trim()}
+                  className="shrink-0 rounded-lg border px-4 py-2 text-xs font-medium disabled:opacity-50"
+                  style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+                >
+                  {couponStatus === 'checking' ? 'Validando...' : 'Aplicar'}
+                </button>
+              </div>
+            )}
+            {couponStatus === 'invalid' && (
+              <p className="mt-2 text-xs" style={{ color: '#e88b8b' }}>
+                Cupom inválido, expirado ou esgotado.
+              </p>
+            )}
+          </div>
+
+          {selectedShipping && (
+            <div className="flex items-center justify-between border-t pt-3 text-xs" style={{ borderColor: 'var(--hairline)', color: 'var(--ink-secondary)' }}>
+              <span>
+                Frete — {selectedShipping.company} {selectedShipping.service}
+              </span>
+              <span className="tabular">{formatBRL(selectedShipping.price)}</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
+            <span className="text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+              {method === 'pix' ? 'TOTAL À VISTA NO PIX' : 'TOTAL'}
+            </span>
+            <div className="flex items-baseline gap-2">
+              {(method === 'pix' || appliedCoupon) && (
+                <span className="tabular text-xs line-through" style={{ color: 'var(--ink-muted)' }}>
+                  {formatBRL(subtotal)}
+                </span>
+              )}
+              <span className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
+                {formatBRL(total)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  )
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--gold)' }}>
+      {children}
+    </h2>
   )
 }
 
@@ -895,6 +848,29 @@ function PaymentNote({ text }: { text: string }) {
       {text}
     </p>
   )
+}
+
+function formatCPF(value: string): string {
+  const d = value.replace(/\D/g, '').slice(0, 11)
+  if (d.length <= 3) return d
+  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`
+  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`
+}
+
+function formatPhone(value: string): string {
+  const d = value.replace(/\D/g, '').slice(0, 11)
+  if (d.length === 0) return ''
+  if (d.length <= 2) return `(${d}`
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
+}
+
+function formatCEP(value: string): string {
+  const d = value.replace(/\D/g, '').slice(0, 8)
+  if (d.length <= 5) return d
+  return `${d.slice(0, 5)}-${d.slice(5)}`
 }
 
 function formatCardNumber(value: string): string {
@@ -989,7 +965,6 @@ function CardBrandIcon({ brand }: { brand: CardBrand }) {
     <svg width="38" height="24" viewBox="0 0 38 24" aria-label="Diners Club">
       <rect width="38" height="24" rx="4" fill="#004A97" />
       <circle cx="19" cy="12" r="7" fill="none" stroke="#fff" strokeWidth="1.5" />
-      <path d="M19 6v12M13 12h12" stroke="#fff" strokeWidth="0" />
     </svg>
   )
 }
@@ -1004,8 +979,9 @@ const Field = forwardRef<
     type?: string
     placeholder?: string
     hint?: string
+    autoComplete?: string
   }
->(function Field({ label, value, onChange, required, type = 'text', placeholder, hint }, ref) {
+>(function Field({ label, value, onChange, required, type = 'text', placeholder, hint, autoComplete }, ref) {
   return (
     <div>
       <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
@@ -1018,6 +994,7 @@ const Field = forwardRef<
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        autoComplete={autoComplete}
         className="w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm outline-none"
         style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
       />
