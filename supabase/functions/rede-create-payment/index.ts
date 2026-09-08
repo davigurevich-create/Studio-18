@@ -360,11 +360,15 @@ Deno.serve(async (req) => {
       redeBody = {
         kind: 'pix',
         reference: shortReference,
-        amount: amountInCents,
-        // nome de campo confirmado pela mensagem de erro real da Rede
-        // ("QrCode: Expiration Date parameter missing") — a doc em PDF
-        // tinha esse campo grafado errado ("Date timeExpiration")
-        qrCode: { 'Expiration Date': expiration.toISOString().slice(0, 19) },
+        // no PIX o exemplo oficial da Rede manda "amount" como STRING
+        // (diferente do cartão, que é numérico) — provavelmente a causa
+        // real do erro "Expiration Date parameter missing": o corpo
+        // inteiro falha a validação do schema deles e a mensagem que
+        // sobra é sobre o próximo campo obrigatório, não sobre a causa
+        amount: String(amountInCents),
+        // nome de campo exatamente como no exemplo oficial da doc
+        // (confirmado visualmente na página do PDF, com espaço mesmo)
+        qrCode: { 'Date timeExpiration': expiration.toISOString().slice(0, 19) },
       }
     } else {
       redeBody = {
