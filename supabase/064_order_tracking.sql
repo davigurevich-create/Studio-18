@@ -3,7 +3,12 @@
 -- pública de pedido (get_order_status).
 -- Rode no SQL Editor do Supabase.
 
-create or replace function get_order_status(order_id uuid, buyer_email text)
+-- Postgres não deixa mudar o formato de retorno (RETURNS TABLE) de uma
+-- função com CREATE OR REPLACE — precisa apagar antes de recriar.
+drop function if exists get_order_status(uuid, text);
+drop function if exists get_my_orders();
+
+create function get_order_status(order_id uuid, buyer_email text)
 returns table (
   id uuid,
   sale_date timestamptz,
@@ -37,7 +42,7 @@ $$;
 
 grant execute on function get_order_status(uuid, text) to anon;
 
-create or replace function get_my_orders()
+create function get_my_orders()
 returns table (
   id uuid,
   sale_date timestamptz,
