@@ -47,7 +47,7 @@ export function Overview() {
     const revenue = monthSales.reduce((sum, s) => {
       const items = saleItems.filter((i) => i.sale_id === s.id)
       const itemsTotal = items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0)
-      return sum + itemsTotal - s.discount_brl + s.shipping_cost_brl
+      return sum + itemsTotal - s.discount_brl + s.shipping_cost_brl + (s.installment_fee_brl ?? 0)
     }, 0)
     const cost = monthSales.reduce((sum, s) => {
       const items = saleItems.filter((i) => i.sale_id === s.id)

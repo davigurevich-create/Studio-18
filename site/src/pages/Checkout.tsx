@@ -15,7 +15,7 @@ import {
   type CreatePaymentResult,
 } from '@/lib/api'
 import { formatBRL } from '@/lib/format'
-import { pixPrice, unitPriceWithMotor } from '@/lib/pricing'
+import { INSTALLMENT_SURCHARGE_FROM, installmentTotal, pixPrice, unitPriceWithMotor } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { useTurnstile } from '@/lib/useTurnstile'
@@ -128,6 +128,7 @@ export function Checkout() {
     ? Math.round(priceBeforeCoupon * (1 - appliedCoupon.discountPct / 100) * 100) / 100
     : priceBeforeCoupon
   const total = Math.round((productsTotal + (selectedShipping?.price ?? 0)) * 100) / 100
+  const cardTotal = method === 'cartao' ? installmentTotal(total, cardInstallments) : total
 
   const applyCoupon = useCallback(async () => {
     const code = couponInput.trim()
@@ -644,11 +645,16 @@ export function Checkout() {
                       >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
                           <option key={n} value={n} style={{ background: '#0a0a0a' }}>
-                            {n}x de {formatBRL(total / n)}
-                            {n === 1 ? ' à vista' : ''}
+                            {n}x de {formatBRL(installmentTotal(total, n) / n)}
+                            {n === 1 ? ' à vista' : n >= INSTALLMENT_SURCHARGE_FROM ? ' com juros' : ' sem juros'}
                           </option>
                         ))}
                       </select>
+                      {cardInstallments >= INSTALLMENT_SURCHARGE_FROM && (
+                        <p className="mt-1.5 text-[11px]" style={{ color: 'var(--ink-muted)' }}>
+                          Parcelamento em {cardInstallments}x tem acréscimo — total de {formatBRL(cardTotal)}.
+                        </p>
+                      )}
                     </div>
                     <p className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--ink-muted)' }}>
                       <Lock size={11} strokeWidth={2} />
@@ -821,13 +827,19 @@ export function Checkout() {
               {method === 'pix' ? 'TOTAL À VISTA NO PIX' : 'TOTAL'}
             </span>
             <div className="flex items-baseline gap-2">
-              {(method === 'pix' || appliedCoupon) && (
-                <span className="tabular text-xs line-through" style={{ color: 'var(--ink-muted)' }}>
-                  {formatBRL(subtotal)}
+              {method === 'cartao' && cardTotal !== total ? (
+                <span className="tabular text-xs" style={{ color: 'var(--ink-muted)' }}>
+                  {formatBRL(total)} + acréscimo
                 </span>
+              ) : (
+                (method === 'pix' || appliedCoupon) && (
+                  <span className="tabular text-xs line-through" style={{ color: 'var(--ink-muted)' }}>
+                    {formatBRL(subtotal)}
+                  </span>
+                )
               )}
               <span className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                {formatBRL(total)}
+                {formatBRL(method === 'cartao' ? cardTotal : total)}
               </span>
             </div>
           </div>
@@ -850,7 +862,7 @@ export function Checkout() {
             {submitting
               ? 'Processando pedido...'
               : method === 'cartao'
-                ? `Pagar ${formatBRL(total)}`
+                ? `Pagar ${formatBRL(cardTotal)}`
                 : `Confirmar pedido — ${formatBRL(total)}`}
           </button>
         </div>

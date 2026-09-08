@@ -103,7 +103,7 @@ export function Financeiro() {
   const dre = useMemo(() => {
     const grossRevenue = periodSales.reduce((sum, s) => {
       const items = saleItems.filter((i) => i.sale_id === s.id)
-      return sum + items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0) + s.shipping_cost_brl
+      return sum + items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0) + s.shipping_cost_brl + (s.installment_fee_brl ?? 0)
     }, 0)
     const discounts = periodSales.reduce((sum, s) => sum + s.discount_brl, 0)
     const netRevenue = grossRevenue - discounts
@@ -164,7 +164,8 @@ export function Financeiro() {
       const bucket = months.find((m) => m.key === key)
       if (!bucket) continue
       const items = saleItems.filter((i) => i.sale_id === s.id)
-      bucket.inflow += items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0) - s.discount_brl + s.shipping_cost_brl
+      bucket.inflow +=
+        items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0) - s.discount_brl + s.shipping_cost_brl + (s.installment_fee_brl ?? 0)
     }
     for (const e of expenses) {
       const key = monthKey(new Date(e.expense_date))
@@ -195,7 +196,13 @@ export function Financeiro() {
       .filter((s) => receivedStatuses.has(s.status))
       .reduce((sum, s) => {
         const items = saleItems.filter((i) => i.sale_id === s.id)
-        return sum + items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0) - s.discount_brl + s.shipping_cost_brl
+        return (
+          sum +
+          items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0) -
+          s.discount_brl +
+          s.shipping_cost_brl +
+          (s.installment_fee_brl ?? 0)
+        )
       }, 0)
     const allTimeOutflow = expenses.reduce((sum, e) => sum + e.amount_brl, 0)
     const currentBalance = allTimeInflow - allTimeOutflow

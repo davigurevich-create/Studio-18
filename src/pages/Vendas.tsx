@@ -201,7 +201,11 @@ export function Vendas() {
             ) : (
             filteredSales.map((s) => {
               const items = saleItems.filter((i) => i.sale_id === s.id)
-              const total = items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0) - s.discount_brl + s.shipping_cost_brl
+              const total =
+                items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0) -
+                s.discount_brl +
+                s.shipping_cost_brl +
+                (s.installment_fee_brl ?? 0)
               const hasAddress = Boolean(s.shipping_street_name)
               return (
                 <tr key={s.id} className="border-t align-top" style={{ borderColor: 'var(--gridline)' }}>

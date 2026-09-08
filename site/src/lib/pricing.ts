@@ -17,6 +17,20 @@ export function installmentPrice(fullPrice: number, installments = MAX_INSTALLME
   return Math.round((fullPrice / installments) * 100) / 100
 }
 
+// Acréscimo pra parcelas de 7x a 12x, repassando a diferença de taxa que a
+// Rede cobra da loja nessas parcelas mais longas (taxa uniforme entre
+// bandeiras — a diferença entre a taxa "à vista" e a de 7-12x é sempre
+// ~1,26 ponto percentual, seja Master/Visa ou Elo/Amex). De 1x a 6x a
+// diferença de taxa é pequena e fica por conta da loja (sem juros pro
+// cliente). Mesma regra replicada na Edge Function rede-create-payment.
+export const INSTALLMENT_SURCHARGE_FROM = 7
+export const INSTALLMENT_SURCHARGE_RATE = 0.0126
+
+export function installmentTotal(total: number, installments: number): number {
+  const withSurcharge = installments >= INSTALLMENT_SURCHARGE_FROM
+  return withSurcharge ? Math.round(total * (1 + INSTALLMENT_SURCHARGE_RATE) * 100) / 100 : total
+}
+
 // Nível de estoque considerado baixo o suficiente para mostrar um aviso de
 // urgência na vitrine ("restam poucas unidades").
 export const LOW_STOCK_THRESHOLD = 5

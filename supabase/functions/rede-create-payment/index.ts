@@ -79,6 +79,16 @@ function pixPrice(fullPrice: number): number {
   return Math.round(fullPrice * (1 - PIX_DISCOUNT) * 100) / 100
 }
 
+// Acréscimo pra parcelas de 7x a 12x no cartão — mesma regra e mesmo valor
+// do front-end (site/src/lib/pricing.ts): repassa a diferença de taxa que a
+// Rede cobra da loja nessas parcelas mais longas (uniforme entre bandeiras).
+// De 1x a 6x não tem acréscimo, fica por conta da loja.
+const INSTALLMENT_SURCHARGE_FROM = 7
+const INSTALLMENT_SURCHARGE_RATE = 0.0126
+function installmentTotal(total: number, installments: number): number {
+  return installments >= INSTALLMENT_SURCHARGE_FROM ? Math.round(total * (1 + INSTALLMENT_SURCHARGE_RATE) * 100) / 100 : total
+}
+
 interface Address {
   zipCode: string
   streetName: string
@@ -291,7 +301,13 @@ Deno.serve(async (req) => {
         ? Math.round(pixAdjustedTotal * (1 - couponDiscountPct / 100) * 100) / 100
         : pixAdjustedTotal
     const shippingCost = Math.round(shipping.price * 100) / 100
-    const totalAmount = Math.round((productsTotal + shippingCost) * 100) / 100
+    const baseAmount = Math.round((productsTotal + shippingCost) * 100) / 100
+    // parcelas só existem no cartão — no PIX/outros o valor fica sem acréscimo
+    const clampedInstallments = paymentMethod === 'cartao' ? Math.min(12, Math.max(1, Math.round(installments ?? 1))) : null
+    const installmentFee = clampedInstallments
+      ? Math.round((installmentTotal(baseAmount, clampedInstallments) - baseAmount) * 100) / 100
+      : 0
+    const totalAmount = Math.round((baseAmount + installmentFee) * 100) / 100
     const discountAmount = Math.round((fullTotalAmount - productsTotal) * 100) / 100
     const description =
       lineItems.length === 1
@@ -315,6 +331,8 @@ Deno.serve(async (req) => {
         shipping_service_id: String(shipping.id),
         shipping_days: shipping.deliveryDays,
         discount_brl: discountAmount,
+        installments: clampedInstallments,
+        installment_fee_brl: installmentFee,
         notes: `Pedido feito pelo site — ${description}`,
         shipping_zip_code: address.zipCode.replace(/\D/g, ''),
         shipping_street_name: address.streetName,
@@ -402,7 +420,7 @@ Deno.serve(async (req) => {
         kind: 'credit',
         reference: shortReference,
         amount: amountInCents,
-        installments: installments ?? 1,
+        installments: clampedInstallments ?? 1,
         cardholderName: card!.holderName,
         cardNumber: card!.number,
         expirationMonth: card!.expirationMonth,
@@ -533,11 +551,18 @@ Deno.serve(async (req) => {
     const shippingRowHtml = `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
             <span>Frete — ${shipping.company} ${shipping.service}</span><span>R$ ${shippingCost.toFixed(2).replace('.', ',')}</span>
           </div>`
+    const installmentFeeRowHtml =
+      installmentFee > 0
+        ? `<div style="display:flex;justify-content:space-between;padding:6px 0;">
+            <span>Acréscimo parcelamento (${clampedInstallments}x)</span><span>R$ ${installmentFee.toFixed(2).replace('.', ',')}</span>
+          </div>`
+        : ''
+    const installmentsLabel = clampedInstallments && clampedInstallments > 1 ? ` em ${clampedInstallments}x` : ''
 
     const paymentBlockHtml =
       paymentMethod === 'pix'
         ? '<p>Pague com o PIX Copia e Cola ou o QR Code que enviamos na tela de confirmação. Assim que o pagamento for identificado, você recebe um novo e-mail confirmando.</p>'
-        : '<p style="color:#8fce8f;">Pagamento aprovado! Seu pedido já está confirmado.</p>'
+        : `<p style="color:#8fce8f;">Pagamento aprovado${installmentsLabel}! Seu pedido já está confirmado.</p>`
 
     await sendEmail(
       customerEmail,
@@ -545,7 +570,7 @@ Deno.serve(async (req) => {
       emailShell(
         'Recebemos seu pedido!',
         `<p>Olá, ${customerName.split(' ')[0]}! Seu pedido <strong>#${sale.id.slice(0, 8)}</strong> foi registrado com sucesso.</p>
-         <div style="margin:16px 0;">${itemsListHtml}${shippingRowHtml}${discountRowHtml}</div>
+         <div style="margin:16px 0;">${itemsListHtml}${shippingRowHtml}${installmentFeeRowHtml}${discountRowHtml}</div>
          <div style="display:flex;justify-content:space-between;padding:10px 0;font-weight:700;color:#f3f1ec;">
            <span>Total</span><span>R$ ${totalAmount.toFixed(2).replace('.', ',')}</span>
          </div>

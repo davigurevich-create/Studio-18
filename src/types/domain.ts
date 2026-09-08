@@ -76,6 +76,8 @@ export interface Sale {
   status: SaleStatus
   shipping_cost_brl: number
   discount_brl: number
+  installments?: number | null
+  installment_fee_brl?: number
   notes: string | null
   created_at: string
   payment_provider?: string | null
