@@ -22,8 +22,8 @@ import { useTurnstile } from '@/lib/useTurnstile'
 import type { CatalogProduct, PaymentMethod, ShippingOption } from '@/types/catalog'
 
 const methods: { id: PaymentMethod; label: string; hint: string; badge?: string }[] = [
-  { id: 'pix', label: 'PIX', hint: 'Aprovação em minutos', badge: '-10%' },
   { id: 'cartao', label: 'Cartão', hint: 'Crédito, em até 12x' },
+  { id: 'pix', label: 'PIX', hint: 'Aprovação em minutos', badge: '-10%' },
 ]
 
 export function Checkout() {
@@ -31,7 +31,7 @@ export function Checkout() {
   const { session } = useAuth()
   const { lines, clear } = useCart()
   const [catalog, setCatalog] = useState<CatalogProduct[] | undefined>(undefined)
-  const [method, setMethod] = useState<PaymentMethod>('pix')
+  const [method, setMethod] = useState<PaymentMethod>('cartao')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [cpf, setCpf] = useState('')
