@@ -370,6 +370,9 @@ Deno.serve(async (req) => {
     const accessToken = await getRedeAccessToken()
 
     let redeBody: Record<string, unknown>
+    // corpo sem threeDSecure, usado como plano B se o banco pedir um
+    // desafio de autenticação (returnCode 220) que ainda não sabemos tratar
+    let cardFallbackBody: Record<string, unknown> | null = null
     if (paymentMethod === 'pix') {
       const expiration = new Date(Date.now() + 30 * 60 * 1000) // QR Code válido por 30 minutos
       redeBody = {
@@ -394,7 +397,7 @@ Deno.serve(async (req) => {
         .map((ip) => ip.trim())
         .find((ip) => /^\d{1,3}(\.\d{1,3}){3}$/.test(ip))
 
-      redeBody = {
+      cardFallbackBody = {
         capture: true,
         kind: 'credit',
         reference: shortReference,
@@ -405,11 +408,18 @@ Deno.serve(async (req) => {
         expirationMonth: card!.expirationMonth,
         expirationYear: card!.expirationYear,
         securityCode: card!.securityCode,
+      }
+
+      redeBody = {
+        ...cardFallbackBody,
         // 3DS 2.0 "frictionless" — manda os dados do navegador pro banco
         // avaliar o risco em segundo plano, sem pedir nada ao cliente.
-        // onFailure "continue" garante que, se o banco pedir confirmação
-        // ativa (challenge) — fluxo que ainda não construímos na tela —,
-        // a cobrança segue normal em vez de travar o checkout.
+        // "onFailure: continue" só cobre o caso de a autenticação FALHAR —
+        // quando o banco pede confirmação ativa (challenge, returnCode
+        // "220") a Rede devolve isso como uma resposta separada, não como
+        // falha, e some com a cobrança se a gente não completar o desafio.
+        // Como ainda não temos a tela de challenge, detectamos esse caso
+        // logo abaixo e refazemos a chamada sem 3DS pra não travar a compra.
         threeDSecure: {
           embedded: true,
           onFailure: 'continue',
@@ -442,7 +452,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const redeResponse = await fetch(REDE_URLS.transactions, {
+    let redeResponse = await fetch(REDE_URLS.transactions, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -450,7 +460,25 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify(redeBody),
     })
-    const payment = await redeResponse.json().catch(() => null)
+    let payment = await redeResponse.json().catch(() => null)
+
+    // returnCode 220 = o banco pediu um desafio de autenticação (ex:
+    // confirmar no app) e a Rede devolveu uma URL de redirecionamento —
+    // não é uma recusa, mas como não temos a tela pra completar esse
+    // desafio ainda, refazemos a cobrança sem 3DS pra não travar a compra
+    // (perde o repasse de responsabilidade por fraude só nessa transação)
+    if (paymentMethod === 'cartao' && payment?.returnCode === '220' && cardFallbackBody) {
+      console.error('3DS pediu challenge (220) — repetindo sem 3DS:', JSON.stringify(payment))
+      redeResponse = await fetch(REDE_URLS.transactions, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cardFallbackBody),
+      })
+      payment = await redeResponse.json().catch(() => null)
+    }
 
     if (!redeResponse.ok || !payment) {
       console.error('Falha na chamada à Rede:', redeResponse.status, JSON.stringify(payment))

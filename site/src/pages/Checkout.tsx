@@ -820,11 +820,8 @@ export function Checkout() {
                 style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
               />
               {cardBrand && (
-                <span
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-[10px] font-bold tracking-wide"
-                  style={{ background: cardBrand.color, color: cardBrand.textColor }}
-                >
-                  {cardBrand.label}
+                <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <CardBrandIcon brand={cardBrand} />
                 </span>
               )}
             </div>
@@ -913,11 +910,7 @@ function formatCardExpiry(value: string): string {
   return `${digits.slice(0, 2)}/${digits.slice(2)}`
 }
 
-interface CardBrand {
-  label: string
-  color: string
-  textColor: string
-}
+type CardBrand = 'visa' | 'mastercard' | 'amex' | 'elo' | 'hipercard' | 'diners'
 
 // deteccao por faixa de BIN (primeiros digitos) — cobre as bandeiras mais
 // comuns no Brasil; nao e uma lista exaustiva (Elo em especial tem
@@ -927,17 +920,78 @@ function detectCardBrand(cardNumber: string): CardBrand | null {
   const digits = cardNumber.replace(/\D/g, '')
   if (!digits) return null
 
-  if (/^4/.test(digits)) return { label: 'VISA', color: '#1a1f71', textColor: '#fff' }
-  if (/^(5[1-5]|2(2[2-9][1-9]|2[3-9]\d|[3-6]\d{2}|7[01]\d|720))/.test(digits)) {
-    return { label: 'MASTERCARD', color: '#eb001b', textColor: '#fff' }
-  }
-  if (/^3[47]/.test(digits)) return { label: 'AMEX', color: '#2e77bc', textColor: '#fff' }
-  if (/^(606282|3841)/.test(digits)) return { label: 'HIPERCARD', color: '#af1f24', textColor: '#fff' }
-  if (/^(30[0-5]|3[68])/.test(digits)) return { label: 'DINERS', color: '#004a97', textColor: '#fff' }
+  if (/^4/.test(digits)) return 'visa'
+  if (/^(5[1-5]|2(2[2-9][1-9]|2[3-9]\d|[3-6]\d{2}|7[01]\d|720))/.test(digits)) return 'mastercard'
+  if (/^3[47]/.test(digits)) return 'amex'
+  if (/^(606282|3841)/.test(digits)) return 'hipercard'
+  if (/^(30[0-5]|3[68])/.test(digits)) return 'diners'
   if (/^(4011|4312|4389|4514|4573|4576|5041|5066|5067|509\d|6277|6362|6363|6504|6505|6506|6507|6509|6516|6550)/.test(digits)) {
-    return { label: 'ELO', color: '#000', textColor: '#ffcb05' }
+    return 'elo'
   }
   return null
+}
+
+// desenhos simplificados das marcas, em vez de só um texto colorido —
+// o da Mastercard em particular precisa dos dois círculos sobrepostos
+// pra ser reconhecível, um selo de texto não lembra a marca de verdade
+function CardBrandIcon({ brand }: { brand: CardBrand }) {
+  if (brand === 'mastercard') {
+    return (
+      <svg width="38" height="24" viewBox="0 0 38 24" aria-label="Mastercard">
+        <rect width="38" height="24" rx="4" fill="#fff" />
+        <circle cx="15" cy="12" r="7" fill="#EB001B" />
+        <circle cx="23" cy="12" r="7" fill="#F79E1B" />
+        <path d="M19 6.5a7 7 0 0 1 0 11 7 7 0 0 1 0-11Z" fill="#FF5F00" />
+      </svg>
+    )
+  }
+  if (brand === 'visa') {
+    return (
+      <svg width="38" height="24" viewBox="0 0 38 24" aria-label="Visa">
+        <rect width="38" height="24" rx="4" fill="#fff" />
+        <text x="19" y="16.5" textAnchor="middle" fontStyle="italic" fontWeight="800" fontSize="11" fill="#1434CB" fontFamily="Arial, sans-serif">
+          VISA
+        </text>
+      </svg>
+    )
+  }
+  if (brand === 'amex') {
+    return (
+      <svg width="38" height="24" viewBox="0 0 38 24" aria-label="American Express">
+        <rect width="38" height="24" rx="4" fill="#006FCF" />
+        <text x="19" y="15.5" textAnchor="middle" fontWeight="700" fontSize="8" fill="#fff" fontFamily="Arial, sans-serif">
+          AMEX
+        </text>
+      </svg>
+    )
+  }
+  if (brand === 'elo') {
+    return (
+      <svg width="38" height="24" viewBox="0 0 38 24" aria-label="Elo">
+        <rect width="38" height="24" rx="4" fill="#000" />
+        <text x="19" y="15.5" textAnchor="middle" fontWeight="800" fontSize="10" fill="#FFCB05" fontFamily="Arial, sans-serif">
+          elo
+        </text>
+      </svg>
+    )
+  }
+  if (brand === 'hipercard') {
+    return (
+      <svg width="38" height="24" viewBox="0 0 38 24" aria-label="Hipercard">
+        <rect width="38" height="24" rx="4" fill="#AF1F24" />
+        <text x="19" y="15" textAnchor="middle" fontWeight="700" fontSize="6.5" fill="#fff" fontFamily="Arial, sans-serif">
+          hipercard
+        </text>
+      </svg>
+    )
+  }
+  return (
+    <svg width="38" height="24" viewBox="0 0 38 24" aria-label="Diners Club">
+      <rect width="38" height="24" rx="4" fill="#004A97" />
+      <circle cx="19" cy="12" r="7" fill="none" stroke="#fff" strokeWidth="1.5" />
+      <path d="M19 6v12M13 12h12" stroke="#fff" strokeWidth="0" />
+    </svg>
+  )
 }
 
 const Field = forwardRef<
