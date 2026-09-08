@@ -361,7 +361,9 @@ Deno.serve(async (req) => {
         kind: 'pix',
         reference: shortReference,
         amount: amountInCents,
-        qrCode: { DatetimeExpiration: expiration.toISOString().slice(0, 19) },
+        // nome de campo exatamente como documentado pela Rede (com espaço
+        // no meio — não é typo nosso, é assim mesmo na API deles)
+        qrCode: { 'Date timeExpiration': expiration.toISOString().slice(0, 19) },
       }
     } else {
       redeBody = {
@@ -389,6 +391,7 @@ Deno.serve(async (req) => {
     const payment = await redeResponse.json().catch(() => null)
 
     if (!redeResponse.ok || !payment) {
+      console.error('Falha na chamada à Rede:', redeResponse.status, JSON.stringify(payment))
       await supabase.from('sales').update({ status: 'cancelado', provider_status: 'error' }).eq('id', sale.id)
       return json({ error: payment?.returnMessage ?? 'Falha ao criar pagamento na Rede.' }, 502)
     }
