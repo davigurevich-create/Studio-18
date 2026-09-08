@@ -284,13 +284,26 @@ Deno.serve(async (req) => {
       console.error('Falha ao gerar etiqueta no Melhor Envio:', generate.data)
       return json({ error: meErrorMessage(generate.data, 'Frete pago, mas falhou ao gerar a etiqueta. Gere manualmente no painel do Melhor Envio.') }, 502)
     }
+    // Log temporário — o nome exato do campo com o código de rastreio na
+    // resposta desse endpoint não está confirmado (sem acesso à doc oficial
+    // daqui). Se o trackingCode sair null mesmo com a etiqueta OK, olhe esse
+    // log em Functions → generate-shipping-label → Logs no Supabase pra
+    // achar o campo certo.
+    console.log('Resposta shipment/generate:', JSON.stringify(generate.data))
 
     // 4. Busca o PDF pra impressão.
     const print = await meFetch('shipment/print', { orders: [cartItemId], mode: 'private' })
     const labelUrl: string | null = print.data?.url ?? null
 
-    const trackingCode: string | null =
-      generate.data?.[cartItemId]?.tracking ?? generate.data?.tracking ?? null
+    let trackingCode: string | null = generate.data?.[cartItemId]?.tracking ?? generate.data?.tracking ?? null
+
+    // Fallback: se não veio no shipment/generate, tenta o endpoint dedicado
+    // de rastreio (mesmo padrão dos outros passos: POST com {orders: [id]}).
+    if (!trackingCode) {
+      const tracking = await meFetch('shipment/tracking', { orders: [cartItemId] })
+      console.log('Resposta shipment/tracking:', JSON.stringify(tracking.data))
+      trackingCode = tracking.data?.[cartItemId]?.tracking ?? null
+    }
 
     await supabase
       .from('sales')
