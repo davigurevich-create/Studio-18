@@ -487,8 +487,8 @@ export function Checkout() {
         </div>
       )}
 
-      <div className="lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-12">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-8 lg:col-start-1">
+      <div className="lg:grid lg:grid-cols-[1fr_1px_380px] lg:items-start lg:gap-x-10">
+        <form id="checkout-form" onSubmit={handleSubmit} className="flex flex-col gap-8 lg:col-start-1 lg:row-start-1">
           <section className="flex flex-col gap-6">
             <SectionLabel>Dados pessoais</SectionLabel>
             <Field label="Nome completo" value={name} onChange={setName} required autoComplete="name" />
@@ -721,27 +721,17 @@ export function Checkout() {
             )}
           </section>
 
-          {error && (
-            <div className="rounded-lg px-4 py-3 text-sm" style={{ background: 'rgba(208,59,59,0.12)', color: '#e88b8b' }}>
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-full px-8 py-3 text-sm font-medium tracking-wide disabled:opacity-50"
-            style={{ background: 'var(--gold)', color: '#0a0a0a' }}
-          >
-            {submitting
-              ? 'Processando pedido...'
-              : method === 'cartao'
-                ? `Pagar ${formatBRL(total)}`
-                : `Confirmar pedido — ${formatBRL(total)}`}
-          </button>
         </form>
 
-        <div className="mt-10 flex flex-col gap-3 rounded-xl border p-4 lg:sticky lg:top-28 lg:col-start-2 lg:row-start-1 lg:mt-0" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}>
+        <div
+          className="hidden lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:block lg:h-full lg:w-px"
+          style={{ background: 'var(--hairline)' }}
+        />
+
+        <div
+          className="mt-10 flex flex-col gap-3 rounded-xl border p-4 lg:sticky lg:top-28 lg:col-start-3 lg:row-start-1 lg:row-span-2 lg:mt-0"
+          style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}
+        >
           {items.map(({ line, product }) => (
             <div key={product.id} className="flex items-center justify-between gap-4">
               <div>
@@ -828,6 +818,28 @@ export function Checkout() {
               </span>
             </div>
           </div>
+        </div>
+
+        <div className="mt-6 flex flex-col gap-4 lg:col-start-1 lg:row-start-2 lg:mt-8">
+          {error && (
+            <div className="rounded-lg px-4 py-3 text-sm" style={{ background: 'rgba(208,59,59,0.12)', color: '#e88b8b' }}>
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            form="checkout-form"
+            disabled={submitting}
+            className="rounded-full px-8 py-3 text-sm font-medium tracking-wide disabled:opacity-50"
+            style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+          >
+            {submitting
+              ? 'Processando pedido...'
+              : method === 'cartao'
+                ? `Pagar ${formatBRL(total)}`
+                : `Confirmar pedido — ${formatBRL(total)}`}
+          </button>
         </div>
       </div>
     </div>
