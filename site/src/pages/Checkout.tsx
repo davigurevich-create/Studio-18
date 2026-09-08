@@ -63,7 +63,17 @@ export function Checkout() {
   const [cardExpiry, setCardExpiry] = useState('')
   const [cardCvv, setCardCvv] = useState('')
   const [cardInstallments, setCardInstallments] = useState(1)
+  const cardNumberRef = useRef<HTMLInputElement>(null)
   const { containerRef: turnstileRef, getToken: getTurnstileToken } = useTurnstile()
+
+  // ao entrar na tela de cartão, a rolagem ficava onde a pessoa parou no
+  // formulário anterior (às vezes lá embaixo) — sobe pro topo e já foca no
+  // primeiro campo, como se fosse uma tela nova de verdade
+  useEffect(() => {
+    if (step !== 'card') return
+    window.scrollTo({ top: 0, behavior: 'auto' })
+    cardNumberRef.current?.focus()
+  }, [step])
 
   const copyToClipboard = useCallback((field: 'order' | 'pix', text: string) => {
     navigator.clipboard.writeText(text)
@@ -343,6 +353,8 @@ export function Checkout() {
       cardInstallments,
     ],
   )
+
+  const cardBrand = useMemo(() => detectCardBrand(cardNumber), [cardNumber])
 
   if (catalog === undefined) {
     return <div className="px-6 py-40 text-center" style={{ color: 'var(--ink-muted)' }}>Carregando...</div>
@@ -780,13 +792,32 @@ export function Checkout() {
             </div>
           )}
 
-          <Field
-            label="Número do cartão"
-            value={cardNumber}
-            onChange={(v) => setCardNumber(formatCardNumber(v))}
-            required
-            placeholder="0000 0000 0000 0000"
-          />
+          <div>
+            <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+              NÚMERO DO CARTÃO
+            </label>
+            <div className="relative">
+              <input
+                ref={cardNumberRef}
+                required
+                type="text"
+                inputMode="numeric"
+                placeholder="0000 0000 0000 0000"
+                value={cardNumber}
+                onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                className="w-full rounded-lg border bg-transparent px-4 py-2.5 pr-16 text-sm outline-none"
+                style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+              />
+              {cardBrand && (
+                <span
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-[10px] font-bold tracking-wide"
+                  style={{ background: cardBrand.color, color: cardBrand.textColor }}
+                >
+                  {cardBrand.label}
+                </span>
+              )}
+            </div>
+          </div>
           <Field label="Nome impresso no cartão" value={cardHolderName} onChange={setCardHolderName} required />
           <div className="grid grid-cols-2 gap-4">
             <Field
@@ -869,6 +900,33 @@ function formatCardExpiry(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 4)
   if (digits.length <= 2) return digits
   return `${digits.slice(0, 2)}/${digits.slice(2)}`
+}
+
+interface CardBrand {
+  label: string
+  color: string
+  textColor: string
+}
+
+// deteccao por faixa de BIN (primeiros digitos) — cobre as bandeiras mais
+// comuns no Brasil; nao e uma lista exaustiva (Elo em especial tem
+// dezenas de faixas), mas cobre o caso comum de dar um feedback visual
+// enquanto a pessoa digita
+function detectCardBrand(cardNumber: string): CardBrand | null {
+  const digits = cardNumber.replace(/\D/g, '')
+  if (!digits) return null
+
+  if (/^4/.test(digits)) return { label: 'VISA', color: '#1a1f71', textColor: '#fff' }
+  if (/^(5[1-5]|2(2[2-9][1-9]|2[3-9]\d|[3-6]\d{2}|7[01]\d|720))/.test(digits)) {
+    return { label: 'MASTERCARD', color: '#eb001b', textColor: '#fff' }
+  }
+  if (/^3[47]/.test(digits)) return { label: 'AMEX', color: '#2e77bc', textColor: '#fff' }
+  if (/^(606282|3841)/.test(digits)) return { label: 'HIPERCARD', color: '#af1f24', textColor: '#fff' }
+  if (/^(30[0-5]|3[68])/.test(digits)) return { label: 'DINERS', color: '#004a97', textColor: '#fff' }
+  if (/^(4011|4312|4389|4514|4573|4576|5041|5066|5067|509\d|6277|6362|6363|6504|6505|6506|6507|6509|6516|6550)/.test(digits)) {
+    return { label: 'ELO', color: '#000', textColor: '#ffcb05' }
+  }
+  return null
 }
 
 const Field = forwardRef<
