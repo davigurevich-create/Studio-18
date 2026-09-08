@@ -474,6 +474,15 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Log temporário — já tentamos dois nomes de campo diferentes pro PIX e
+    // os dois deram o mesmo erro "Expiration Date parameter missing", o que
+    // não bate com o corpo já conferido contra o exemplo oficial do PDF.
+    // Precisa ver o corpo exato enviado e a resposta completa pra achar a
+    // causa real, em vez de continuar adivinhando.
+    if (paymentMethod === 'pix') {
+      console.log('Corpo enviado pra Rede (PIX):', JSON.stringify(redeBody))
+    }
+
     let redeResponse = await fetch(REDE_URLS.transactions, {
       method: 'POST',
       headers: {
@@ -483,6 +492,10 @@ Deno.serve(async (req) => {
       body: JSON.stringify(redeBody),
     })
     let payment = await redeResponse.json().catch(() => null)
+
+    if (paymentMethod === 'pix') {
+      console.log('Resposta da Rede (PIX):', redeResponse.status, JSON.stringify(payment))
+    }
 
     // returnCode 220 = o banco pediu um desafio de autenticação (ex:
     // confirmar no app) e a Rede devolveu uma URL de redirecionamento —
