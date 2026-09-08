@@ -36,6 +36,9 @@ export function installmentValue(total: number, installments: number): number {
 }
 
 export function installmentTotal(total: number, installments: number): number {
+  // sem juros (1x-6x): o total é sempre o mesmo, exato — não pode variar
+  // por causa do arredondamento do valor de cada parcela individual
+  if (installments < INSTALLMENT_SURCHARGE_FROM) return total
   return Math.round(installmentValue(total, installments) * installments * 100) / 100
 }
 
