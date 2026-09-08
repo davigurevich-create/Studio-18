@@ -196,7 +196,7 @@ export function Product() {
                       </span>
                     </div>
                     <div className="mt-1 text-xs" style={{ color: 'var(--ink-muted)' }}>
-                      ou {MAX_INSTALLMENTS}x de {formatBRL(installmentPrice(effectivePrice))} no cartão, ou boleto
+                      ou {MAX_INSTALLMENTS}x de {formatBRL(installmentPrice(effectivePrice))} no cartão
                     </div>
                   </>
                 )}

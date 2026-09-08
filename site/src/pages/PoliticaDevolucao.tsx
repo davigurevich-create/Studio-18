@@ -22,7 +22,7 @@ const sections = [
   {
     title: '5. Prazo de reembolso',
     body:
-      'Após recebermos e conferirmos o produto devolvido, o reembolso é processado em até 10 dias úteis, no mesmo método de pagamento usado na compra (estorno no cartão, PIX de volta, ou reembolso do boleto).',
+      'Após recebermos e conferirmos o produto devolvido, o reembolso é processado em até 10 dias úteis, no mesmo método de pagamento usado na compra (estorno no cartão ou PIX de volta).',
   },
 ]
 

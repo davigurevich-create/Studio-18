@@ -25,7 +25,7 @@ export interface CatalogProduct {
   motor_quantity_available?: number | null
 }
 
-export type PaymentMethod = 'pix' | 'cartao' | 'boleto'
+export type PaymentMethod = 'pix' | 'cartao'
 
 export interface CheckoutAddress {
   zipCode: string
@@ -51,6 +51,14 @@ export interface ShippingOption {
   deliveryDays: string
 }
 
+export interface CheckoutCard {
+  number: string
+  holderName: string
+  expirationMonth: number
+  expirationYear: number
+  securityCode: string
+}
+
 export interface CheckoutInput {
   items: CheckoutItem[]
   customerName: string
@@ -58,8 +66,9 @@ export interface CheckoutInput {
   customerCpf: string
   customerPhone: string
   paymentMethod: PaymentMethod
-  cardToken?: string
-  cardPaymentMethodId?: string
+  // só para cartão — a Rede não tem tokenização no navegador como o
+  // Mercado Pago tinha, então os dados crus vão direto pra Edge Function
+  card?: CheckoutCard
   installments?: number
   address: CheckoutAddress
   couponCode?: string

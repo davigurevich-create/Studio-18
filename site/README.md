@@ -39,46 +39,50 @@ gestão (`/` na raiz do repositório):
   automaticamente (desde que esteja marcado como `active`).
 - **Pedidos**: quando alguém finaliza um pedido no checkout, uma Supabase Edge
   Function cria a venda com `status = "pendente"` e `channel = "site"` nas
-  tabelas `sales`/`sale_items` e gera a cobrança real no Mercado Pago — a
-  mesma venda aparece na hora em **Vendas** no painel de gestão, e o status
-  muda para `"pago"` automaticamente assim que o pagamento é confirmado (veja
-  abaixo).
+  tabelas `sales`/`sale_items` e gera a cobrança real na Rede — a mesma venda
+  aparece na hora em **Vendas** no painel de gestão, e o status muda para
+  `"pago"` automaticamente assim que o pagamento é confirmado (veja abaixo).
 - **Fotos**: até você enviar as fotos reais dos 17 sets, os cards mostram um
   selo dourado "Foto em breve" com um ícone estilizado. Assim que tiver os
   arquivos, me envie que eu subo e conecto em `image_url`/`image_urls` de cada
   produto.
 
-## Sobre o checkout (Mercado Pago)
+## Sobre o checkout (Rede)
 
-O checkout processa pagamento de verdade via **Mercado Pago** (PIX, cartão e
-boleto). A cobrança é criada por uma Supabase Edge Function — o Access Token
-do Mercado Pago fica só lá, nunca no código do site.
+O checkout processa pagamento de verdade via **Rede** (PIX e cartão de
+crédito). A cobrança é criada por uma Supabase Edge Function — o PV e a chave
+de integração da Rede ficam só lá, nunca no código do site. Diferente do
+Mercado Pago, a Rede não tem um componente de captura de cartão no
+navegador — os dados do cartão são enviados pelo formulário do checkout
+direto pra Edge Function, que processa e nunca guarda esse dado.
 
 ### Como configurar
 
-1. Crie uma aplicação em https://www.mercadopago.com.br/developers/panel e
-   pegue as **credenciais de teste** (Public Key + Access Token) — depois,
-   quando for para produção, repita com as credenciais de produção.
+1. No painel da Rede (userede.com.br / developer.userede.com.br), gere o PV
+   e a chave de integração — primeiro em ambiente de sandbox pra testar.
 2. Rode `supabase/005_payment_gateway.sql` (raiz do repo) no SQL Editor do
    Supabase — adiciona as colunas de rastreamento do pagamento em `sales`.
 3. Instale a Supabase CLI e faça login (`npx supabase login`), depois linke
    o projeto: `npx supabase link --project-ref SEU_PROJECT_REF`.
-4. Configure o segredo do Access Token (nunca vai para o `.env` do site):
+4. Configure os segredos (nunca vão para o `.env` do site):
    ```bash
-   npx supabase secrets set MP_ACCESS_TOKEN=SEU_ACCESS_TOKEN
+   npx supabase secrets set REDE_PV=SEU_PV
+   npx supabase secrets set REDE_CLIENT_SECRET=SUA_CHAVE_DE_INTEGRACAO
+   npx supabase secrets set REDE_ENV=sandbox
    ```
 5. Publique as duas functions:
    ```bash
-   npx supabase functions deploy mp-create-payment
-   npx supabase functions deploy mp-webhook
+   npx supabase functions deploy rede-create-payment
+   npx supabase functions deploy rede-pix-webhook
    ```
-6. No painel do Mercado Pago (Suas integrações → sua aplicação → Webhooks),
-   cadastre a URL `https://SEU-PROJETO.supabase.co/functions/v1/mp-webhook`
-   e assine o evento `payment`.
-7. No `.env` do site, adicione `VITE_MP_PUBLIC_KEY` (a Public Key — essa é
-   segura para expor no navegador, só o Access Token é secreto).
+6. Registre a URL de notificação do PIX junto à Rede:
+   `https://SEU-PROJETO.supabase.co/functions/v1/rede-pix-webhook` — em
+   sandbox dá pra registrar via API (`POST v1/transactions/notification-URL`);
+   em produção é preciso ligar pro call center da Rede.
+7. Quando migrar para produção, troque `REDE_ENV` para `production` e
+   atualize `REDE_PV`/`REDE_CLIENT_SECRET` pelas credenciais reais.
 
-Sem `VITE_MP_PUBLIC_KEY` configurada, o checkout continua funcionando em modo
+Sem o Supabase configurado, o checkout continua funcionando em modo
 demonstração (registra o pedido como pendente, mas não cobra ninguém).
 
 ## Deploy

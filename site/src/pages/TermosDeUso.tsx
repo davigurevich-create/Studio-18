@@ -12,7 +12,7 @@ const sections = [
   {
     title: '3. Preços e pagamento',
     body:
-      'Os preços exibidos incluem os tributos aplicáveis e estão em reais (BRL). O frete é calculado à parte, conforme o CEP de entrega, e exibido antes da confirmação da compra. Pagamentos são processados via Mercado Pago (PIX, cartão ou boleto).',
+      'Os preços exibidos incluem os tributos aplicáveis e estão em reais (BRL). O frete é calculado à parte, conforme o CEP de entrega, e exibido antes da confirmação da compra. Pagamentos são processados via Rede (PIX ou cartão).',
   },
   {
     title: '4. Entrega',

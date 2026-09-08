@@ -41,18 +41,18 @@ export interface CreatePaymentResult {
   orderId: string
   status: string
   pix?: { qrCode?: string; qrCodeBase64?: string }
-  boleto?: { barcode?: string; ticketUrl?: string }
   error?: string
 }
 
 /**
- * Cria a cobranca real no Mercado Pago via Supabase Edge Function (o Access
- * Token do gateway fica so no servidor) e registra o pedido em Vendas com
- * status "pendente" ate a confirmacao do pagamento chegar pelo webhook.
+ * Cria a cobranca real na Rede via Supabase Edge Function (PV e chave de
+ * integracao ficam so no servidor) e registra o pedido em Vendas com
+ * status "pendente" ate a confirmacao do pagamento chegar pelo webhook
+ * (pix) ou de forma sincrona (cartao).
  */
 export async function createPayment(input: CheckoutInput): Promise<CreatePaymentResult> {
   if (supabase) {
-    return invokeEdgeFunction<CreatePaymentResult>('mp-create-payment', input)
+    return invokeEdgeFunction<CreatePaymentResult>('rede-create-payment', input)
   }
 
   // Modo demonstracao: nao ha backend para processar o pagamento.
