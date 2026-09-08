@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Gift, Lock, Truck } from 'lucide-react'
 import { SpotifySection } from '@/components/SpotifySection'
+import { TrustBadges } from '@/components/TrustBadges'
 import {
   createPayment,
   getCatalog,
@@ -846,6 +847,8 @@ export function Checkout() {
         </div>
 
         <div className="mt-6 flex flex-col gap-4 lg:col-start-1 lg:row-start-2 lg:mt-8">
+          <TrustBadges />
+
           {error && (
             <div className="rounded-lg px-4 py-3 text-sm" style={{ background: 'rgba(208,59,59,0.12)', color: '#e88b8b' }}>
               {error}
