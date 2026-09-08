@@ -1,16 +1,15 @@
-import { CreditCard, Lock, ShieldCheck } from 'lucide-react'
+import { Lock, ShieldCheck } from 'lucide-react'
 
 const badges = [
   { icon: Lock, label: 'Site seguro (SSL)' },
   { icon: ShieldCheck, label: 'Dados protegidos' },
-  { icon: CreditCard, label: 'Pagamento processado pela Rede' },
 ]
 
 /**
  * Selos de confiança do checkout — só afirma coisas verdadeiras sobre a
  * própria arquitetura (HTTPS de verdade via Vercel, dados de cartão que
- * nunca são salvos, cobrança processada pela Rede) em vez de simular um
- * selo de terceiro que a loja não tem de verdade.
+ * nunca são salvos) em vez de simular um selo de terceiro que a loja não
+ * tem de verdade. O logo da Rede é o arquivo oficial que o usuário subiu.
  */
 export function TrustBadges() {
   return (
@@ -21,6 +20,10 @@ export function TrustBadges() {
           {label}
         </div>
       ))}
+      <div className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--ink-muted)' }}>
+        <img src="/rede-itau-logo.webp" alt="Rede Itaú" className="h-4 w-auto" />
+        Pagamento processado pela Rede
+      </div>
     </div>
   )
 }
