@@ -732,19 +732,32 @@ export function Checkout() {
           className="mt-10 flex flex-col gap-3 rounded-xl border p-4 lg:sticky lg:top-28 lg:col-start-3 lg:row-start-1 lg:row-span-2 lg:mt-0"
           style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}
         >
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--ink)' }}>
+            Resumo do pedido
+          </h2>
           {items.map(({ line, product }) => (
-            <div key={product.id} className="flex items-center justify-between gap-4">
-              <div>
-                <div className="text-sm" style={{ color: 'var(--ink)' }}>
-                  {line.quantity}x {product.name}
-                </div>
-                <div className="text-xs" style={{ color: 'var(--ink-muted)' }}>
-                  {product.manufacturer} · {product.scale}
-                  {line.withMotor && ' · com motor funcional'}
-                </div>
+            <div key={product.id} className="flex items-center gap-3">
+              <div
+                className="h-16 w-16 shrink-0 overflow-hidden rounded-lg"
+                style={{ background: 'var(--carbon-1)' }}
+              >
+                {product.image_url && (
+                  <img src={product.image_url} alt={product.name} className="h-full w-full object-cover" />
+                )}
               </div>
-              <div className="tabular shrink-0 text-sm font-medium" style={{ color: 'var(--gold-bright)' }}>
-                {formatBRL(unitPriceWithMotor(product, Boolean(line.withMotor)) * line.quantity)}
+              <div className="flex flex-1 items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm" style={{ color: 'var(--ink)' }}>
+                    {line.quantity}x {product.name}
+                  </div>
+                  <div className="text-xs" style={{ color: 'var(--ink-muted)' }}>
+                    {product.manufacturer} · {product.scale}
+                    {line.withMotor && ' · com motor funcional'}
+                  </div>
+                </div>
+                <div className="tabular shrink-0 text-sm font-medium" style={{ color: 'var(--gold-bright)' }}>
+                  {formatBRL(unitPriceWithMotor(product, Boolean(line.withMotor)) * line.quantity)}
+                </div>
               </div>
             </div>
           ))}
