@@ -71,6 +71,13 @@ function emailShell(title: string, bodyHtml: string): string {
   </div>`
 }
 
+// Assim que a transportadora confirma o rastreio, esse é o sinal real de
+// que o pedido saiu de verdade — o status vira "enviado" sozinho, exceto se
+// já estiver num passo mais adiante (entregue/cancelado), pra não regredir.
+function statusPatchOnTracking(currentStatus: string): Record<string, unknown> {
+  return currentStatus === 'entregue' || currentStatus === 'cancelado' ? {} : { status: 'enviado' }
+}
+
 async function sendShippedEmail(saleId: string, customerName: string | null, customerContact: string, trackingCode: string): Promise<void> {
   await sendEmail(
     customerContact,
@@ -192,7 +199,10 @@ Deno.serve(async (req) => {
         const tracking = await meFetch('shipment/tracking', { orders: [sale.melhor_envio_order_id] })
         trackingCode = tracking.data?.[sale.melhor_envio_order_id]?.tracking ?? null
         if (trackingCode) {
-          await supabase.from('sales').update({ shipping_tracking_code: trackingCode }).eq('id', saleId)
+          await supabase
+            .from('sales')
+            .update({ shipping_tracking_code: trackingCode, ...statusPatchOnTracking(sale.status) })
+            .eq('id', saleId)
           if (sale.customer_contact) await sendShippedEmail(saleId, sale.customer_name, sale.customer_contact, trackingCode)
         }
       }
@@ -341,6 +351,7 @@ Deno.serve(async (req) => {
         melhor_envio_order_id: cartItemId,
         shipping_label_url: labelUrl,
         shipping_tracking_code: trackingCode,
+        ...(trackingCode ? statusPatchOnTracking(sale.status) : {}),
       })
       .eq('id', saleId)
 
