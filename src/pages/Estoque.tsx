@@ -77,14 +77,24 @@ export function Estoque() {
         }
       />
 
-      <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <StatTile label="SKUs cadastrados" value={String(stock.length)} />
         <StatTile
           label="Estoque baixo"
           value={String(stock.filter((p) => p.quantity_in_stock <= p.min_stock_alert).length)}
           status={stock.some((p) => p.quantity_in_stock <= p.min_stock_alert) ? 'warning' : 'good'}
         />
-        <StatTile label="Unidades em estoque" value={stock.reduce((t, p) => t + p.quantity_in_stock, 0).toLocaleString('pt-BR')} />
+        {/* "motor" é categoria à parte do produto (o motor funcional vendido
+            como opcional dos sets) — separado das unidades de sets (carro/moto)
+            pra não misturar as duas contagens de estoque. */}
+        <StatTile
+          label="Sets em estoque"
+          value={stock.filter((p) => p.category !== 'motor').reduce((t, p) => t + p.quantity_in_stock, 0).toLocaleString('pt-BR')}
+        />
+        <StatTile
+          label="Motores em estoque"
+          value={stock.filter((p) => p.category === 'motor').reduce((t, p) => t + p.quantity_in_stock, 0).toLocaleString('pt-BR')}
+        />
         <StatTile
           label="Valor em estoque (custo)"
           value={formatBRL(stock.reduce((t, p) => t + p.quantity_in_stock * p.cost_price_brl, 0))}

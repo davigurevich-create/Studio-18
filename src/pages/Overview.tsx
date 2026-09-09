@@ -38,6 +38,11 @@ export function Overview() {
   const kpis = useMemo(() => {
     const stockValue = stock.reduce((sum, p) => sum + p.quantity_in_stock * p.cost_price_brl, 0)
     const totalUnits = stock.reduce((sum, p) => sum + p.quantity_in_stock, 0)
+    // "motor" é uma categoria de produto à parte (o motor funcional vendido
+    // como opcional dos sets) — separado das unidades de sets propriamente
+    // ditos (carro/moto) pra não misturar as duas contagens de estoque.
+    const setUnits = stock.filter((p) => p.category !== 'motor').reduce((sum, p) => sum + p.quantity_in_stock, 0)
+    const motorUnits = stock.filter((p) => p.category === 'motor').reduce((sum, p) => sum + p.quantity_in_stock, 0)
     const lowStock = stock.filter((p) => p.quantity_in_stock <= p.min_stock_alert)
 
     const thisMonth = new Date()
@@ -58,7 +63,7 @@ export function Overview() {
       .reduce((sum, e) => sum + e.amount_brl, 0)
     const margin = revenue - cost - monthExpenses
 
-    return { stockValue, totalUnits, lowStock, revenue, margin }
+    return { stockValue, totalUnits, setUnits, motorUnits, lowStock, revenue, margin, salesCount: monthSales.length }
   }, [stock, sales, saleItems, expenses])
 
   const salesByDay = useMemo(() => {
@@ -104,15 +109,21 @@ export function Overview() {
     <div>
       <PageHeader title="Visão geral" description="Resumo de estoque, vendas e resultado do mês" />
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile label="Faturamento do mês" value={formatBRL(kpis.revenue)} />
+        <StatTile label="Vendas do mês" value={String(kpis.salesCount)} sub="pedidos, exceto cancelados" />
         <StatTile
           label="Margem do mês"
           value={formatBRL(kpis.margin)}
           status={kpis.margin >= 0 ? 'good' : 'critical'}
           sub={kpis.margin >= 0 ? 'Positiva' : 'Negativa'}
         />
-        <StatTile label="Valor em estoque (custo)" value={formatBRL(kpis.stockValue)} sub={`${kpis.totalUnits} unidades`} />
+        <StatTile label="Valor em estoque (custo)" value={formatBRL(kpis.stockValue)} sub={`${kpis.totalUnits} unidades no total`} />
+      </div>
+
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatTile label="Sets em estoque" value={String(kpis.setUnits)} sub="unidades — carros e motos" />
+        <StatTile label="Motores em estoque" value={String(kpis.motorUnits)} sub="unidades — motores funcionais" />
         <StatTile
           label="Alertas de estoque baixo"
           value={String(kpis.lowStock.length)}
