@@ -12,7 +12,7 @@ const faqs: { q: string; a: ReactNode }[] = [
   },
   {
     q: 'Quais formas de pagamento vocês aceitam?',
-    a: 'PIX (com 10% de desconto) e cartão de crédito, em até 12x, processados com segurança pela Rede.',
+    a: 'PIX (com 5% de desconto) e cartão de crédito, em até 12x, processados com segurança pela Rede.',
   },
   {
     q: 'Os sets são originais?',

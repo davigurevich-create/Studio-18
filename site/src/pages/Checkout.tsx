@@ -24,7 +24,7 @@ import type { CatalogProduct, PaymentMethod, ShippingOption } from '@/types/cata
 
 const methods: { id: PaymentMethod; label: string; hint: string; badge?: string }[] = [
   { id: 'cartao', label: 'Cartão', hint: 'Crédito, em até 12x' },
-  { id: 'pix', label: 'PIX', hint: 'Aprovação em minutos', badge: '-10%' },
+  { id: 'pix', label: 'PIX', hint: 'Aprovação em minutos', badge: '-5%' },
 ]
 
 export function Checkout() {
@@ -667,7 +667,7 @@ export function Checkout() {
             </AnimatePresence>
 
             {method === 'pix' && (
-              <PaymentNote text={`Após confirmar, geramos o QR Code / código PIX copia-e-cola para pagamento — com 10% de desconto já aplicado (${formatBRL(total)}).`} />
+              <PaymentNote text={`Após confirmar, geramos o QR Code / código PIX copia-e-cola para pagamento — com 5% de desconto já aplicado (${formatBRL(total)}).`} />
             )}
           </section>
 

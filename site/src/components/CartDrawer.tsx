@@ -140,7 +140,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                   </span>
                 </div>
                 <p className="mb-4 text-[11px]" style={{ color: 'var(--gold-bright)' }}>
-                  Pague à vista no PIX e ganhe 10% de desconto no checkout.
+                  Pague à vista no PIX e ganhe 5% de desconto no checkout.
                 </p>
                 <button
                   type="button"
