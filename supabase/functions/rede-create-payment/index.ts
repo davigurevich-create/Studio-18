@@ -472,7 +472,10 @@ Deno.serve(async (req) => {
           billing: {
             address: `${address.streetName}, ${address.streetNumber}`,
             city: address.city,
-            postalcode: address.zipCode.replace(/\D/g, ''),
+            // a Rede exige o CEP com o traço (formato "12345-678", 9
+            // caracteres) — confirmado no exemplo oficial do PDF; sem o
+            // traço dá "PostalCode: Invalid parameter size" (fica com 8)
+            postalcode: address.zipCode.replace(/\D/g, '').replace(/^(\d{5})(\d{3})$/, '$1-$2'),
             state: address.federalUnit,
             country: 'Brasil',
             emailAddress: customerEmail,
