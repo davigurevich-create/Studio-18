@@ -30,6 +30,11 @@ const FOCUS_NFE_TOKEN = Deno.env.get('FOCUS_NFE_TOKEN') ?? ''
 const FOCUS_NFE_ENV = Deno.env.get('FOCUS_NFE_ENV') ?? 'homologacao'
 const FOCUS_NFE_CNPJ = (Deno.env.get('FOCUS_NFE_CNPJ') ?? Deno.env.get('SHIPPING_ORIGIN_DOCUMENT') ?? '').replace(/\D/g, '')
 const FOCUS_BASE_URL = FOCUS_NFE_ENV === 'producao' ? 'https://api.focusnfe.com.br' : 'https://homologacao.focusnfe.com.br'
+// CNPJ/CPF do contador (ou outra pessoa autorizada a consultar o XML na
+// SEFAZ) — algumas UFs exigem isso (rejeição 86 "Não informado o Grupo de
+// Autorização para UF que exige a identificação"), senão a Focus NFe rejeita
+// a emissão. Confirmado com o suporte da Focus NFe pelo contador do cliente.
+const FOCUS_NFE_ACCOUNTANT_CNPJ = (Deno.env.get('FOCUS_NFE_ACCOUNTANT_CNPJ') ?? '').replace(/\D/g, '')
 
 const PAYMENT_CODE: Record<string, string> = {
   pix: '17',
@@ -194,6 +199,9 @@ Deno.serve(async (req) => {
       cep_destinatario: sale.shipping_zip_code.replace(/\D/g, ''),
       valor_frete: shippingCost || undefined,
       valor_desconto: Number(sale.discount_brl ?? 0) || undefined,
+      pessoas_autorizadas: FOCUS_NFE_ACCOUNTANT_CNPJ
+        ? [{ cnpj: FOCUS_NFE_ACCOUNTANT_CNPJ }]
+        : undefined,
       items: items.map((it: any, idx: number) => ({
         numero_item: idx + 1,
         codigo_produto: it.product.sku,
