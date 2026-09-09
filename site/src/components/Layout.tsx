@@ -13,6 +13,7 @@ const navLinks = [
   { href: '/quem-somos', label: 'Quem Somos' },
   { href: '/manifesto', label: 'Manifesto' },
   { href: '/diferenciais', label: 'Diferenciais' },
+  { href: '/badges', label: 'Badges' },
   { href: '/#pecas-faltantes', label: 'Peças faltantes' },
   { href: '/blog', label: 'Blog' },
   { href: '/faq', label: 'FAQ' },
