@@ -18,6 +18,11 @@ const MELHOR_ENVIO_ENV = Deno.env.get('MELHOR_ENVIO_ENV') ?? 'producao'
 const MELHOR_ENVIO_BASE_URL = MELHOR_ENVIO_ENV === 'sandbox' ? 'https://sandbox.melhorenvio.com.br' : 'https://www.melhorenvio.com.br'
 const MELHOR_ENVIO_TOKEN = (MELHOR_ENVIO_ENV === 'sandbox' ? Deno.env.get('MELHOR_ENVIO_SANDBOX_TOKEN') : Deno.env.get('MELHOR_ENVIO_TOKEN'))!
 const SHIPPING_ORIGIN_ZIP = (Deno.env.get('SHIPPING_ORIGIN_ZIP') ?? '04784-080').replace(/\D/g, '')
+// Zera o valor do frete mostrado no checkout — só pra testar pagamento real
+// sem cobrar o frete de verdade no cartão/PIX do cliente. Setar como secret
+// só durante o teste; apagar (ou deixar diferente de 'true') depois, senão
+// TODO pedido real sai sem cobrar frete.
+const TEST_FREE_SHIPPING = Deno.env.get('TEST_FREE_SHIPPING') === 'true'
 
 // Ainda não temos as dimensões reais medidas de cada caixa (só o peso) —
 // usa uma caixa "média" de set grande technic 1:8 como estimativa até
@@ -117,7 +122,7 @@ Deno.serve(async (req) => {
         id: opt.id ?? 0,
         service: opt.name ?? 'Frete',
         company: opt.company?.name ?? '',
-        price: Number(opt.price),
+        price: TEST_FREE_SHIPPING ? 0 : Number(opt.price),
         deliveryDays: String(opt.delivery_time ?? opt.custom_delivery_time ?? '—'),
       }))
       .sort((a, b) => a.price - b.price)
