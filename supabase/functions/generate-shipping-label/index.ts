@@ -282,6 +282,16 @@ Deno.serve(async (req) => {
     // chave de homologação nunca existiu de verdade na SEFAZ, então o
     // Melhor Envio real rejeita ela (ver comentário no FOCUS_NFE_ENV acima).
     const usableInvoiceKey = FOCUS_NFE_ENV === 'producao' ? sale.invoice_key : null
+    // Log temporário — o erro "nota fiscal deve ser modelo 55" voltou mesmo
+    // com uma NF-e real e FOCUS_NFE_ENV/MELHOR_ENVIO_ENV confirmados em
+    // produção. Precisa ver os valores reais em vez de continuar suspeitando.
+    console.log('Debug etiqueta:', JSON.stringify({
+      FOCUS_NFE_ENV,
+      MELHOR_ENVIO_ENV,
+      invoice_status: sale.invoice_status,
+      invoice_key: sale.invoice_key,
+      usableInvoiceKey,
+    }))
 
     // 1. Adiciona ao carrinho do Melhor Envio.
     const cart = await meFetch('cart', {
