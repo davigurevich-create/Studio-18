@@ -281,17 +281,14 @@ Deno.serve(async (req) => {
     // Só usa a chave da nota se ela for de uma NF-e real (produção) — uma
     // chave de homologação nunca existiu de verdade na SEFAZ, então o
     // Melhor Envio real rejeita ela (ver comentário no FOCUS_NFE_ENV acima).
-    const usableInvoiceKey = FOCUS_NFE_ENV === 'producao' ? sale.invoice_key : null
-    // Log temporário — o erro "nota fiscal deve ser modelo 55" voltou mesmo
-    // com uma NF-e real e FOCUS_NFE_ENV/MELHOR_ENVIO_ENV confirmados em
-    // produção. Precisa ver os valores reais em vez de continuar suspeitando.
-    console.log('Debug etiqueta:', JSON.stringify({
-      FOCUS_NFE_ENV,
-      MELHOR_ENVIO_ENV,
-      invoice_status: sale.invoice_status,
-      invoice_key: sale.invoice_key,
-      usableInvoiceKey,
-    }))
+    // A chave de acesso de verdade tem sempre 44 dígitos numéricos — a Focus
+    // NFe devolve com o prefixo "NFe" na frente (formato de exibição/DANFE),
+    // que precisa ser removido antes de mandar pra Melhor Envio, senão o
+    // formato não bate e eles rejeitam com "deve ser modelo 55" (confirmado
+    // com log real: invoice_key = "NFe3526...", 47 caracteres em vez de 44).
+    const rawInvoiceKey = FOCUS_NFE_ENV === 'producao' ? sale.invoice_key : null
+    const cleanInvoiceKey = rawInvoiceKey?.replace(/\D/g, '') ?? null
+    const usableInvoiceKey = cleanInvoiceKey?.length === 44 ? cleanInvoiceKey : null
 
     // 1. Adiciona ao carrinho do Melhor Envio.
     const cart = await meFetch('cart', {
