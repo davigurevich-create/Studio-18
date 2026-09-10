@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { motion } from 'framer-motion'
-import { Award, Layers, Sparkles, Trophy, Wrench } from 'lucide-react'
+import { Award, Gift, Layers, Sparkles, Trophy, Wrench } from 'lucide-react'
 import { SpotifySection } from '@/components/SpotifySection'
 
 const BOB_URL = 'https://brasilopenbadge.com.br/partner/studio-18'
@@ -59,6 +59,10 @@ const marcos = [
     text: 'Reservado para quem já somou 10 mil pontos na plataforma — o mesmo que dizer: milhares de peças, dezenas de horas, uma coleção de verdade.',
   },
 ]
+
+// Os dois badges de marco também dão direito a um cupom de 10% — revelado
+// só pra quem conquistou, dentro da própria página do badge no portal BOB.
+const MARCO_PERK = '10% de desconto no seu próximo set, revelado na página do seu badge'
 
 export function Badges() {
   return (
@@ -240,9 +244,16 @@ export function Badges() {
               <p className="mb-4 text-xs tracking-widest" style={{ color: 'var(--gold-bright)' }}>
                 {marco.criteria.toUpperCase()}
               </p>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
+              <p className="mb-4 text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
                 {marco.text}
               </p>
+              <div
+                className="flex items-center gap-2 rounded-full border px-4 py-2 text-xs"
+                style={{ borderColor: 'var(--gold-dim)', background: 'var(--gold-wash)', color: 'var(--gold-bright)' }}
+              >
+                <Gift size={13} strokeWidth={1.75} />
+                {MARCO_PERK}
+              </div>
             </motion.div>
           ))}
         </div>

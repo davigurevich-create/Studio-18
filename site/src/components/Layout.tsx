@@ -16,7 +16,6 @@ const navLinks = [
   { href: '/badges', label: 'Badges' },
   { href: '/#pecas-faltantes', label: 'Peças faltantes' },
   { href: '/blog', label: 'Blog' },
-  { href: '/faq', label: 'FAQ' },
 ]
 
 export function Layout() {
