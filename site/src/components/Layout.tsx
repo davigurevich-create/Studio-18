@@ -11,9 +11,8 @@ const navLinks = [
   { href: '/#colecao', label: 'Coleção' },
   { href: '/recomendador', label: 'Recomendação IA' },
   { href: '/quem-somos', label: 'Quem Somos' },
-  { href: '/manifesto', label: 'Manifesto' },
   { href: '/diferenciais', label: 'Diferenciais' },
-  { href: '/badges', label: 'Badges' },
+  { href: '/badges', label: 'Medalhas Digitais' },
   { href: '/#pecas-faltantes', label: 'Peças faltantes' },
   { href: '/blog', label: 'Blog' },
 ]
@@ -68,12 +67,7 @@ export function Layout() {
   // ficar sempre escuro ali, senao fica ilegivel (texto claro sobre branco)
   // no topo da pagina, antes do usuario rolar.
   const forceDarkHeader = location.pathname.startsWith('/blog/')
-  // O Manifesto é 100% preto com uma luz dourada fixa vindo de trás do
-  // cabeçalho — o fundo escuro/embaçado que o header ganha ao rolar
-  // tampava essa luz e cortava a sensação de amplitude, então lá o
-  // cabeçalho fica sempre transparente (menos com o menu mobile aberto).
-  const isManifesto = location.pathname === '/manifesto'
-  const showDarkHeader = (scrolled && !isManifesto) || menuOpen || forceDarkHeader
+  const showDarkHeader = scrolled || menuOpen || forceDarkHeader
 
   return (
     <div style={{ background: 'var(--carbon-0)', color: 'var(--ink)', minHeight: '100vh' }}>

@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { Camera } from 'lucide-react'
 import { RevealLine, type Word } from '@/components/RevealText'
 import { SpotifySection } from '@/components/SpotifySection'
+import { ManifestoSection } from '@/pages/Manifesto'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -77,6 +78,11 @@ export function QuemSomos() {
           backgroundImage: 'url(/quem-somos-flow.jpg)',
         }}
       />
+
+      {/* MANIFESTO — incorporado como seção da página Quem Somos, entre a
+          imagem de respiro e a seção do conceito flow, pra aliviar o menu
+          superior do site (que estava com uma página própria pra isso). */}
+      <ManifestoSection />
 
       {/* FLOW — verbete de dicionário para o conceito por trás do ritual de
           montagem: o estado de imersão que o Studio 18 vende junto com cada

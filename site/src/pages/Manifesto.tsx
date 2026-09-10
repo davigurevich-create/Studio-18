@@ -30,36 +30,41 @@ function renderWords(text: string) {
 // pelo centro — controla a velocidade do holofote no desktop.
 const SLICE_SVH = 60
 
-export function Manifesto() {
+// Luz dourada de fundo — reaproveitada tanto na versão desktop (presa
+// dentro da área "sticky" enquanto a seção rola) quanto na mobile (fixa
+// no topo da seção, que não tem rolagem interna longa).
+function GoldGlow() {
+  return (
+    <div className="pointer-events-none absolute inset-x-0 top-0 h-full" style={{ zIndex: 0 }}>
+      <div
+        className="absolute inset-x-0 top-0 h-full"
+        style={{ background: 'radial-gradient(ellipse 60% 60% at 50% -12%, rgba(205,164,77,0.32), transparent 62%)' }}
+      />
+      <div
+        className="absolute inset-x-0 top-0 h-[38%]"
+        style={{ background: 'linear-gradient(to bottom, rgba(205,164,77,0.14), transparent)' }}
+      />
+    </div>
+  )
+}
+
+export function ManifestoSection() {
   const pinRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: pinRef, offset: ['start start', 'end end'] })
 
   return (
     <div style={{ background: '#000' }}>
-      {/* Luz dourada fixa vindo do topo absoluto da página — fica atrás do
-          header/logo desde o primeiro frame, não acompanha a rolagem, dá a
-          sensação de amplitude de um holofote real iluminando a cena
-          inteira, não só o texto. */}
-      <div className="pointer-events-none fixed inset-x-0 top-0 h-screen" style={{ zIndex: 0 }}>
-        <div
-          className="absolute inset-x-0 top-0 h-full"
-          style={{ background: 'radial-gradient(ellipse 60% 60% at 50% -12%, rgba(205,164,77,0.32), transparent 62%)' }}
-        />
-        <div
-          className="absolute inset-x-0 top-0 h-[38%]"
-          style={{ background: 'linear-gradient(to bottom, rgba(205,164,77,0.14), transparent)' }}
-        />
-      </div>
-
       {/* DESKTOP — holofote de leitura: as frases deslizam na horizontal
-          enquanto a página fica presa numa rolagem longa; uma marca fixa no
+          enquanto a seção fica presa numa rolagem longa; uma marca fixa no
           centro da tela mantém em foco total só a frase que está passando
           por ali, como uma agulha de vitrola sobre o texto. O título
           "Manifesto" fica fixo no topo da cena presa, visível o tempo todo
           junto com as frases. */}
       <div ref={pinRef} className="relative z-10 hidden lg:block" style={{ height: `${phrases.length * SLICE_SVH}svh` }}>
         <div className="sticky top-0 flex h-screen flex-col overflow-hidden">
-          <div className="px-6 pt-32 text-center">
+          <GoldGlow />
+
+          <div className="relative px-6 pt-32 text-center">
             <p className="eyebrow">Manifesto</p>
           </div>
 
@@ -76,7 +81,8 @@ export function Manifesto() {
           laterais, com barra de progresso no topo. Rolagem vertical sutil
           não funcionava bem no toque — isso dá um gesto de leitura ativo,
           bem mais vivo. */}
-      <div className="relative z-10 lg:hidden">
+      <div className="relative z-10 overflow-hidden lg:hidden">
+        <GoldGlow />
         <ManifestoStories />
       </div>
     </div>
