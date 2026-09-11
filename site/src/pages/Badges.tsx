@@ -1,21 +1,9 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from 'framer-motion'
-import { Award, ChevronDown, Trophy, Wrench } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { SpotifySection } from '@/components/SpotifySection'
 
 const BOB_URL = 'https://brasilopenbadge.com.br/partner/studio-18'
-
-// lucide-react não exporta mais um ícone de Instagram (marca registrada) —
-// mesmo desenho simples usado no rodapé (Layout.tsx).
-function InstagramIcon({ size = 18, strokeWidth = 1.75, style }: { size?: number; strokeWidth?: number; style?: CSSProperties }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} style={style} aria-hidden="true">
-      <rect x="3" y="3" width="18" height="18" rx="5" />
-      <circle cx="12" cy="12" r="4" />
-      <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none" />
-    </svg>
-  )
-}
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -42,6 +30,39 @@ function BannerBackground({ desktop, mobile }: { desktop: string; mobile: string
       <div
         className="pointer-events-none absolute inset-0 sm:hidden"
         style={{ backgroundImage: `url(${mobile})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      />
+    </>
+  )
+}
+
+// Banner de cada passo do "como funciona" (número + título, arte pronta
+// feita no Canva) — a imagem é inline-block, então o text-align já
+// aplicado no container (alterna esquerda/direita por passo) posiciona
+// ela sozinho. Se o arquivo não existir, cai num título de texto simples.
+function StepBanner({ index, title, desktop, mobile }: { index: number; title: string; desktop: string; mobile: string }) {
+  const [failed, setFailed] = useState(false)
+
+  if (failed) {
+    return (
+      <h3 className="mb-3 text-xl font-semibold sm:text-2xl" style={{ color: 'var(--ink)' }}>
+        {String(index + 1).padStart(2, '0')} — {title}
+      </h3>
+    )
+  }
+
+  return (
+    <>
+      <img
+        src={desktop}
+        alt={`Passo ${index + 1} — ${title}`}
+        className="mb-3 hidden h-auto w-full max-w-[340px] sm:inline-block"
+        onError={() => setFailed(true)}
+      />
+      <img
+        src={mobile}
+        alt={`Passo ${index + 1} — ${title}`}
+        className="mb-3 inline-block h-auto w-full max-w-[280px] sm:hidden"
+        onError={() => setFailed(true)}
       />
     </>
   )
@@ -344,24 +365,28 @@ function CountUp({ value, prefix = '' }: { value: number; prefix?: string }) {
 
 const steps = [
   {
-    icon: Wrench,
     title: 'Monte seu set',
     text: 'Termine a montagem de qualquer set Studio 18 — do primeiro carro à moto mais complexa do catálogo.',
+    bannerDesktop: '/badges-step-01-desktop.png',
+    bannerMobile: '/badges-step-01-mobile.png',
   },
   {
-    icon: InstagramIcon,
     title: 'Poste no Instagram',
     text: 'Compartilhe uma foto ou vídeo do set montado, marcando @studio18bricks no Instagram.',
+    bannerDesktop: '/badges-step-02-desktop.png',
+    bannerMobile: '/badges-step-02-mobile.png',
   },
   {
-    icon: Award,
     title: 'Receba seu Badge',
     text: 'Sua conquista vira uma credencial digital verificável, emitida pela BOB e guardada na sua mochila digital.',
+    bannerDesktop: '/badges-step-03-desktop.png',
+    bannerMobile: '/badges-step-03-mobile.png',
   },
   {
-    icon: Trophy,
     title: 'Suba no ranking',
     text: 'Cada badge vale pontos — o mesmo número de peças do set. Acumule pontos e ganhe benefícios exclusivos.',
+    bannerDesktop: '/badges-step-04-desktop.png',
+    bannerMobile: '/badges-step-04-mobile.png',
   },
 ]
 
@@ -529,7 +554,6 @@ export function Badges() {
 
           <div className="flex flex-col gap-16 sm:gap-24">
             {steps.map((step, i) => {
-              const Icon = step.icon
               const alignRight = i % 2 === 0
               return (
                 <motion.div
@@ -545,20 +569,12 @@ export function Badges() {
                     style={{ background: 'var(--carbon-0)', borderColor: 'var(--gold-bright)' }}
                   />
                   <div className={`w-full sm:max-w-[46%] ${alignRight ? 'sm:pr-12 sm:text-right' : 'sm:pl-12 sm:text-left'}`}>
-                    <div className={`mb-3 flex items-center gap-3 ${alignRight ? 'sm:flex-row-reverse' : ''}`}>
-                      <div
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-                        style={{ background: 'var(--gold-wash)', border: '1px solid var(--gold-dim)' }}
-                      >
-                        <Icon size={17} strokeWidth={1.75} style={{ color: 'var(--gold-bright)' }} />
-                      </div>
-                      <span className="text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-                        {String(i + 1).padStart(2, '0')}
-                      </span>
-                    </div>
-                    <h3 className="mb-2 text-xl font-semibold sm:text-2xl" style={{ color: 'var(--ink)' }}>
-                      {step.title}
-                    </h3>
+                    <StepBanner
+                      index={i}
+                      title={step.title}
+                      desktop={step.bannerDesktop}
+                      mobile={step.bannerMobile}
+                    />
                     <p className="text-sm sm:text-base" style={{ color: 'var(--ink-secondary)' }}>
                       {step.text}
                     </p>
