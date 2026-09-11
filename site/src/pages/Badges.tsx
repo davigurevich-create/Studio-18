@@ -259,14 +259,14 @@ export function Badges() {
       </section>
 
       {/* O QUE É UMA MEDALHA DIGITAL */}
-      <section className="relative overflow-hidden border-t px-6 pb-16 pt-24 sm:pt-32" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)' }}>
+      <section className="relative overflow-hidden border-t px-6 pb-16 pt-24 sm:pt-32" style={{ borderColor: 'var(--hairline)', background: '#000' }}>
         <div
-          className="pointer-events-none absolute -left-32 top-1/3 h-[420px] w-[420px] rounded-full opacity-30"
-          style={{ background: 'radial-gradient(circle, var(--gold-dim), transparent 70%)' }}
+          className="pointer-events-none absolute -left-24 top-1/4 h-[380px] w-[380px] rounded-full sm:-left-32 sm:h-[460px] sm:w-[460px]"
+          style={{ background: 'radial-gradient(circle, rgba(205,164,77,0.55), transparent 70%)' }}
         />
         <div
-          className="pointer-events-none absolute -right-32 bottom-0 h-[420px] w-[420px] rounded-full opacity-30"
-          style={{ background: 'radial-gradient(circle, var(--gold-dim), transparent 70%)' }}
+          className="pointer-events-none absolute -right-24 bottom-0 h-[380px] w-[380px] rounded-full sm:-right-32 sm:h-[460px] sm:w-[460px]"
+          style={{ background: 'radial-gradient(circle, rgba(205,164,77,0.55), transparent 70%)' }}
         />
         <motion.div
           variants={fadeUp}
@@ -299,7 +299,9 @@ export function Badges() {
           </a>
         </motion.div>
 
-        <ScrollCue label="Ver como funciona" />
+        <div className="mt-20 sm:mt-28">
+          <ScrollCue label="Ver como funciona" />
+        </div>
       </section>
 
       {/* COMO FUNCIONA — timeline vertical em zigue-zague: os passos
