@@ -1,11 +1,25 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { User } from 'lucide-react'
 import { ChatWidget } from '@/components/ChatWidget'
 import { CartDrawer } from '@/components/CartDrawer'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
+
+// Por padrão, o header pode virar o card flutuante assim que a página
+// rola. Algumas páginas (ex: Diferenciais, que fica "presa" numa
+// sequência longa antes de soltar de verdade) precisam adiar isso — essa
+// página avisa via useSetFloatingHeaderReady(false) até o momento certo.
+const FloatingHeaderReadyContext = createContext<(ready: boolean) => void>(() => {})
+
+export function useSetFloatingHeaderReady(ready: boolean) {
+  const setReady = useContext(FloatingHeaderReadyContext)
+  useEffect(() => {
+    setReady(ready)
+    return () => setReady(true)
+  }, [ready, setReady])
+}
 
 const navLinks = [
   { href: '/#colecao', label: 'Coleção' },
@@ -21,6 +35,7 @@ export function Layout() {
   const location = useLocation()
   const [scrolled, setScrolled] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
+  const [floatingHeaderReady, setFloatingHeaderReady] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
   const { totalCount } = useCart()
@@ -82,7 +97,7 @@ export function Layout() {
   const showDarkHeader = scrolled || menuOpen || forceDarkHeader
   // Só vira o card flutuante quando já rolou (nunca no carregamento) e só
   // no desktop — no mobile, mesmo rolado, continua a barra reta de sempre.
-  const floatingCard = scrolled && !menuOpen && isDesktop
+  const floatingCard = scrolled && !menuOpen && isDesktop && floatingHeaderReady
 
   // Sempre centralizado via left:50% + translateX(-50%) nos dois estados —
   // só a largura anima (100% -> calc(100% - 2rem)). Isso evita a troca de
@@ -233,7 +248,9 @@ export function Layout() {
       </AnimatePresence>
 
       <main>
-        <Outlet />
+        <FloatingHeaderReadyContext.Provider value={setFloatingHeaderReady}>
+          <Outlet />
+        </FloatingHeaderReadyContext.Provider>
       </main>
 
       <footer className="px-6 py-10" style={{ background: '#000' }}>

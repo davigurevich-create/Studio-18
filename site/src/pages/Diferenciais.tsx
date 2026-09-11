@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'framer-motion'
 import { BadgePercent, ChevronDown, PackageOpen, ShieldCheck, Warehouse } from 'lucide-react'
 import { SpotifySection } from '@/components/SpotifySection'
+import { useSetFloatingHeaderReady } from '@/components/Layout'
 
 const diferenciais = [
   {
@@ -43,9 +44,17 @@ export function Diferenciais() {
   const [active, setActive] = useState(0)
   const { scrollYProgress } = useScroll({ target: pinRef, offset: ['start start', 'end end'] })
 
+  // A página fica "presa" numa sequência longa antes de soltar de
+  // verdade — o header só pode virar o card flutuante depois que o
+  // último diferencial (índice 3) já apareceu, não no primeiro pixel de
+  // rolagem (a página continua ali parada bem antes disso).
+  const [pastLastChapter, setPastLastChapter] = useState(false)
+  useSetFloatingHeaderReady(pastLastChapter)
+
   useMotionValueEvent(scrollYProgress, 'change', (v) => {
     const idx = Math.min(diferenciais.length - 1, Math.max(0, Math.floor(v * diferenciais.length)))
     setActive(idx)
+    setPastLastChapter(v >= (diferenciais.length - 1) / diferenciais.length)
   })
 
   const ActiveIcon = diferenciais[active].icon
@@ -75,7 +84,7 @@ export function Diferenciais() {
           menu e da logo, como no resto do site) até o fim dos 4 capítulos.
           Uma única foto de fundo cobre tudo — título, capítulos, marcas e
           CTA — sem nenhuma seção separada quebrando essa continuidade. */}
-      <div ref={pinRef} className="relative" style={{ height: `${diferenciais.length * CHAPTER_HEIGHT_SVH}svh`, background: '#000' }}>
+      <div ref={pinRef} data-pin="diferenciais" className="relative" style={{ height: `${diferenciais.length * CHAPTER_HEIGHT_SVH}svh`, background: '#000' }}>
         <div className="sticky top-0 flex h-[100svh] flex-col overflow-hidden">
           <div
             className="pointer-events-none absolute inset-0"
