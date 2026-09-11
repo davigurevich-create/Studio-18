@@ -265,6 +265,14 @@ export function Home() {
           }}
         />
         <div className="pointer-events-none absolute inset-0" style={{ background: 'rgba(6,6,6,0.78)' }} />
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-24 sm:h-32"
+          style={{ background: 'linear-gradient(to bottom, #000, transparent)' }}
+        />
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-24 sm:h-32"
+          style={{ background: 'linear-gradient(to top, #000, transparent)' }}
+        />
         <div className="relative z-10 mx-auto max-w-6xl">
           <motion.p variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="eyebrow mb-3 text-center">
             Suporte pós-venda
