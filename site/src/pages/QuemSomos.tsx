@@ -21,7 +21,7 @@ const linesOfText: Word[][] = [
 
 export function QuemSomos() {
   return (
-    <div>
+    <div style={{ background: '#000' }}>
       {/* TEXTO DE IMPACTO — primeira coisa que a página mostra agora.
           Revela linha por linha conforme a rolagem. O padding inferior (em
           vh) garante espaço de rolagem suficiente para a ultima linha
