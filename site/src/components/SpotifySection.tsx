@@ -79,8 +79,8 @@ export function SpotifySection({ compact = false }: { compact?: boolean }) {
       style={{ background: '#000' }}
     >
       <div
-        className="pointer-events-none absolute -right-40 -top-32 h-[560px] w-[560px] rounded-full opacity-35"
-        style={{ background: 'radial-gradient(circle, var(--gold-dim), transparent 70%)' }}
+        className="pointer-events-none absolute right-10 top-1/2 h-[560px] w-[560px] -translate-y-1/2 rounded-full opacity-60"
+        style={{ background: 'radial-gradient(circle, var(--gold-bright), transparent 70%)' }}
       />
 
       <motion.div
