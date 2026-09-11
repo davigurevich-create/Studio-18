@@ -92,8 +92,8 @@ export interface CouponValidation {
  * Valida um cupom de desconto (parcerias com influenciadores) direto no
  * Postgres via função security definer — não expõe a lista de cupons
  * cadastrados, só se o código informado está válido agora e qual o
- * desconto. A cobrança real (Edge Function mp-create-payment) reconfere o
- * cupom no servidor antes de aplicar o desconto de verdade.
+ * desconto. A cobrança real (Edge Function rede-create-payment) reconfere
+ * o cupom no servidor antes de aplicar o desconto de verdade.
  */
 export async function validateCoupon(code: string): Promise<CouponValidation> {
   if (!supabase) {
