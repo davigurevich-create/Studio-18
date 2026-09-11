@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'
-import { Camera } from 'lucide-react'
 import { RevealLine, type Word } from '@/components/RevealText'
 import { SpotifySection } from '@/components/SpotifySection'
 import { ManifestoSection } from '@/pages/Manifesto'
@@ -23,44 +22,12 @@ const linesOfText: Word[][] = [
 export function QuemSomos() {
   return (
     <div>
-      {/* FOTO — placeholder ate a foto real do fundador em frente ao
-          container ser enviada */}
-      <div className="relative flex h-[70svh] min-h-[420px] items-center justify-center overflow-hidden sm:h-[85svh]">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(135deg, #14120d 0%, #1f1b13 35%, var(--gold-dim) 100%)',
-          }}
-        />
-        <div
-          className="pointer-events-none absolute inset-0 opacity-30 mix-blend-multiply"
-          style={{
-            backgroundImage:
-              'repeating-linear-gradient(45deg, rgba(0,0,0,0.35) 0px, rgba(0,0,0,0.35) 2px, transparent 2px, transparent 6px)',
-          }}
-        />
-        <div className="relative z-10 flex flex-col items-center gap-4 px-6 text-center">
-          <div
-            className="flex h-16 w-16 items-center justify-center rounded-full border"
-            style={{ borderColor: 'var(--gold-dim)', background: 'rgba(6,6,6,0.4)' }}
-          >
-            <Camera size={26} style={{ color: 'var(--gold-bright)' }} strokeWidth={1.5} />
-          </div>
-          <p className="text-xs tracking-[0.3em]" style={{ color: 'var(--ink-muted)' }}>
-            FOTO EM BREVE
-          </p>
-          <p className="max-w-xs text-sm" style={{ color: 'var(--ink-secondary)' }}>
-            Fundador da Studio 18 em frente ao container com os sets recém-chegados
-          </p>
-        </div>
-      </div>
-
-      {/* TEXTO DE IMPACTO — revela linha por linha conforme a rolagem.
-          O padding inferior (em vh) garante espaço de rolagem suficiente
-          para a ultima linha terminar 100% nitida antes do fim da pagina,
-          em qualquer altura de tela. */}
-      <section className="mx-auto max-w-5xl px-6 pt-32 pb-[32svh] sm:pt-48 sm:pb-[38svh]">
+      {/* TEXTO DE IMPACTO — primeira coisa que a página mostra agora.
+          Revela linha por linha conforme a rolagem. O padding inferior (em
+          vh) garante espaço de rolagem suficiente para a ultima linha
+          terminar 100% nitida antes do fim da pagina, em qualquer altura de
+          tela. */}
+      <section className="mx-auto max-w-5xl px-6 pt-32 pb-[32svh] sm:pt-48 sm:pb-[38svh]" style={{ background: '#000' }}>
         <div className="flex flex-col gap-2 sm:gap-4">
           {linesOfText.map((line, i) => (
             <RevealLine key={i} words={line} index={i} />
@@ -69,14 +36,20 @@ export function QuemSomos() {
       </section>
 
       {/* RESPIRO VISUAL — imagem full-bleed antes do FLOW, para quebrar a
-          sequência de blocos de texto puro. */}
+          sequência de blocos de texto puro. Degradê pro preto só no topo,
+          pra fundir com o texto de impacto logo acima. */}
       <div
-        className="h-[46svh] min-h-[280px] bg-cover bg-center sm:h-[62svh]"
+        className="relative h-[46svh] min-h-[280px] overflow-hidden bg-cover bg-center sm:h-[62svh]"
         style={{
           backgroundColor: '#14120d',
           backgroundImage: 'url(/quem-somos-flow.jpg)',
         }}
-      />
+      >
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-24 sm:h-32"
+          style={{ background: 'linear-gradient(to bottom, #000, transparent)' }}
+        />
+      </div>
 
       {/* MANIFESTO — incorporado como seção da página Quem Somos, entre a
           imagem de respiro e a seção do conceito flow, pra aliviar o menu
