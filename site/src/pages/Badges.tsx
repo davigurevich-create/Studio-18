@@ -202,7 +202,7 @@ export function Badges() {
           pronto (arte feita no Canva, com o efeito de reflexo já
           embutido), não de tipografia gerada em código. */}
       <section
-        className="relative flex min-h-[88svh] flex-col overflow-hidden px-6 pb-10 pt-40 text-center sm:min-h-[100svh] sm:pt-52"
+        className="relative flex min-h-[88svh] flex-col overflow-hidden px-6 pt-36 text-center sm:min-h-[92svh] sm:pt-40"
         style={{ background: '#000' }}
       >
         <motion.div variants={fadeUp} initial="hidden" animate="show">
@@ -236,7 +236,7 @@ export function Badges() {
           initial="hidden"
           animate="show"
           transition={{ delay: 0.2 }}
-          className="relative z-10 mx-auto mt-16 flex flex-wrap items-center justify-center gap-x-8 gap-y-6 sm:mt-20 sm:gap-x-20"
+          className="relative z-10 mx-auto mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-6 sm:mt-12 sm:gap-x-20"
         >
           {stats.map((stat, i) => (
             <div key={stat.label} className="flex items-center gap-x-8 sm:gap-x-20">
@@ -253,7 +253,7 @@ export function Badges() {
           ))}
         </motion.div>
 
-        <div className="mt-auto pt-16">
+        <div className="mt-auto pt-8">
           <ScrollCue label="Role para conhecer" />
         </div>
       </section>
