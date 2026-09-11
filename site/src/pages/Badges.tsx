@@ -371,11 +371,13 @@ const marcos = [
     image: '/mestre-construtor.png',
     title: 'Badge: Mestre Construtor',
     criteria: '3 sets distintos concluídos',
+    url: 'https://brasilopenbadge.com.br/partner/studio-18&pg=1be28d1fda591a84d6d478dc897495d4&b=11443',
   },
   {
     image: '/clube-10k.png',
     title: 'Badge: Clube 10K — Engenheiro Chefe',
     criteria: '10.000 pontos acumulados',
+    url: 'https://brasilopenbadge.com.br/partner/studio-18&pg=1be28d1fda591a84d6d478dc897495d4&b=11444',
   },
 ]
 
@@ -597,8 +599,11 @@ export function Badges() {
 
         <div className="mx-auto grid max-w-2xl grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-8">
           {marcos.map((marco, i) => (
-            <motion.div
+            <motion.a
               key={marco.title}
+              href={marco.url}
+              target="_blank"
+              rel="noreferrer"
               variants={fadeUp}
               initial="hidden"
               whileInView="show"
@@ -624,7 +629,7 @@ export function Badges() {
               <p className="text-xs tracking-widest" style={{ color: 'var(--gold-bright)' }}>
                 {marco.criteria.toUpperCase()}
               </p>
-            </motion.div>
+            </motion.a>
           ))}
         </div>
 
