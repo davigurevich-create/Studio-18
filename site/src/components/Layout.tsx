@@ -84,6 +84,10 @@ export function Layout() {
   // no desktop — no mobile, mesmo rolado, continua a barra reta de sempre.
   const floatingCard = scrolled && !menuOpen && isDesktop
 
+  // Sempre centralizado via left:50% + translateX(-50%) nos dois estados —
+  // só a largura anima (100% -> calc(100% - 2rem)). Isso evita a troca de
+  // "left: 0" pra "left: 50%" no meio da transição, que causava aquele
+  // tremor/solavanco na formação do card.
   const headerStyle = floatingCard
     ? {
         top: 12,
@@ -92,25 +96,26 @@ export function Layout() {
         maxWidth: 1220,
         borderRadius: 9999,
         transform: 'translateX(-50%)',
-        background: 'rgba(6,6,6,0.94)',
-        border: '1px solid var(--hairline-strong)',
+        background: '#000',
+        border: 'none',
+        borderBottom: 'none',
         boxShadow: '0 16px 40px rgba(0,0,0,0.55)',
-        backdropFilter: 'blur(14px)',
+        backdropFilter: 'none',
         overflow: 'hidden' as const,
       }
     : {
         top: 0,
-        left: 0,
+        left: '50%',
         width: '100%',
         maxWidth: '100%',
         borderRadius: 0,
-        transform: 'none',
+        transform: 'translateX(-50%)',
         background: showDarkHeader ? 'rgba(6,6,6,0.85)' : 'transparent',
         border: 'none',
         borderBottom: showDarkHeader ? '1px solid var(--hairline)' : '1px solid transparent',
         boxShadow: 'none',
         backdropFilter: showDarkHeader ? 'blur(10px)' : 'none',
-        overflow: 'visible' as const,
+        overflow: 'hidden' as const,
       }
 
   return (
