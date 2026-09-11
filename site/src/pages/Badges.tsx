@@ -672,7 +672,7 @@ export function Badges() {
           no topo (pedido do usuário) pra fundir com a seção anterior. */}
       <section
         className="relative overflow-hidden px-6 pb-72 pt-24 text-center sm:pb-[26rem] sm:pt-32"
-        style={{ background: 'linear-gradient(160deg, #14120d 0%, #1f1b13 45%, var(--gold-dim) 130%)' }}
+        style={{ background: 'linear-gradient(160deg, #000 0%, #14120d 20%, #1f1b13 45%, var(--gold-dim) 130%)' }}
       >
         <BannerBackground
           desktop={BANNERS.ctaDesktop}
@@ -681,7 +681,7 @@ export function Badges() {
           mobileSize="contain"
         />
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-24 sm:h-32"
+          className="pointer-events-none absolute inset-x-0 top-0 h-40 sm:h-32"
           style={{ background: 'linear-gradient(to bottom, #000, transparent)' }}
         />
 
