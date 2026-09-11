@@ -614,7 +614,7 @@ export function Badges() {
               whileHover={{ y: -6 }}
               className="group flex flex-col items-center"
             >
-              <div className="relative mb-5 flex h-32 w-32 items-center justify-center">
+              <div className="relative mb-5 flex h-32 w-32 items-center justify-center sm:h-64 sm:w-64">
                 <div
                   className="pointer-events-none absolute inset-0 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-60"
                   style={{ background: 'radial-gradient(circle, var(--gold-bright), transparent 70%)' }}
@@ -622,10 +622,10 @@ export function Badges() {
                 <img
                   src={marco.image}
                   alt={marco.title}
-                  className="relative h-32 w-32 object-contain transition-transform duration-500 group-hover:scale-105"
+                  className="relative h-32 w-32 object-contain transition-transform duration-500 group-hover:scale-105 sm:h-64 sm:w-64"
                 />
               </div>
-              <h3 className="mb-1 text-base font-medium" style={{ color: 'var(--ink)' }}>
+              <h3 className="mb-1 text-base font-medium sm:text-lg" style={{ color: 'var(--ink)' }}>
                 {marco.title}
               </h3>
               <p className="text-xs tracking-widest" style={{ color: 'var(--gold-bright)' }}>
