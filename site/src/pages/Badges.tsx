@@ -585,7 +585,9 @@ export function Badges() {
           </div>
         </div>
 
-        <ScrollCue label="Continuar explorando" />
+        <div className="mt-20 sm:mt-28">
+          <ScrollCue label="Continuar explorando" />
+        </div>
       </section>
 
       {/* RESPIRO — foto real dos colecionadores contemplando os sets. */}
