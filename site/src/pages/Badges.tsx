@@ -26,6 +26,8 @@ const fadeUp = {
 // background-image simplesmente não carrega e o gradiente do próprio
 // elemento (definido abaixo) segue visível no lugar, sem erro nenhum.
 const BANNERS = {
+  heroTitleDesktop: '/badges-hero-title-desktop.png',
+  heroTitleMobile: '/badges-hero-title-mobile.png',
   flowDesktop: '/badges-flow-desktop.jpg',
   flowMobile: '/badges-flow-mobile.jpg',
 }
@@ -188,20 +190,45 @@ export function Badges() {
   const stepsListRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress: lineProgress } = useScroll({ target: stepsListRef, offset: ['start 0.75', 'end 0.4'] })
   const lineScale = useTransform(lineProgress, [0, 1], [0, 1])
+  // Enquanto o banner (arte pronta feita no Canva) não existir em
+  // site/public/, a tag <img> mostraria um ícone de imagem quebrada — ao
+  // invés disso, escondemos a tag e mostramos um título simples no lugar,
+  // que some sozinho assim que o arquivo certo for enviado.
+  const [heroBannerFailed, setHeroBannerFailed] = useState(false)
 
   return (
     <div>
-      {/* HERO — fundo 100% preto, sem foto; o impacto vem da tipografia
-          gigante com reflexo (mesmo recurso usado no restante do site) e
-          dos números que sobem em contagem. */}
-      <section className="relative overflow-hidden px-6 pb-16 pt-40 text-center sm:pt-52" style={{ background: '#000' }}>
+      {/* HERO — fundo 100% preto, sem foto; o título vem de um banner
+          pronto (arte feita no Canva, com o efeito de reflexo já
+          embutido), não de tipografia gerada em código. */}
+      <section
+        className="relative flex min-h-[88svh] flex-col overflow-hidden px-6 pb-10 pt-40 text-center sm:min-h-[100svh] sm:pt-52"
+        style={{ background: '#000' }}
+      >
         <motion.div variants={fadeUp} initial="hidden" animate="show">
-          <p className="eyebrow mb-6">Uma comunidade baseada em</p>
-          <MirrorText className="text-[15vw] font-black uppercase leading-[0.88] tracking-tight sm:text-[9vw] lg:text-8xl">
-            Medalhas
-            <br />
-            Digitais
-          </MirrorText>
+          {heroBannerFailed ? (
+            <div>
+              <p className="eyebrow mb-4">Uma comunidade baseada em</p>
+              <p className="text-4xl font-black uppercase leading-none tracking-tight sm:text-6xl" style={{ color: 'var(--ink)' }}>
+                Medalhas Digitais
+              </p>
+            </div>
+          ) : (
+            <>
+              <img
+                src={BANNERS.heroTitleDesktop}
+                alt="Uma comunidade baseada em Medalhas Digitais"
+                className="mx-auto hidden h-auto w-full max-w-[640px] sm:block"
+                onError={() => setHeroBannerFailed(true)}
+              />
+              <img
+                src={BANNERS.heroTitleMobile}
+                alt="Uma comunidade baseada em Medalhas Digitais"
+                className="mx-auto h-auto w-full max-w-[340px] sm:hidden"
+                onError={() => setHeroBannerFailed(true)}
+              />
+            </>
+          )}
         </motion.div>
 
         <motion.div
@@ -209,25 +236,26 @@ export function Badges() {
           initial="hidden"
           animate="show"
           transition={{ delay: 0.2 }}
-          className="relative z-10 mx-auto mt-24 flex max-w-lg items-start justify-center gap-2 sm:mt-28 sm:gap-4"
+          className="relative z-10 mx-auto mt-16 flex flex-wrap items-center justify-center gap-x-8 gap-y-6 sm:mt-20 sm:gap-x-20"
         >
           {stats.map((stat, i) => (
-            <div
-              key={stat.label}
-              className="flex-1 px-3 text-center sm:px-6"
-              style={{ borderLeft: i > 0 ? '1px solid var(--hairline)' : undefined }}
-            >
-              <div className="tabular text-2xl font-semibold sm:text-4xl" style={{ color: 'var(--gold-bright)' }}>
-                <CountUp value={stat.value} prefix={stat.prefix} />
-              </div>
-              <div className="mt-2 text-[10px] leading-tight tracking-widest sm:text-xs" style={{ color: 'var(--ink-muted)' }}>
-                {stat.label.toUpperCase()}
+            <div key={stat.label} className="flex items-center gap-x-8 sm:gap-x-20">
+              {i > 0 && <span className="hidden h-10 w-px sm:block" style={{ background: 'var(--hairline)' }} />}
+              <div className="text-center">
+                <div className="tabular text-2xl font-semibold sm:text-4xl" style={{ color: 'var(--gold-bright)' }}>
+                  <CountUp value={stat.value} prefix={stat.prefix} />
+                </div>
+                <div className="mt-2 whitespace-nowrap text-[10px] tracking-widest sm:text-xs" style={{ color: 'var(--ink-muted)' }}>
+                  {stat.label.toUpperCase()}
+                </div>
               </div>
             </div>
           ))}
         </motion.div>
 
-        <ScrollCue label="Role para conhecer" />
+        <div className="mt-auto pt-16">
+          <ScrollCue label="Role para conhecer" />
+        </div>
       </section>
 
       {/* O QUE É UMA MEDALHA DIGITAL */}
