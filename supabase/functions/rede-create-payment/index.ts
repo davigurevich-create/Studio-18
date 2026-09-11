@@ -418,9 +418,12 @@ Deno.serve(async (req) => {
         // inteiro falha a validação do schema deles e a mensagem que
         // sobra é sobre o próximo campo obrigatório, não sobre a causa
         amount: String(amountInCents),
-        // nome de campo exatamente como no exemplo oficial da doc
-        // (confirmado visualmente na página do PDF, com espaço mesmo)
-        qrCode: { 'Date timeExpiration': expiration.toISOString().slice(0, 19) },
+        // campo correto é "dateTimeExpiration" (camelCase, sem espaço) —
+        // confirmado pelo suporte da Rede (chamado sobre o returnCode
+        // 370): o nome usado antes, "Date timeExpiration", chegava como
+        // campo desconhecido pra API deles, então o dateTimeExpiration
+        // real ficava null e a validação falhava
+        qrCode: { dateTimeExpiration: expiration.toISOString().slice(0, 19) },
       }
     } else {
       // IP público do cliente — vem do header que a infra da Supabase
