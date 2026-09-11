@@ -366,8 +366,8 @@ export function Badges() {
       {/* O QUE É UMA MEDALHA DIGITAL */}
       <section
         ref={whatIsRef}
-        className="relative overflow-hidden border-t px-6 pb-16 pt-24 sm:pt-32"
-        style={{ borderColor: 'var(--hairline)', background: '#000' }}
+        className="relative overflow-hidden px-6 pb-16 pt-24 sm:pt-32"
+        style={{ background: '#000' }}
       >
         <motion.div
           className="pointer-events-none absolute -left-24 top-1/4 h-[380px] w-[380px] rounded-full sm:-left-32 sm:h-[460px] sm:w-[460px]"
@@ -417,7 +417,7 @@ export function Badges() {
           revelam normalmente conforme a rolagem (1 e 2 já visíveis ao
           entrar na seção, 3 e 4 aparecem rolando mais), com uma linha
           dourada que "desenha" pra baixo acompanhando o progresso. */}
-      <section className="border-t px-6 py-24 sm:py-32" style={{ borderColor: 'var(--hairline)', background: '#000' }}>
+      <section className="px-6 py-24 sm:py-32" style={{ background: '#000' }}>
         <motion.div
           variants={fadeUp}
           initial="hidden"
@@ -484,12 +484,12 @@ export function Badges() {
       </section>
 
       {/* RESPIRO — foto real dos colecionadores contemplando os sets. */}
-      <div className="relative h-[52svh] min-h-[300px] overflow-hidden border-t sm:h-[70svh]" style={{ borderColor: 'var(--hairline)', background: 'linear-gradient(120deg, #14120d, var(--gold-dim))' }}>
+      <div className="relative h-[52svh] min-h-[300px] overflow-hidden sm:h-[70svh]" style={{ background: 'linear-gradient(120deg, #14120d, var(--gold-dim))' }}>
         <BannerBackground desktop={BANNERS.flowDesktop} mobile={BANNERS.flowMobile} />
       </div>
 
       {/* GAMIFICAÇÃO */}
-      <section className="border-t px-6 py-24 text-center sm:py-32" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)' }}>
+      <section className="px-6 py-24 text-center sm:py-32" style={{ background: '#000' }}>
         <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-80px' }}>
           <p className="eyebrow mb-4">A gamificação</p>
           <MirrorText className="mb-16 text-[10vw] font-black uppercase leading-[0.9] tracking-tight sm:mb-20 sm:text-5xl lg:text-6xl">
@@ -553,8 +553,8 @@ export function Badges() {
       {/* CTA FINAL — fundo dourado sólido (sem foto), com a vitrine de
           medalhas dos modelos abaixo do botão. */}
       <section
-        className="relative overflow-hidden border-t px-6 py-24 text-center sm:py-32"
-        style={{ borderColor: 'var(--hairline)', background: 'linear-gradient(160deg, #14120d 0%, #1f1b13 45%, var(--gold-dim) 130%)' }}
+        className="relative overflow-hidden px-6 py-24 text-center sm:py-32"
+        style={{ background: 'linear-gradient(160deg, #14120d 0%, #1f1b13 45%, var(--gold-dim) 130%)' }}
       >
         <motion.div
           variants={fadeUp}
