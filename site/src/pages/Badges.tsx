@@ -20,18 +20,28 @@ const BANNERS = {
   flowMobile: '/badges-flow-mobile.jpg',
   discountDesktop: '/badges-gamification-discount-desktop.png',
   discountMobile: '/badges-gamification-discount-mobile.png',
+  ctaDesktop: '/badges-cta-desktop.png',
+  ctaMobile: '/badges-cta-mobile.png',
 }
 
-function BannerBackground({ desktop, mobile }: { desktop: string; mobile: string }) {
+function BannerBackground({
+  desktop,
+  mobile,
+  position = 'center',
+}: {
+  desktop: string
+  mobile: string
+  position?: string
+}) {
   return (
     <>
       <div
         className="pointer-events-none absolute inset-0 hidden sm:block"
-        style={{ backgroundImage: `url(${desktop})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+        style={{ backgroundImage: `url(${desktop})`, backgroundSize: 'cover', backgroundPosition: position }}
       />
       <div
         className="pointer-events-none absolute inset-0 sm:hidden"
-        style={{ backgroundImage: `url(${mobile})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+        style={{ backgroundImage: `url(${mobile})`, backgroundSize: 'cover', backgroundPosition: position }}
       />
     </>
   )
@@ -182,15 +192,6 @@ function TiltBanner({
 // Mesma lógica de "sobe o arquivo com esse nome e ele aparece sozinho":
 // se a imagem não existir ainda, a própria tag <img> se esconde (onError),
 // sem ícone quebrado nem espaço vazio na fileira.
-const MEDALS = [
-  '/badges-medal-01.jpg',
-  '/badges-medal-02.jpg',
-  '/badges-medal-03.jpg',
-  '/badges-medal-04.jpg',
-  '/badges-medal-05.jpg',
-  '/badges-medal-06.jpg',
-]
-
 // Quebra um parágrafo em palavras, marcando como "gold" as que caem
 // dentro de uma frase de destaque (goldPhrase) — mesma ideia do Word[]
 // do RevealText.tsx, só que derivada de uma frase corrida em vez de um
@@ -664,12 +665,20 @@ export function Badges() {
         </motion.div>
       </section>
 
-      {/* CTA FINAL — fundo dourado sólido (sem foto), com a vitrine de
-          medalhas dos modelos abaixo do botão. */}
+      {/* CTA FINAL — banner de fundo (arte pronta, já traz a vitrine de
+          medalhas dos modelos "impressa" na parte de baixo), fixado pela
+          base pra essa vitrine ficar sempre visível. Degradê pro preto só
+          no topo (pedido do usuário) pra fundir com a seção anterior. */}
       <section
-        className="relative overflow-hidden px-6 py-24 text-center sm:py-32"
+        className="relative overflow-hidden px-6 pb-72 pt-24 text-center sm:pb-[26rem] sm:pt-32"
         style={{ background: 'linear-gradient(160deg, #14120d 0%, #1f1b13 45%, var(--gold-dim) 130%)' }}
       >
+        <BannerBackground desktop={BANNERS.ctaDesktop} mobile={BANNERS.ctaMobile} position="center bottom" />
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-24 sm:h-32"
+          style={{ background: 'linear-gradient(to bottom, #000, transparent)' }}
+        />
+
         <motion.div
           variants={fadeUp}
           initial="hidden"
@@ -687,38 +696,6 @@ export function Badges() {
           >
             Acessar o portal de medalhas →
           </a>
-        </motion.div>
-
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ delay: 0.15 }}
-          className="relative z-10 mx-auto mt-16 flex max-w-3xl flex-wrap items-center justify-center gap-6 sm:mt-20 sm:gap-8"
-        >
-          {MEDALS.map((src) => (
-            <motion.div
-              key={src}
-              whileHover={{ scale: 1.1, y: -8 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-              className="group relative h-20 w-20 shrink-0 sm:h-24 sm:w-24"
-            >
-              <div
-                className="pointer-events-none absolute inset-0 rounded-full opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-70"
-                style={{ background: 'radial-gradient(circle, var(--gold-bright), transparent 70%)' }}
-              />
-              <img
-                src={src}
-                alt="Medalha de modelo Studio 18"
-                className="relative h-full w-full rounded-full object-cover shadow-lg transition-shadow duration-300"
-                style={{ border: '2px solid rgba(10,9,7,0.6)' }}
-                onError={(e) => {
-                  e.currentTarget.closest('.group')?.setAttribute('style', 'display:none')
-                }}
-              />
-            </motion.div>
-          ))}
         </motion.div>
       </section>
 
