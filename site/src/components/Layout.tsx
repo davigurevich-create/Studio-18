@@ -117,7 +117,7 @@ export function Layout() {
         background: '#000',
         border: 'none',
         borderBottom: 'none',
-        boxShadow: '0 16px 40px rgba(0,0,0,0.55)',
+        boxShadow: '0 16px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 0 1px rgba(255,255,255,0.04)',
         backdropFilter: 'none',
         overflow: 'hidden' as const,
       }
