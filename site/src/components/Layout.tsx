@@ -194,7 +194,7 @@ export function Layout() {
         <Outlet />
       </main>
 
-      <footer className="border-t px-6 py-10" style={{ borderColor: 'var(--hairline)', background: '#000' }}>
+      <footer className="px-6 py-10" style={{ background: '#000' }}>
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 text-center">
           <img src="/logo-studio18.png" alt="Studio 18" className="h-11 w-auto sm:h-14" />
           <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>

@@ -75,8 +75,8 @@ export function SpotifySection({ compact = false }: { compact?: boolean }) {
 
   return (
     <section
-      className="relative overflow-hidden border-t px-6 py-28 text-center sm:py-32"
-      style={{ borderColor: 'var(--hairline)', background: '#000' }}
+      className="relative overflow-hidden px-6 py-28 text-center sm:py-32"
+      style={{ background: '#000' }}
     >
       <div
         className="pointer-events-none absolute -right-40 -top-32 h-[560px] w-[560px] rounded-full opacity-35"

@@ -253,8 +253,8 @@ export function Home() {
       {/* PEÇAS FALTANTES */}
       <section
         id="pecas-faltantes"
-        className="relative overflow-hidden border-t px-6 py-24"
-        style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)' }}
+        className="relative overflow-hidden px-6 py-24"
+        style={{ background: '#000' }}
       >
         <div
           className="pointer-events-none absolute inset-0"

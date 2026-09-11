@@ -71,9 +71,8 @@ export function QuemSomos() {
       {/* RESPIRO VISUAL — imagem full-bleed antes do FLOW, para quebrar a
           sequência de blocos de texto puro. */}
       <div
-        className="h-[46svh] min-h-[280px] border-t bg-cover bg-center sm:h-[62svh]"
+        className="h-[46svh] min-h-[280px] bg-cover bg-center sm:h-[62svh]"
         style={{
-          borderColor: 'var(--hairline)',
           backgroundColor: '#14120d',
           backgroundImage: 'url(/quem-somos-flow.jpg)',
         }}
@@ -90,8 +89,8 @@ export function QuemSomos() {
           texto descritivo em branco e no mesmo tamanho, com destaques em
           dourado só nas frases mais impactantes. */}
       <section
-        className="relative overflow-hidden border-t px-6 py-24 sm:py-32"
-        style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)' }}
+        className="relative overflow-hidden px-6 py-24 sm:py-32"
+        style={{ background: '#000' }}
       >
         <div
           className="pointer-events-none absolute -left-32 top-1/2 h-[520px] w-[520px] -translate-y-1/2 rounded-full opacity-40"
