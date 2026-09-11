@@ -36,18 +36,28 @@ export function QuemSomos() {
       </section>
 
       {/* RESPIRO VISUAL — imagem full-bleed antes do FLOW, para quebrar a
-          sequência de blocos de texto puro. Degradê pro preto só no topo,
-          pra fundir com o texto de impacto logo acima. */}
+          sequência de blocos de texto puro. Degradê pro preto no topo (funde
+          com o texto de impacto acima) e na base (funde com o Manifesto
+          logo abaixo, junto com a luz dourada dele entrando aos poucos). */}
       <div
-        className="relative h-[46svh] min-h-[280px] overflow-hidden bg-cover bg-center sm:h-[62svh]"
-        style={{
-          backgroundColor: '#14120d',
-          backgroundImage: 'url(/quem-somos-flow.jpg)',
-        }}
+        className="relative h-[46svh] min-h-[280px] overflow-hidden sm:h-[62svh]"
+        style={{ backgroundColor: '#14120d' }}
       >
+        <div
+          className="absolute inset-0 hidden bg-cover bg-center sm:block"
+          style={{ backgroundImage: 'url(/quem-somos-flow.jpg)' }}
+        />
+        <div
+          className="absolute inset-0 bg-cover bg-center sm:hidden"
+          style={{ backgroundImage: 'url(/quem-somos-banner-mobile.jpg)' }}
+        />
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-24 sm:h-32"
           style={{ background: 'linear-gradient(to bottom, #000, transparent)' }}
+        />
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-32 sm:h-48"
+          style={{ background: 'linear-gradient(to top, #000, transparent)' }}
         />
       </div>
 

@@ -32,10 +32,12 @@ const SLICE_SVH = 60
 
 // Luz dourada de fundo — reaproveitada tanto na versão desktop (presa
 // dentro da área "sticky" enquanto a seção rola) quanto na mobile (fixa
-// no topo da seção, que não tem rolagem interna longa).
-function GoldGlow() {
+// no topo da seção, que não tem rolagem interna longa). Entra aos poucos
+// em opacidade conforme a rolagem chega na seção, em vez de já nascer
+// 100% visível — dá uma transição suave vindo do banner de respiro acima.
+function GoldGlow({ opacity }: { opacity: MotionValue<number> }) {
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 h-full" style={{ zIndex: 0 }}>
+    <motion.div className="pointer-events-none absolute inset-x-0 top-0 h-full" style={{ zIndex: 0, opacity }}>
       <div
         className="absolute inset-x-0 top-0 h-full"
         style={{ background: 'radial-gradient(ellipse 60% 60% at 50% -12%, rgba(205,164,77,0.32), transparent 62%)' }}
@@ -44,13 +46,20 @@ function GoldGlow() {
         className="absolute inset-x-0 top-0 h-[38%]"
         style={{ background: 'linear-gradient(to bottom, rgba(205,164,77,0.14), transparent)' }}
       />
-    </div>
+    </motion.div>
   )
 }
 
 export function ManifestoSection() {
   const pinRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: pinRef, offset: ['start start', 'end end'] })
+  // Rampa rápida logo no início do pin (primeiros 15% da rolagem presa),
+  // depois fica cheia pelo resto da seção.
+  const desktopGlowOpacity = useTransform(scrollYProgress, [0, 0.15], [0, 1])
+
+  const mobileRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress: mobileProgress } = useScroll({ target: mobileRef, offset: ['start 0.85', 'start 0.4'] })
+  const mobileGlowOpacity = useTransform(mobileProgress, [0, 1], [0, 1])
 
   return (
     <div style={{ background: '#000' }}>
@@ -62,7 +71,7 @@ export function ManifestoSection() {
           junto com as frases. */}
       <div ref={pinRef} className="relative z-10 hidden lg:block" style={{ height: `${phrases.length * SLICE_SVH}svh` }}>
         <div className="sticky top-0 flex h-screen flex-col overflow-hidden">
-          <GoldGlow />
+          <GoldGlow opacity={desktopGlowOpacity} />
 
           <div className="relative px-6 pt-32 text-center">
             <p className="eyebrow">Manifesto</p>
@@ -81,8 +90,8 @@ export function ManifestoSection() {
           laterais, com barra de progresso no topo. Rolagem vertical sutil
           não funcionava bem no toque — isso dá um gesto de leitura ativo,
           bem mais vivo. */}
-      <div className="relative z-10 overflow-hidden lg:hidden">
-        <GoldGlow />
+      <div ref={mobileRef} className="relative z-10 overflow-hidden lg:hidden">
+        <GoldGlow opacity={mobileGlowOpacity} />
         <ManifestoStories />
       </div>
     </div>
