@@ -38,11 +38,11 @@ function BannerBackground({
     <>
       <div
         className="pointer-events-none absolute inset-0 hidden sm:block"
-        style={{ backgroundImage: `url(${desktop})`, backgroundSize: 'cover', backgroundPosition: position }}
+        style={{ backgroundImage: `url(${desktop})`, backgroundSize: 'cover', backgroundPosition: position, backgroundRepeat: 'no-repeat' }}
       />
       <div
         className="pointer-events-none absolute inset-0 sm:hidden"
-        style={{ backgroundImage: `url(${mobile})`, backgroundSize: mobileSize, backgroundPosition: position }}
+        style={{ backgroundImage: `url(${mobile})`, backgroundSize: mobileSize, backgroundPosition: position, backgroundRepeat: 'no-repeat' }}
       />
     </>
   )
