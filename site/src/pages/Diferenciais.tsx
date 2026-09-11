@@ -54,7 +54,7 @@ export function Diferenciais() {
   useMotionValueEvent(scrollYProgress, 'change', (v) => {
     const idx = Math.min(diferenciais.length - 1, Math.max(0, Math.floor(v * diferenciais.length)))
     setActive(idx)
-    setPastLastChapter(v >= (diferenciais.length - 1) / diferenciais.length)
+    setPastLastChapter(v >= 0.95)
   })
 
   const ActiveIcon = diferenciais[active].icon

@@ -94,7 +94,10 @@ export function Layout() {
   // ficar sempre escuro ali, senao fica ilegivel (texto claro sobre branco)
   // no topo da pagina, antes do usuario rolar.
   const forceDarkHeader = location.pathname.startsWith('/blog/')
-  const showDarkHeader = scrolled || menuOpen || forceDarkHeader
+  // floatingHeaderReady=false (Diferenciais, antes do 4º diferencial) também
+  // segura o fundo escuro — sem isso o header ficava cinza durante toda a
+  // rolagem presa, antes mesmo de virar o card flutuante.
+  const showDarkHeader = (scrolled && floatingHeaderReady) || menuOpen || forceDarkHeader
   // Só vira o card flutuante quando já rolou (nunca no carregamento) e só
   // no desktop — no mobile, mesmo rolado, continua a barra reta de sempre.
   const floatingCard = scrolled && !menuOpen && isDesktop && floatingHeaderReady
