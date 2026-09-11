@@ -26,8 +26,8 @@ const fadeUp = {
 // background-image simplesmente não carrega e o gradiente do próprio
 // elemento (definido abaixo) segue visível no lugar, sem erro nenhum.
 const BANNERS = {
-  heroTitleDesktop: '/badges-hero-title-desktop.png',
-  heroTitleMobile: '/badges-hero-title-mobile.png',
+  heroTitleDesktop: '/banner-hero-badges-desktop.png',
+  heroTitleMobile: '/banner-hero-badges-mobile.png',
   flowDesktop: '/badges-flow-desktop.jpg',
   flowMobile: '/badges-flow-mobile.jpg',
 }
