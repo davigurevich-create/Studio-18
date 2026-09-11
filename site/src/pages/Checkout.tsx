@@ -340,6 +340,10 @@ export function Checkout() {
   }
 
   if (step === 'done' && result) {
+    // Mesmo formato curto (8 primeiros caracteres do id) usado em Minha
+    // Conta e no e-mail de confirmação — o UUID inteiro nunca aparece pro
+    // cliente, só serve internamente pras chamadas de API.
+    const shortOrderId = result.orderId.slice(0, 8)
     // Split em duas colunas no desktop: confirmação + card de conta à
     // esquerda, playlists do Spotify à direita (ocupando a altura das
     // duas). No mobile tudo empilha, mas o Spotify entra logo depois da
@@ -366,10 +370,10 @@ export function Checkout() {
             style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)', color: 'var(--ink-muted)' }}
           >
             <span>Número do pedido:</span>
-            <code style={{ color: 'var(--gold-bright)' }}>{result.orderId}</code>
+            <code style={{ color: 'var(--gold-bright)' }}>{shortOrderId}</code>
             <button
               type="button"
-              onClick={() => copyToClipboard('order', result.orderId)}
+              onClick={() => copyToClipboard('order', shortOrderId)}
               className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium transition-colors"
               style={{
                 background: copiedField === 'order' ? '#3f7f4f' : 'var(--gold)',

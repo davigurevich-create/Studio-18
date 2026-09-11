@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
           `<p>Olá, ${(existingSale.customer_name ?? '').split(' ')[0] || 'tudo bem'}! Recebemos a confirmação do pagamento do seu pedido <strong>#${existingSale.id.slice(0, 8)}</strong>.</p>
            <p>Já avisamos nossa equipe — seu set entra na fila de preparação para envio.</p>
            <p style="margin-top:24px;">
-             <a href="${SITE_URL}/rastreio" style="color:#e6c778;">Acompanhe o status do envio em ${SITE_URL}/rastreio</a>
+             <a href="${SITE_URL}/conta" style="color:#e6c778;">Acompanhe o status do envio em Minha Conta</a>
            </p>`,
         ),
       )

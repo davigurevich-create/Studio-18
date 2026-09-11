@@ -609,7 +609,7 @@ Deno.serve(async (req) => {
          ${paymentBlockHtml}
          <p style="margin-top:20px;">Entrega para: ${address.streetName}, ${address.streetNumber}${address.complement ? ` — ${address.complement}` : ''} — ${address.neighborhood}, ${address.city}/${address.federalUnit}</p>
          <p style="margin-top:24px;">
-           <a href="${SITE_URL}/rastreio" style="color:#e6c778;">Acompanhe seu pedido a qualquer momento em ${SITE_URL}/rastreio</a>
+           <a href="${SITE_URL}/conta" style="color:#e6c778;">Acompanhe seu pedido a qualquer momento em Minha Conta</a>
          </p>`,
       ),
     )
