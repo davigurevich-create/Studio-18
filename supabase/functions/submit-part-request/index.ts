@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
          ${replacementBlockHtml}
          <p style="margin-top:20px;">Número do pedido original: ${orderReference}</p>
          <p style="margin-top:24px;">
-           <a href="${SITE_URL}/rastreio" style="color:#e6c778;">Acompanhe o status a qualquer momento em ${SITE_URL}/rastreio</a>
+           <a href="${SITE_URL}/conta" style="color:#e6c778;">Acompanhe o status a qualquer momento em Minha Conta</a>
          </p>`,
       ),
     )
