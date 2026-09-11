@@ -1,7 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
-import { SpotifySection } from '@/components/SpotifySection'
 
 const BOB_URL = 'https://brasilopenbadge.com.br/partner/studio-18'
 
@@ -28,10 +27,12 @@ function BannerBackground({
   desktop,
   mobile,
   position = 'center',
+  mobileSize = 'cover',
 }: {
   desktop: string
   mobile: string
   position?: string
+  mobileSize?: string
 }) {
   return (
     <>
@@ -41,7 +42,7 @@ function BannerBackground({
       />
       <div
         className="pointer-events-none absolute inset-0 sm:hidden"
-        style={{ backgroundImage: `url(${mobile})`, backgroundSize: 'cover', backgroundPosition: position }}
+        style={{ backgroundImage: `url(${mobile})`, backgroundSize: mobileSize, backgroundPosition: position }}
       />
     </>
   )
@@ -673,7 +674,12 @@ export function Badges() {
         className="relative overflow-hidden px-6 pb-72 pt-24 text-center sm:pb-[26rem] sm:pt-32"
         style={{ background: 'linear-gradient(160deg, #14120d 0%, #1f1b13 45%, var(--gold-dim) 130%)' }}
       >
-        <BannerBackground desktop={BANNERS.ctaDesktop} mobile={BANNERS.ctaMobile} position="center bottom" />
+        <BannerBackground
+          desktop={BANNERS.ctaDesktop}
+          mobile={BANNERS.ctaMobile}
+          position="center bottom"
+          mobileSize="contain"
+        />
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-24 sm:h-32"
           style={{ background: 'linear-gradient(to bottom, #000, transparent)' }}
@@ -698,8 +704,6 @@ export function Badges() {
           </a>
         </motion.div>
       </section>
-
-      <SpotifySection />
     </div>
   )
 }
