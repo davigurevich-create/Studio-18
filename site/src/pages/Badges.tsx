@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useMotionValue, useScroll, useSpring, useTransform } from 'framer-motion'
 import { Award, ChevronDown, Trophy, Wrench } from 'lucide-react'
 import { SpotifySection } from '@/components/SpotifySection'
 
@@ -43,6 +43,110 @@ function BannerBackground({ desktop, mobile }: { desktop: string; mobile: string
         className="pointer-events-none absolute inset-0 sm:hidden"
         style={{ backgroundImage: `url(${mobile})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
       />
+    </>
+  )
+}
+
+/**
+ * Banner do título da hero com o mesmo efeito de inclinação 3D do carro
+ * da hero principal do site (HeroCar.tsx): segue o cursor no desktop, e
+ * segue o giroscópio/tilt do aparelho no mobile (com o pedido de
+ * permissão do iOS disparado no primeiro toque, já que o navegador exige
+ * um gesto do usuário pra liberar o sensor).
+ */
+function TiltHeroBanner({
+  desktopSrc,
+  mobileSrc,
+  alt,
+  onError,
+}: {
+  desktopSrc: string
+  mobileSrc: string
+  alt: string
+  onError: () => void
+}) {
+  const tiltSpring = { stiffness: 60, damping: 16, mass: 0.5 }
+
+  // Desktop — segue o mouse, igual ao carro da hero principal.
+  const desktopRef = useRef<HTMLDivElement>(null)
+  const mx = useMotionValue(0)
+  const my = useMotionValue(0)
+  const rotateXDesktop = useSpring(useTransform(my, [-0.5, 0.5], [7, -7]), tiltSpring)
+  const rotateYDesktop = useSpring(useTransform(mx, [-0.5, 0.5], [-9, 9]), tiltSpring)
+
+  useEffect(() => {
+    const handlePointerMove = (e: PointerEvent) => {
+      const rect = desktopRef.current?.getBoundingClientRect()
+      if (!rect) return
+      const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom
+      if (!inside) {
+        mx.set(0)
+        my.set(0)
+        return
+      }
+      mx.set((e.clientX - rect.left) / rect.width - 0.5)
+      my.set((e.clientY - rect.top) / rect.height - 0.5)
+    }
+    window.addEventListener('pointermove', handlePointerMove)
+    return () => window.removeEventListener('pointermove', handlePointerMove)
+  }, [mx, my])
+
+  // Mobile — segue o tilt do aparelho (giroscópio).
+  const gamma = useMotionValue(0)
+  const beta = useMotionValue(0)
+  const rotateXMobile = useSpring(useTransform(beta, [-20, 20], [7, -7]), tiltSpring)
+  const rotateYMobile = useSpring(useTransform(gamma, [-20, 20], [-9, 9]), tiltSpring)
+
+  useEffect(() => {
+    let baseline: { beta: number; gamma: number } | null = null
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      if (e.beta == null || e.gamma == null) return
+      if (!baseline) baseline = { beta: e.beta, gamma: e.gamma }
+      gamma.set(Math.max(-20, Math.min(20, e.gamma - baseline.gamma)))
+      beta.set(Math.max(-20, Math.min(20, e.beta - baseline.beta)))
+    }
+    const enable = () => window.addEventListener('deviceorientation', handleOrientation)
+
+    type DeviceOrientationEventWithPermission = typeof DeviceOrientationEvent & {
+      requestPermission?: () => Promise<'granted' | 'denied'>
+    }
+    const DOE = window.DeviceOrientationEvent as DeviceOrientationEventWithPermission | undefined
+    if (DOE?.requestPermission) {
+      const onFirstTouch = () => {
+        DOE.requestPermission?.()
+          .then((result) => {
+            if (result === 'granted') enable()
+          })
+          .catch(() => {})
+        window.removeEventListener('touchstart', onFirstTouch)
+      }
+      window.addEventListener('touchstart', onFirstTouch, { once: true })
+      return () => window.removeEventListener('touchstart', onFirstTouch)
+    }
+    if (DOE) enable()
+    return () => window.removeEventListener('deviceorientation', handleOrientation)
+  }, [beta, gamma])
+
+  return (
+    <>
+      <div ref={desktopRef} className="mx-auto hidden sm:block" style={{ perspective: 1000 }}>
+        <motion.img
+          src={desktopSrc}
+          alt={alt}
+          onError={onError}
+          className="mx-auto h-auto w-full max-w-[640px]"
+          style={{ rotateX: rotateXDesktop, rotateY: rotateYDesktop }}
+        />
+      </div>
+      <div className="mx-auto sm:hidden" style={{ perspective: 800 }}>
+        <motion.img
+          src={mobileSrc}
+          alt={alt}
+          onError={onError}
+          className="mx-auto h-auto w-full max-w-[340px]"
+          style={{ rotateX: rotateXMobile, rotateY: rotateYMobile }}
+        />
+      </div>
     </>
   )
 }
@@ -190,6 +294,15 @@ export function Badges() {
   const stepsListRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress: lineProgress } = useScroll({ target: stepsListRef, offset: ['start 0.75', 'end 0.4'] })
   const lineScale = useTransform(lineProgress, [0, 1], [0, 1])
+
+  // Luzes douradas da seção "o que é uma medalha digital" — derivam
+  // (drift) verticalmente em direções opostas e respiram em brilho
+  // conforme a rolagem passa pela seção, só enquanto ela está em cena.
+  const whatIsRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress: whatIsProgress } = useScroll({ target: whatIsRef, offset: ['start end', 'end start'] })
+  const blobLeftY = useTransform(whatIsProgress, [0, 1], [-70, 70])
+  const blobRightY = useTransform(whatIsProgress, [0, 1], [70, -70])
+  const blobOpacity = useTransform(whatIsProgress, [0, 0.5, 1], [0.5, 1, 0.5])
   // Enquanto o banner (arte pronta feita no Canva) não existir em
   // site/public/, a tag <img> mostraria um ícone de imagem quebrada — ao
   // invés disso, escondemos a tag e mostramos um título simples no lugar,
@@ -214,20 +327,12 @@ export function Badges() {
               </p>
             </div>
           ) : (
-            <>
-              <img
-                src={BANNERS.heroTitleDesktop}
-                alt="Uma comunidade baseada em Medalhas Digitais"
-                className="mx-auto hidden h-auto w-full max-w-[640px] sm:block"
-                onError={() => setHeroBannerFailed(true)}
-              />
-              <img
-                src={BANNERS.heroTitleMobile}
-                alt="Uma comunidade baseada em Medalhas Digitais"
-                className="mx-auto h-auto w-full max-w-[340px] sm:hidden"
-                onError={() => setHeroBannerFailed(true)}
-              />
-            </>
+            <TiltHeroBanner
+              desktopSrc={BANNERS.heroTitleDesktop}
+              mobileSrc={BANNERS.heroTitleMobile}
+              alt="Uma comunidade baseada em Medalhas Digitais"
+              onError={() => setHeroBannerFailed(true)}
+            />
           )}
         </motion.div>
 
@@ -259,14 +364,18 @@ export function Badges() {
       </section>
 
       {/* O QUE É UMA MEDALHA DIGITAL */}
-      <section className="relative overflow-hidden border-t px-6 pb-16 pt-24 sm:pt-32" style={{ borderColor: 'var(--hairline)', background: '#000' }}>
-        <div
+      <section
+        ref={whatIsRef}
+        className="relative overflow-hidden border-t px-6 pb-16 pt-24 sm:pt-32"
+        style={{ borderColor: 'var(--hairline)', background: '#000' }}
+      >
+        <motion.div
           className="pointer-events-none absolute -left-24 top-1/4 h-[380px] w-[380px] rounded-full sm:-left-32 sm:h-[460px] sm:w-[460px]"
-          style={{ background: 'radial-gradient(circle, rgba(205,164,77,0.55), transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, rgba(205,164,77,0.55), transparent 70%)', y: blobLeftY, opacity: blobOpacity }}
         />
-        <div
+        <motion.div
           className="pointer-events-none absolute -right-24 bottom-0 h-[380px] w-[380px] rounded-full sm:-right-32 sm:h-[460px] sm:w-[460px]"
-          style={{ background: 'radial-gradient(circle, rgba(205,164,77,0.55), transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, rgba(205,164,77,0.55), transparent 70%)', y: blobRightY, opacity: blobOpacity }}
         />
         <motion.div
           variants={fadeUp}
