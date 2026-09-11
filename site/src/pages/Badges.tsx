@@ -236,16 +236,16 @@ export function Badges() {
           initial="hidden"
           animate="show"
           transition={{ delay: 0.2 }}
-          className="relative z-10 mx-auto mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-6 sm:mt-12 sm:gap-x-20"
+          className="relative z-10 mx-auto mt-10 grid max-w-sm grid-cols-3 items-start justify-center gap-x-2 sm:mt-12 sm:flex sm:max-w-none sm:items-center sm:gap-x-20"
         >
           {stats.map((stat, i) => (
-            <div key={stat.label} className="flex items-center gap-x-8 sm:gap-x-20">
+            <div key={stat.label} className="flex items-center justify-center sm:gap-x-20">
               {i > 0 && <span className="hidden h-10 w-px sm:block" style={{ background: 'var(--hairline)' }} />}
               <div className="text-center">
-                <div className="tabular text-2xl font-semibold sm:text-4xl" style={{ color: 'var(--gold-bright)' }}>
+                <div className="tabular text-xl font-semibold sm:text-4xl" style={{ color: 'var(--gold-bright)' }}>
                   <CountUp value={stat.value} prefix={stat.prefix} />
                 </div>
-                <div className="mt-2 whitespace-nowrap text-[10px] tracking-widest sm:text-xs" style={{ color: 'var(--ink-muted)' }}>
+                <div className="mt-2 text-[9px] leading-tight tracking-wide sm:whitespace-nowrap sm:text-xs sm:tracking-widest" style={{ color: 'var(--ink-muted)' }}>
                   {stat.label.toUpperCase()}
                 </div>
               </div>
