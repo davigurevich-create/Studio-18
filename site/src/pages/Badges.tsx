@@ -590,9 +590,19 @@ export function Badges() {
         </div>
       </section>
 
-      {/* RESPIRO — foto real dos colecionadores contemplando os sets. */}
-      <div className="relative h-[52svh] min-h-[300px] overflow-hidden sm:h-[70svh]" style={{ background: 'linear-gradient(120deg, #14120d, var(--gold-dim))' }}>
+      {/* RESPIRO — foto real dos colecionadores contemplando os sets.
+          Faixas de degradê pro preto no topo e na base fundem a foto com
+          as seções vizinhas, em vez de terminar numa borda seca. */}
+      <div className="relative h-[64svh] min-h-[420px] overflow-hidden sm:h-[70svh]" style={{ background: 'linear-gradient(120deg, #14120d, var(--gold-dim))' }}>
         <BannerBackground desktop={BANNERS.flowDesktop} mobile={BANNERS.flowMobile} />
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-24 sm:h-32"
+          style={{ background: 'linear-gradient(to bottom, #000, transparent)' }}
+        />
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-24 sm:h-32"
+          style={{ background: 'linear-gradient(to top, #000, transparent)' }}
+        />
       </div>
 
       {/* GAMIFICAÇÃO */}
