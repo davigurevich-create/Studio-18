@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { motion, useMotionValue, useScroll, useSpring, useTransform } from 'framer-motion'
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from 'framer-motion'
 import { Award, ChevronDown, Trophy, Wrench } from 'lucide-react'
 import { SpotifySection } from '@/components/SpotifySection'
 
@@ -191,6 +191,94 @@ function MirrorText({ children, className }: { children: ReactNode; className: s
         {children}
       </p>
     </div>
+  )
+}
+
+// Quebra um parágrafo em palavras, marcando como "gold" as que caem
+// dentro de uma frase de destaque (goldPhrase) — mesma ideia do Word[]
+// do RevealText.tsx, só que derivada de uma frase corrida em vez de um
+// array escrito à mão.
+function splitWords(text: string, goldPhrase?: string): { text: string; gold?: boolean }[] {
+  const idx = goldPhrase ? text.indexOf(goldPhrase) : -1
+  if (idx === -1) return text.split(' ').map((w) => ({ text: w }))
+  const before = text.slice(0, idx).trim()
+  const after = text.slice(idx + goldPhrase!.length).trim()
+  const words: { text: string; gold?: boolean }[] = []
+  if (before) words.push(...before.split(' ').map((w) => ({ text: w })))
+  words.push(...goldPhrase!.split(' ').map((w) => ({ text: w, gold: true })))
+  if (after) words.push(...after.split(' ').map((w) => ({ text: w })))
+  // Pontuação colada direto na frase de destaque (ex: "Badge," ou
+  // "reconhecida.") vira um token isolado — gruda de volta na palavra
+  // anterior em vez de aparecer separada por um espaço indevido.
+  for (let i = words.length - 1; i > 0; i--) {
+    if (/^[.,;:!?)]+$/.test(words[i].text)) {
+      words[i - 1] = { ...words[i - 1], text: words[i - 1].text + words[i].text }
+      words.splice(i, 1)
+    }
+  }
+  return words
+}
+
+function BlurWord({
+  text,
+  gold,
+  progress,
+  index,
+  total,
+}: {
+  text: string
+  gold?: boolean
+  progress: MotionValue<number>
+  index: number
+  total: number
+}) {
+  // Janelas de revelação bem largas e sobrepostas entre palavras vizinhas
+  // — várias palavras ficam "em trânsito" ao mesmo tempo, o que suaviza o
+  // efeito (em vez de cada palavra "estalar" nítida uma de cada vez).
+  const span = 1 / total
+  const start = index * span * 0.55
+  const end = Math.min(1, start + span * 7)
+  const opacity = useTransform(progress, [start, end], [0.25, 1])
+  const blurAmount = useTransform(progress, [start, end], [5, 0])
+  const filter = useMotionTemplate`blur(${blurAmount}px)`
+
+  return (
+    <motion.span style={{ opacity, filter, color: gold ? 'var(--gold-bright)' : undefined, display: 'inline-block' }}>
+      {text}
+    </motion.span>
+  )
+}
+
+/**
+ * Parágrafo que revela palavra por palavra conforme a rolagem — cada
+ * palavra nasce suavemente borrada e semi-transparente, ganhando nitidez
+ * conforme a seção entra em foco (em vez do bloco inteiro aparecer de
+ * uma vez com fadeUp).
+ */
+function BlurRevealParagraph({
+  text,
+  goldPhrase,
+  className,
+  style,
+}: {
+  text: string
+  goldPhrase?: string
+  className?: string
+  style?: CSSProperties
+}) {
+  const ref = useRef<HTMLParagraphElement>(null)
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 0.9', 'start 0.35'] })
+  const words = useMemo(() => splitWords(text, goldPhrase), [text, goldPhrase])
+
+  return (
+    <p ref={ref} className={className} style={style}>
+      {words.map((w, i) => (
+        <Fragment key={i}>
+          <BlurWord text={w.text} gold={w.gold} progress={scrollYProgress} index={i} total={words.length} />
+          {i < words.length - 1 ? ' ' : ''}
+        </Fragment>
+      ))}
+    </p>
   )
 }
 
@@ -386,17 +474,18 @@ export function Badges() {
         >
           <p className="eyebrow mb-4">Studio 18 × BOB Brasil Open Badge</p>
           <h2 className="mb-6 text-3xl font-medium sm:text-4xl">O que é uma Medalha Digital (Open Badge)?</h2>
-          <p className="mb-6 text-base leading-relaxed sm:text-lg" style={{ color: 'var(--ink-secondary)' }}>
-            Open Badge é o padrão internacional de credenciais digitais (Open Badge Specification, criado pela
-            Mozilla Foundation) — um certificado à prova de falsificação, que carrega os critérios exatos de quem,
-            como e por que foi conquistado. As Medalhas Digitais da Studio 18 são emitidas em parceria com a{' '}
-            <span style={{ color: 'var(--gold-bright)' }}>BOB — Brasil Open Badge</span>, a maior plataforma do
-            Brasil no formato, dentro de um portal 100% personalizado da Studio 18.
-          </p>
-          <p className="mb-8 text-lg font-medium sm:text-xl" style={{ color: 'var(--ink)' }}>
-            Porque cada set montado é{' '}
-            <span style={{ color: 'var(--gold-bright)' }}>uma conquista que merece ser reconhecida</span>.
-          </p>
+          <BlurRevealParagraph
+            className="mb-6 text-base leading-relaxed sm:text-lg"
+            style={{ color: 'var(--ink-secondary)' }}
+            goldPhrase="BOB — Brasil Open Badge"
+            text="Open Badge é o padrão internacional de credenciais digitais (Open Badge Specification, criado pela Mozilla Foundation) — um certificado à prova de falsificação, que carrega os critérios exatos de quem, como e por que foi conquistado. As Medalhas Digitais da Studio 18 são emitidas em parceria com a BOB — Brasil Open Badge, a maior plataforma do Brasil no formato, dentro de um portal 100% personalizado da Studio 18."
+          />
+          <BlurRevealParagraph
+            className="mb-8 text-lg font-medium sm:text-xl"
+            style={{ color: 'var(--ink)' }}
+            goldPhrase="uma conquista que merece ser reconhecida"
+            text="Porque cada set montado é uma conquista que merece ser reconhecida."
+          />
           <a
             href={BOB_URL}
             target="_blank"
