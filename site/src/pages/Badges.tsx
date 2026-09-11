@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 import { SpotifySection } from '@/components/SpotifySection'
@@ -18,6 +18,8 @@ const BANNERS = {
   heroTitleMobile: '/banner-hero-badges-mobile.png',
   flowDesktop: '/badges-flow-desktop.jpg',
   flowMobile: '/badges-flow-mobile.jpg',
+  discountDesktop: '/badges-gamification-discount-desktop.png',
+  discountMobile: '/badges-gamification-discount-mobile.png',
 }
 
 function BannerBackground({ desktop, mobile }: { desktop: string; mobile: string }) {
@@ -75,16 +77,20 @@ function StepBanner({ index, title, desktop, mobile }: { index: number; title: s
  * permissão do iOS disparado no primeiro toque, já que o navegador exige
  * um gesto do usuário pra liberar o sensor).
  */
-function TiltHeroBanner({
+function TiltBanner({
   desktopSrc,
   mobileSrc,
   alt,
   onError,
+  desktopMaxW = 'max-w-[640px]',
+  mobileMaxW = 'max-w-[340px]',
 }: {
   desktopSrc: string
   mobileSrc: string
   alt: string
   onError: () => void
+  desktopMaxW?: string
+  mobileMaxW?: string
 }) {
   const tiltSpring = { stiffness: 60, damping: 16, mass: 0.5 }
 
@@ -155,7 +161,7 @@ function TiltHeroBanner({
           src={desktopSrc}
           alt={alt}
           onError={onError}
-          className="mx-auto h-auto w-full max-w-[640px]"
+          className={`mx-auto h-auto w-full ${desktopMaxW}`}
           style={{ rotateX: rotateXDesktop, rotateY: rotateYDesktop }}
         />
       </div>
@@ -164,7 +170,7 @@ function TiltHeroBanner({
           src={mobileSrc}
           alt={alt}
           onError={onError}
-          className="mx-auto h-auto w-full max-w-[340px]"
+          className={`mx-auto h-auto w-full ${mobileMaxW}`}
           style={{ rotateX: rotateXMobile, rotateY: rotateYMobile }}
         />
       </div>
@@ -184,36 +190,6 @@ const MEDALS = [
   '/badges-medal-05.jpg',
   '/badges-medal-06.jpg',
 ]
-
-/**
- * Texto grande "espelhado" — mesmo esticamento vertical (scaleY) já usado
- * no texto de impacto de Quem Somos/Manifesto (RevealText.tsx), com uma
- * cópia espelhada por baixo que desaparece em degradê, dando o efeito de
- * reflexo premium do design de referência.
- */
-function MirrorText({ children, className }: { children: ReactNode; className: string }) {
-  const style: CSSProperties = { transform: 'scaleY(1.16)', transformOrigin: 'bottom' }
-  return (
-    <div className="relative">
-      <p className={className} style={style}>
-        {children}
-      </p>
-      <p
-        aria-hidden="true"
-        className={`${className} pointer-events-none absolute inset-x-0 top-full select-none`}
-        style={{
-          transform: 'scaleY(-1.16)',
-          transformOrigin: 'top',
-          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.4), transparent 70%)',
-          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.4), transparent 70%)',
-          opacity: 0.5,
-        }}
-      >
-        {children}
-      </p>
-    </div>
-  )
-}
 
 // Quebra um parágrafo em palavras, marcando como "gold" as que caem
 // dentro de uma frase de destaque (goldPhrase) — mesma ideia do Word[]
@@ -421,6 +397,7 @@ export function Badges() {
   // invés disso, escondemos a tag e mostramos um título simples no lugar,
   // que some sozinho assim que o arquivo certo for enviado.
   const [heroBannerFailed, setHeroBannerFailed] = useState(false)
+  const [discountBannerFailed, setDiscountBannerFailed] = useState(false)
 
   return (
     <div>
@@ -440,7 +417,7 @@ export function Badges() {
               </p>
             </div>
           ) : (
-            <TiltHeroBanner
+            <TiltBanner
               desktopSrc={BANNERS.heroTitleDesktop}
               mobileSrc={BANNERS.heroTitleMobile}
               alt="Uma comunidade baseada em Medalhas Digitais"
@@ -607,11 +584,15 @@ export function Badges() {
 
       {/* GAMIFICAÇÃO */}
       <section className="px-6 py-24 text-center sm:py-32" style={{ background: '#000' }}>
-        <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-80px' }}>
-          <p className="eyebrow mb-4">A gamificação</p>
-          <MirrorText className="mb-16 text-[10vw] font-black uppercase leading-[0.9] tracking-tight sm:mb-20 sm:text-5xl lg:text-6xl">
-            1 peça = 1 ponto
-          </MirrorText>
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: '-80px' }}
+          className="mb-16 sm:mb-20"
+        >
+          <p className="eyebrow mb-2">A gamificação</p>
+          <h2 className="text-3xl font-medium sm:text-4xl">1 peça = 1 ponto</h2>
         </motion.div>
 
         <div className="mx-auto grid max-w-2xl grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-8">
@@ -655,15 +636,26 @@ export function Badges() {
           transition={{ delay: 0.15 }}
           className="mt-20 sm:mt-28"
         >
-          <p className="mb-4 text-sm" style={{ color: 'var(--ink-secondary)' }}>
-            As duas medalhas de marco também liberam
-          </p>
-          <MirrorText className="text-[13vw] font-black uppercase leading-[0.88] tracking-tight sm:text-7xl lg:text-8xl">
-            =10% desconto
-          </MirrorText>
-          <p className="mt-6 text-sm" style={{ color: 'var(--ink-muted)' }}>
-            no seu próximo set, revelado na página da sua medalha dentro do portal BOB.
-          </p>
+          {discountBannerFailed ? (
+            <div>
+              <p className="mb-4 text-sm" style={{ color: 'var(--ink-secondary)' }}>
+                As duas medalhas de marco também liberam
+              </p>
+              <h3 className="text-3xl font-medium sm:text-4xl">10% de desconto</h3>
+              <p className="mt-6 text-sm" style={{ color: 'var(--ink-muted)' }}>
+                no seu próximo set, revelado na página da sua medalha dentro do portal BOB.
+              </p>
+            </div>
+          ) : (
+            <TiltBanner
+              desktopSrc={BANNERS.discountDesktop}
+              mobileSrc={BANNERS.discountMobile}
+              alt="Estes badges destravam um cupom de 10% de desconto no seu próximo set, disponibilizado dentro do seu badge"
+              onError={() => setDiscountBannerFailed(true)}
+              desktopMaxW="max-w-[460px]"
+              mobileMaxW="max-w-[300px]"
+            />
+          )}
         </motion.div>
       </section>
 
