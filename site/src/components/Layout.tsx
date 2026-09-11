@@ -20,6 +20,7 @@ const navLinks = [
 export function Layout() {
   const location = useLocation()
   const [scrolled, setScrolled] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
   const { totalCount } = useCart()
@@ -29,6 +30,17 @@ export function Layout() {
     const onScroll = () => setScrolled(window.scrollY > 24)
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Vira "card" flutuante arredondado só no desktop e só depois de rolar —
+  // no carregamento da página, ou no mobile, o cabeçalho continua a barra
+  // reta de sempre.
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 640px)')
+    const update = () => setIsDesktop(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
   }, [])
 
   useEffect(() => {
@@ -68,17 +80,42 @@ export function Layout() {
   // no topo da pagina, antes do usuario rolar.
   const forceDarkHeader = location.pathname.startsWith('/blog/')
   const showDarkHeader = scrolled || menuOpen || forceDarkHeader
+  // Só vira o card flutuante quando já rolou (nunca no carregamento) e só
+  // no desktop — no mobile, mesmo rolado, continua a barra reta de sempre.
+  const floatingCard = scrolled && !menuOpen && isDesktop
+
+  const headerStyle = floatingCard
+    ? {
+        top: 12,
+        left: '50%',
+        width: 'calc(100% - 2rem)',
+        maxWidth: 1220,
+        borderRadius: 9999,
+        transform: 'translateX(-50%)',
+        background: 'rgba(6,6,6,0.94)',
+        border: '1px solid var(--hairline-strong)',
+        boxShadow: '0 16px 40px rgba(0,0,0,0.55)',
+        backdropFilter: 'blur(14px)',
+        overflow: 'hidden' as const,
+      }
+    : {
+        top: 0,
+        left: 0,
+        width: '100%',
+        maxWidth: '100%',
+        borderRadius: 0,
+        transform: 'none',
+        background: showDarkHeader ? 'rgba(6,6,6,0.85)' : 'transparent',
+        border: 'none',
+        borderBottom: showDarkHeader ? '1px solid var(--hairline)' : '1px solid transparent',
+        boxShadow: 'none',
+        backdropFilter: showDarkHeader ? 'blur(10px)' : 'none',
+        overflow: 'visible' as const,
+      }
 
   return (
     <div style={{ background: 'var(--carbon-0)', color: 'var(--ink)', minHeight: '100vh' }}>
-      <header
-        className="fixed inset-x-0 top-0 z-50 transition-colors"
-        style={{
-          background: showDarkHeader ? 'rgba(6,6,6,0.85)' : 'transparent',
-          borderBottom: showDarkHeader ? '1px solid var(--hairline)' : '1px solid transparent',
-          backdropFilter: showDarkHeader ? 'blur(10px)' : 'none',
-        }}
-      >
+      <header className="fixed z-50 transition-all duration-300" style={headerStyle}>
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center">
             <img src="/logo-studio18.png" alt="Studio 18" className="h-8 w-auto sm:h-10" />
