@@ -4,6 +4,14 @@ import { Badge, Button, Card, PageHeader, formatBRL } from '@/components/ui'
 import type { NewSaleItemInput } from '@/lib/api'
 import type { Product, ProductStock, Sale, SaleItem, SaleStatus } from '@/types/domain'
 
+function formatPhone(phone: string | null | undefined): string | null {
+  if (!phone) return null
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length === 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+  if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
+  return digits || null
+}
+
 const statusTone: Record<SaleStatus, 'muted' | 'good' | 'warning' | 'critical' | 'info'> = {
   pendente: 'warning',
   pago: 'info',
@@ -79,7 +87,7 @@ export function Vendas() {
           .map((i) => products.find((p) => p.id === i.product_id)?.name ?? '')
           .join(' ')
           .toLowerCase()
-        const haystack = `${s.customer_name ?? ''} ${s.customer_contact ?? ''} ${s.id} ${productNames}`.toLowerCase()
+        const haystack = `${s.customer_name ?? ''} ${s.customer_contact ?? ''} ${s.customer_phone ?? ''} ${s.id} ${productNames}`.toLowerCase()
         if (!haystack.includes(q)) return false
       }
       return true
@@ -225,6 +233,9 @@ export function Vendas() {
                     <div className="font-medium">{s.customer_name ?? '—'}</div>
                     <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                       {s.customer_contact ?? '—'}
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {formatPhone(s.customer_phone) ?? '—'}
                     </div>
                     <div className="mt-0.5 text-xs capitalize" style={{ color: 'var(--text-muted)' }}>
                       {s.channel}
