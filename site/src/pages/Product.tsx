@@ -6,7 +6,7 @@ import { ProductGallery } from '@/components/ProductGallery'
 import { RestockWaitlistForm } from '@/components/RestockWaitlistForm'
 import { getProduct, getShippingOptions } from '@/lib/api'
 import { formatBRL } from '@/lib/format'
-import { installmentPrice, LOW_STOCK_THRESHOLD, MAX_INSTALLMENTS, unitPriceWithMotor } from '@/lib/pricing'
+import { installmentValue, INTEREST_FREE_INSTALLMENTS, LOW_STOCK_THRESHOLD, unitPriceWithMotor } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { useFavorites } from '@/lib/favorites'
@@ -193,7 +193,7 @@ export function Product() {
                       </span>
                     </div>
                     <div className="mt-1 text-xs" style={{ color: 'var(--ink-muted)' }}>
-                      ou {MAX_INSTALLMENTS}x de {formatBRL(installmentPrice(effectivePrice))} no cartão
+                      ou {INTEREST_FREE_INSTALLMENTS}x de {formatBRL(installmentValue(effectivePrice, INTEREST_FREE_INSTALLMENTS))} sem juros
                     </div>
                   </>
                 )}

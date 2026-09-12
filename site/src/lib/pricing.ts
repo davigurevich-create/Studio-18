@@ -7,16 +7,6 @@ export function pixPrice(fullPrice: number): number {
   return Math.round(fullPrice * (1 - PIX_DISCOUNT) * 100) / 100
 }
 
-// Máximo de parcelas oferecido no cartão no checkout — a taxa de juros real
-// (se houver, a partir de qual parcela) é decidida pelo Mercado Pago
-// conforme o cartão do cliente, então mostramos só o valor de referência
-// nas vitrines, sem prometer "sem juros".
-export const MAX_INSTALLMENTS = 12
-
-export function installmentPrice(fullPrice: number, installments = MAX_INSTALLMENTS): number {
-  return Math.round((fullPrice / installments) * 100) / 100
-}
-
 // De 1x a 6x não tem juros (fica por conta da loja). De 7x a 12x aplica
 // juros compostos de 1,99% ao mês (padrão de varejo online) pela tabela
 // Price — quanto mais parcelas, maior o total pago, exatamente como um
@@ -24,6 +14,11 @@ export function installmentPrice(fullPrice: number, installments = MAX_INSTALLME
 // rede-create-payment (fonte da verdade do valor cobrado de fato).
 export const INSTALLMENT_SURCHARGE_FROM = 7
 export const INSTALLMENT_MONTHLY_INTEREST_RATE = 0.0199
+
+// Parcela de referência mostrada nas vitrines (cards e página de produto) —
+// a última sem juros, pra anunciar "6x sem juros" em vez do valor com juros
+// embutido de uma parcela maior.
+export const INTEREST_FREE_INSTALLMENTS = INSTALLMENT_SURCHARGE_FROM - 1
 
 // Valor de cada parcela — pela tabela Price quando tem juros (7x-12x).
 export function installmentValue(total: number, installments: number): number {
