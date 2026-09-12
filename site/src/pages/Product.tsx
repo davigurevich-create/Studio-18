@@ -6,7 +6,7 @@ import { ProductGallery } from '@/components/ProductGallery'
 import { RestockWaitlistForm } from '@/components/RestockWaitlistForm'
 import { getProduct, getShippingOptions } from '@/lib/api'
 import { formatBRL } from '@/lib/format'
-import { installmentPrice, LOW_STOCK_THRESHOLD, MAX_INSTALLMENTS, pixPrice, unitPriceWithMotor } from '@/lib/pricing'
+import { installmentPrice, LOW_STOCK_THRESHOLD, MAX_INSTALLMENTS, unitPriceWithMotor } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { useFavorites } from '@/lib/favorites'
@@ -185,13 +185,10 @@ export function Product() {
                 ) : (
                   <>
                     <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-                      À VISTA NO PIX
+                      PREÇO
                     </div>
                     <div className="flex items-baseline gap-3">
                       <span className="tabular text-3xl font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                        {formatBRL(pixPrice(effectivePrice))}
-                      </span>
-                      <span className="tabular text-sm line-through" style={{ color: 'var(--ink-muted)' }}>
                         {formatBRL(effectivePrice)}
                       </span>
                     </div>

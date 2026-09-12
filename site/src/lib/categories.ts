@@ -74,7 +74,6 @@ export const categories: CategoryDef[] = [
     bannerMobile: '/banner-motos-mobile.png',
     skus: [
       'S18-002', // BMW R1300GS
-      'S18-019', // Zero Pulse
     ],
   },
 ]

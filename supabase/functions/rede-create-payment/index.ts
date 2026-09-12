@@ -91,11 +91,11 @@ function pixPrice(fullPrice: number): number {
   return Math.round(fullPrice * (1 - PIX_DISCOUNT) * 100) / 100
 }
 
-// De 1x a 3x não tem juros (fica por conta da loja). De 4x a 12x aplica
+// De 1x a 6x não tem juros (fica por conta da loja). De 7x a 12x aplica
 // juros compostos de 1,99% ao mês (padrão de varejo online) pela tabela
 // Price — quanto mais parcelas, maior o total pago. Mesma regra e mesmos
 // valores do front-end (site/src/lib/pricing.ts).
-const INSTALLMENT_SURCHARGE_FROM = 4
+const INSTALLMENT_SURCHARGE_FROM = 7
 const INSTALLMENT_MONTHLY_INTEREST_RATE = 0.0199
 function installmentTotal(total: number, installments: number): number {
   if (installments < INSTALLMENT_SURCHARGE_FROM) return total

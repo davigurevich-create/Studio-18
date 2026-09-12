@@ -22,9 +22,13 @@ import { useAuth } from '@/lib/auth'
 import { useTurnstile } from '@/lib/useTurnstile'
 import type { CatalogProduct, PaymentMethod, ShippingOption } from '@/types/catalog'
 
+// PIX temporariamente removido das opções de pagamento — ainda não está
+// funcionando (ver conversa com a Rede sobre o returnCode 370). Só cartão
+// disponível por enquanto. Pra reativar, basta descomentar a linha do PIX
+// abaixo.
 const methods: { id: PaymentMethod; label: string; hint: string; badge?: string }[] = [
   { id: 'cartao', label: 'Cartão', hint: 'Crédito, em até 12x' },
-  { id: 'pix', label: 'PIX', hint: 'Aprovação em minutos', badge: '-5%' },
+  // { id: 'pix', label: 'PIX', hint: 'Aprovação em minutos', badge: '-5%' },
 ]
 
 export function Checkout() {
@@ -549,7 +553,7 @@ export function Checkout() {
 
           <section className="flex flex-col gap-4">
             <SectionLabel>Forma de pagamento</SectionLabel>
-            <div className="grid grid-cols-2 gap-3">
+            <div className={`grid gap-3 ${methods.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
               {methods.map((m) => (
                 <button
                   key={m.id}

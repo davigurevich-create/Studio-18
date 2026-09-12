@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowUpRight, Cog, Heart, ShoppingBag } from 'lucide-react'
 import { ProductArt } from '@/components/ProductArt'
 import { formatBRL } from '@/lib/format'
-import { installmentPrice, LOW_STOCK_THRESHOLD, MAX_INSTALLMENTS, pixPrice, unitPriceWithMotor } from '@/lib/pricing'
+import { installmentPrice, LOW_STOCK_THRESHOLD, MAX_INSTALLMENTS, unitPriceWithMotor } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { useFavorites } from '@/lib/favorites'
@@ -154,10 +154,10 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
               ) : (
                 <>
                   <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-                    À VISTA NO PIX
+                    PREÇO
                   </div>
                   <div className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                    {formatBRL(pixPrice(effectivePrice))}
+                    {formatBRL(effectivePrice)}
                   </div>
                   <div className="tabular text-[11px]" style={{ color: 'var(--ink-muted)' }}>
                     ou {MAX_INSTALLMENTS}x de {formatBRL(installmentPrice(effectivePrice))} no cartão
