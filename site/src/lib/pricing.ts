@@ -38,8 +38,9 @@ export function installmentTotal(total: number, installments: number): number {
 }
 
 // Nível de estoque considerado baixo o suficiente para mostrar um aviso de
-// urgência na vitrine ("restam poucas unidades").
-export const LOW_STOCK_THRESHOLD = 5
+// urgência na vitrine ("restam poucas unidades") — só nas últimas 2
+// unidades (2 ou 1).
+export const LOW_STOCK_THRESHOLD = 2
 
 // Preço unitário efetivo de um produto, somando o opcional de motor
 // detalhado quando escolhido — usado em qualquer lugar que precise exibir
