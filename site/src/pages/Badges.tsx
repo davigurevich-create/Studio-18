@@ -355,14 +355,14 @@ const steps = [
     bannerMobile: '/badges-step-02-mobile.png',
   },
   {
-    title: 'Receba seu Badge',
-    text: 'Sua conquista vira uma credencial digital verificável, emitida pela BOB e guardada na sua mochila digital.',
+    title: 'Receba sua medalha',
+    text: 'Sua conquista vira uma medalha digital verificável, emitida pela BOB e guardada no seu portal de medalhas.',
     bannerDesktop: '/badges-step-03-desktop.png',
     bannerMobile: '/badges-step-03-mobile.png',
   },
   {
     title: 'Suba no ranking',
-    text: 'Cada badge vale pontos — o mesmo número de peças do set. Acumule pontos e ganhe benefícios exclusivos.',
+    text: 'Cada medalha vale pontos — o mesmo número de peças do set. Acumule pontos e ganhe benefícios exclusivos.',
     bannerDesktop: '/badges-step-04-desktop.png',
     bannerMobile: '/badges-step-04-mobile.png',
   },
@@ -371,13 +371,13 @@ const steps = [
 const marcos = [
   {
     image: '/mestre-construtor.png',
-    title: 'Badge: Mestre Construtor',
+    title: 'Medalha: Mestre Construtor',
     criteria: '3 sets distintos concluídos',
     url: 'https://brasilopenbadge.com.br/partner/studio-18&pg=1be28d1fda591a84d6d478dc897495d4&b=11443',
   },
   {
     image: '/clube-10k.png',
-    title: 'Badge: Clube 10K — Engenheiro Chefe',
+    title: 'Medalha: Clube 10K — Engenheiro Chefe',
     criteria: '10.000 pontos acumulados',
     url: 'https://brasilopenbadge.com.br/partner/studio-18&pg=1be28d1fda591a84d6d478dc897495d4&b=11444',
   },
@@ -478,13 +478,13 @@ export function Badges() {
           viewport={{ once: true, margin: '-80px' }}
           className="relative z-10 mx-auto max-w-2xl text-center"
         >
-          <p className="eyebrow mb-4">Studio 18 × BOB Brasil Open Badge</p>
-          <h2 className="mb-6 text-3xl font-medium sm:text-4xl">O que é uma Medalha Digital (Open Badge)?</h2>
+          <p className="eyebrow mb-4">Studio 18 × BOB</p>
+          <h2 className="mb-6 text-3xl font-medium sm:text-4xl">O que é uma Medalha Digital?</h2>
           <BlurRevealParagraph
             className="mb-6 text-base leading-relaxed sm:text-lg"
             style={{ color: 'var(--ink-secondary)' }}
-            goldPhrase="BOB — Brasil Open Badge"
-            text="Open Badge é o padrão internacional de credenciais digitais (Open Badge Specification, criado pela Mozilla Foundation) — um certificado à prova de falsificação, que carrega os critérios exatos de quem, como e por que foi conquistado. As Medalhas Digitais da Studio 18 são emitidas em parceria com a BOB — Brasil Open Badge, a maior plataforma do Brasil no formato, dentro de um portal 100% personalizado da Studio 18."
+            goldPhrase="BOB"
+            text="É um certificado digital exclusivo que comprova a montagem do seu set — à prova de falsificação, com todos os detalhes de quando e como você conquistou. Suas medalhas ficam guardadas num portal 100% Studio 18, em parceria com a BOB, a maior plataforma do Brasil nesse formato."
           />
           <BlurRevealParagraph
             className="mb-8 text-lg font-medium sm:text-xl"
@@ -521,7 +521,7 @@ export function Badges() {
           className="mx-auto mb-20 max-w-2xl text-center sm:mb-28"
         >
           <p className="eyebrow mb-2">Como funciona</p>
-          <h2 className="text-3xl font-medium sm:text-4xl">Da montagem ao Badge</h2>
+          <h2 className="text-3xl font-medium sm:text-4xl">Da montagem à medalha</h2>
         </motion.div>
 
         <div ref={stepsListRef} className="relative mx-auto max-w-3xl">
@@ -657,7 +657,7 @@ export function Badges() {
             <TiltBanner
               desktopSrc={BANNERS.discountDesktop}
               mobileSrc={BANNERS.discountMobile}
-              alt="Estes badges destravam um cupom de 10% de desconto no seu próximo set, disponibilizado dentro do seu badge"
+              alt="Estas medalhas destravam um cupom de 10% de desconto no seu próximo set, disponibilizado dentro da sua medalha"
               onError={() => setDiscountBannerFailed(true)}
               desktopMaxW="max-w-[460px]"
               mobileMaxW="max-w-[300px]"
