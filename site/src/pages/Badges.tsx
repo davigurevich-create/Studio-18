@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from 'framer-motion'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const BOB_URL = 'https://brasilopenbadge.com.br/partner/studio-18'
 const INSTAGRAM_URL = 'https://www.instagram.com/studio18_bricks/'
@@ -86,7 +86,7 @@ function StepBanner({ index, title, desktop, mobile }: { index: number; title: s
 // a sensação de progresso é só o "estojo" do card (fundo/borda/brilho,
 // cada vez mais rico) e a cor do número de desconto, nunca o tamanho de
 // nada dentro dele.
-const MEDAL_SIZE = 84
+const MEDAL_SIZE = 128
 const PCT_FONT_SIZE = 30
 
 // Um degrau visual bem marcado por nível, do mais discreto (10K) ao mais
@@ -175,7 +175,7 @@ function EliteClubCard({ club, index }: { club: (typeof eliteClubs)[number]; ind
       <div className="relative z-10 mt-1 text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
         DE DESCONTO
       </div>
-      <div className="relative z-10 mt-4 text-[11px]" style={{ color: 'var(--ink-muted)' }}>
+      <div className="relative z-10 mt-4 text-sm font-medium" style={{ color: 'var(--ink-muted)' }}>
         {club.points}
       </div>
     </motion.div>
@@ -507,6 +507,38 @@ export function Badges() {
   // que some sozinho assim que o arquivo certo for enviado.
   const [heroBannerFailed, setHeroBannerFailed] = useState(false)
 
+  // Carrossel dos clubes no mobile — mesmo esquema de setas + bolinhas de
+  // posição já usado nos trilhos de produto por categoria, em vez de um
+  // texto estático de "arraste pro lado".
+  const eliteTrackRef = useRef<HTMLDivElement>(null)
+  const [eliteActive, setEliteActive] = useState(0)
+
+  const scrollToEliteClub = (index: number) => {
+    const track = eliteTrackRef.current
+    if (!track) return
+    const clamped = Math.max(0, Math.min(eliteClubs.length - 1, index))
+    const card = track.children[clamped] as HTMLElement | undefined
+    if (!card) return
+    track.scrollTo({ left: card.offsetLeft - track.offsetLeft, behavior: 'smooth' })
+  }
+
+  const handleEliteScroll = () => {
+    const track = eliteTrackRef.current
+    if (!track) return
+    const trackCenter = track.scrollLeft + track.clientWidth / 2
+    let closest = 0
+    let closestDistance = Infinity
+    Array.from(track.children).forEach((child, i) => {
+      const el = child as HTMLElement
+      const distance = Math.abs(el.offsetLeft + el.offsetWidth / 2 - trackCenter)
+      if (distance < closestDistance) {
+        closestDistance = distance
+        closest = i
+      }
+    })
+    setEliteActive(closest)
+  }
+
   return (
     <div>
       {/* HERO — fundo 100% preto, sem foto; o título vem de um banner
@@ -718,9 +750,33 @@ export function Badges() {
           ))}
         </div>
 
-        {/* Mobile — carrossel com scroll-snap */}
+        {/* Mobile — carrossel com scroll-snap, setas + bolinhas de posição
+            (mesmo esquema dos trilhos de produto por categoria) */}
         <div className="sm:hidden">
+          <div className="mb-3 flex justify-end gap-2">
+            <button
+              type="button"
+              aria-label="Clube anterior"
+              onClick={() => scrollToEliteClub(eliteActive - 1)}
+              disabled={eliteActive === 0}
+              className="glass-pill flex h-9 w-9 items-center justify-center disabled:opacity-30"
+            >
+              <ChevronLeft size={16} strokeWidth={2.5} className="relative z-10" style={{ color: 'var(--ink-secondary)' }} />
+            </button>
+            <button
+              type="button"
+              aria-label="Próximo clube"
+              onClick={() => scrollToEliteClub(eliteActive + 1)}
+              disabled={eliteActive === eliteClubs.length - 1}
+              className="glass-pill flex h-9 w-9 items-center justify-center disabled:opacity-30"
+            >
+              <ChevronRight size={16} strokeWidth={2.5} className="relative z-10" style={{ color: 'var(--ink-secondary)' }} />
+            </button>
+          </div>
+
           <div
+            ref={eliteTrackRef}
+            onScroll={handleEliteScroll}
             className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-[10vw] pb-2 [&::-webkit-scrollbar]:hidden"
             style={{ scrollbarWidth: 'none' }}
           >
@@ -730,9 +786,19 @@ export function Badges() {
               </div>
             ))}
           </div>
-          <p className="mt-5 text-[11px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-            ARRASTE PARA VER TODOS OS CLUBES →
-          </p>
+
+          <div className="mt-4 flex justify-center gap-1.5">
+            {eliteClubs.map((_, i) => (
+              <span
+                key={i}
+                className="h-1.5 rounded-full transition-all duration-300"
+                style={{
+                  width: i === eliteActive ? 16 : 6,
+                  background: i === eliteActive ? 'var(--gold-bright)' : 'var(--hairline-strong)',
+                }}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
