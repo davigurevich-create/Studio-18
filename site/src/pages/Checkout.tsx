@@ -119,6 +119,14 @@ export function Checkout() {
       .catch(() => {})
   }, [session])
 
+  // Ao trocar pra tela de confirmação (ou de espera do PIX), volta pro
+  // topo — sem isso a página abria na posição de scroll que o formulário
+  // estava, o que quase sempre deixava o conteúdo novo (bem mais curto)
+  // começando fora da tela, como se tivesse rolado tudo sozinho.
+  useEffect(() => {
+    if (step === 'done') window.scrollTo(0, 0)
+  }, [step])
+
   // PIX: a tela de "pedido registrado" fica só com o QR Code até o
   // pagamento ser confirmado — nada de número do pedido, card de conta ou
   // Spotify antes disso (essas informações só fazem sentido depois que a
