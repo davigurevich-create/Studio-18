@@ -15,10 +15,16 @@ const REDE_ENV = Deno.env.get('REDE_ENV') ?? 'sandbox'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
+// v1 (PIX) — mesmo endpoint usado em rede-create-payment. O suporte da
+// Rede confirmou (chamado RITM7838124/RITM7845169) que essa API não fala
+// OAuth2: era isso que fazia essa consulta falhar silenciosamente (batia
+// no endpoint v2 de cartão com um token que a v1 não reconhece), e por
+// isso nenhum PIX confirmava sozinho — o status só nunca saía de
+// "pendente" mesmo com o pagamento aprovado de verdade.
 const REDE_URLS =
   REDE_ENV === 'production'
-    ? { auth: 'https://api.userede.com.br/redelabs/oauth2/token', transactions: 'https://api.userede.com.br/erede/v2/transactions' }
-    : { auth: 'https://rl7-sandbox-api.useredecloud.com.br/oauth2/token', transactions: 'https://sandbox-erede.useredecloud.com.br/v2/transactions' }
+    ? { pixTransactions: 'https://api.userede.com.br/erede/v1/transactions' }
+    : { pixTransactions: 'https://sandbox-erede.useredecloud.com.br/v1/transactions' }
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const EMAIL_FROM = Deno.env.get('EMAIL_FROM') ?? 'Studio 18 <onboarding@resend.dev>'
@@ -59,20 +65,8 @@ function emailShell(title: string, bodyHtml: string): string {
   </div>`
 }
 
-async function getRedeAccessToken(): Promise<string> {
-  const res = await fetch(REDE_URLS.auth, {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${btoa(`${REDE_PV}:${REDE_CLIENT_SECRET}`)}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: 'grant_type=client_credentials',
-  })
-  const data = await res.json().catch(() => null)
-  if (!res.ok || !data?.access_token) {
-    throw new Error('Não foi possível autenticar com a Rede.')
-  }
-  return data.access_token as string
+function pixAuthHeader(): string {
+  return `Basic ${btoa(`${REDE_PV.trim()}:${REDE_CLIENT_SECRET.trim()}`)}`
 }
 
 // status do PIX vem em authorization.status: "Approved" | "Canceled" | "Pending"
@@ -92,11 +86,13 @@ Deno.serve(async (req) => {
       return new Response('ok', { status: 200 })
     }
 
-    const accessToken = await getRedeAccessToken()
-    const queryResponse = await fetch(`${REDE_URLS.transactions}/${tid}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+    const queryResponse = await fetch(`${REDE_URLS.pixTransactions}/${tid}`, {
+      headers: { Authorization: pixAuthHeader() },
     })
-    if (!queryResponse.ok) return new Response('ok', { status: 200 })
+    if (!queryResponse.ok) {
+      console.error('Falha ao consultar transação PIX na Rede:', queryResponse.status, await queryResponse.text().catch(() => ''))
+      return new Response('ok', { status: 200 })
+    }
     const transaction = await queryResponse.json()
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
@@ -136,9 +132,12 @@ Deno.serve(async (req) => {
     }
 
     return new Response('ok', { status: 200 })
-  } catch {
+  } catch (err) {
     // A Rede reenvia se não receber 200 — evitamos loop de retry por erro
-    // nosso respondendo 200 mesmo em falha, e só logamos no servidor.
+    // nosso respondendo 200 mesmo em falha, mas logamos no servidor pra
+    // dar pra investigar (foi a falta desse log que atrasou achar o bug
+    // do endpoint errado aqui embaixo).
+    console.error('Erro no webhook do PIX:', err)
     return new Response('ok', { status: 200 })
   }
 })
