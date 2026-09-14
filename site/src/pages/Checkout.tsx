@@ -22,10 +22,6 @@ import { useAuth } from '@/lib/auth'
 import { useTurnstile } from '@/lib/useTurnstile'
 import type { CatalogProduct, PaymentMethod, ShippingOption } from '@/types/catalog'
 
-// PIX reativado temporariamente só pra teste em produção (fix de
-// autenticação v1/Basic aplicado na Edge Function — ver conversa com a
-// Rede, chamado RITM7838124/RITM7845169). Se o teste falhar, comente a
-// linha do PIX de novo.
 const methods: { id: PaymentMethod; label: string; hint: string; badge?: string }[] = [
   { id: 'cartao', label: 'Cartão', hint: 'Crédito, em até 12x' },
   { id: 'pix', label: 'PIX', hint: 'Aprovação em minutos', badge: '-5%' },

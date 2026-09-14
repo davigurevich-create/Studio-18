@@ -139,15 +139,16 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                     {formatBRL(total)}
                   </span>
                 </div>
-                {/* PIX temporariamente desativado — mensagem de desconto
-                    removida enquanto só o cartão está disponível. */}
+                <p className="mb-4 text-[11px]" style={{ color: 'var(--gold-bright)' }}>
+                  Pague à vista no PIX e ganhe 5% de desconto no checkout.
+                </p>
                 <button
                   type="button"
                   onClick={() => {
                     onClose()
                     navigate('/checkout')
                   }}
-                  className="mt-3 w-full rounded-full px-6 py-3 text-sm font-medium"
+                  className="w-full rounded-full px-6 py-3 text-sm font-medium"
                   style={{ background: 'var(--gold)', color: '#0a0a0a' }}
                 >
                   Finalizar compra

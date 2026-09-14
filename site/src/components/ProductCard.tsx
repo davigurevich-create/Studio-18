@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowUpRight, Cog, Heart, ShoppingBag } from 'lucide-react'
 import { ProductArt } from '@/components/ProductArt'
 import { formatBRL } from '@/lib/format'
-import { installmentValue, INTEREST_FREE_INSTALLMENTS, LOW_STOCK_THRESHOLD, unitPriceWithMotor } from '@/lib/pricing'
+import { installmentValue, INTEREST_FREE_INSTALLMENTS, LOW_STOCK_THRESHOLD, pixPrice, unitPriceWithMotor } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { useFavorites } from '@/lib/favorites'
@@ -154,10 +154,10 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
               ) : (
                 <>
                   <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-                    PREÇO
+                    À VISTA NO PIX
                   </div>
                   <div className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                    {formatBRL(effectivePrice)}
+                    {formatBRL(pixPrice(effectivePrice))}
                   </div>
                   <div className="tabular text-[11px]" style={{ color: 'var(--ink-muted)' }}>
                     ou {INTEREST_FREE_INSTALLMENTS}x de {formatBRL(installmentValue(effectivePrice, INTEREST_FREE_INSTALLMENTS))} sem juros
