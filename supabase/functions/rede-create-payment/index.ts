@@ -192,7 +192,7 @@ async function getRedeAccessToken(): Promise<string> {
   const res = await fetch(REDE_URLS.auth, {
     method: 'POST',
     headers: {
-      Authorization: `Basic ${btoa(`${REDE_PV}:${REDE_CLIENT_SECRET}`)}`,
+      Authorization: `Basic ${btoa(`${REDE_PV.trim()}:${REDE_CLIENT_SECRET.trim()}`)}`,
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: 'grant_type=client_credentials',
@@ -401,7 +401,17 @@ Deno.serve(async (req) => {
     const shortReference = sale.id.replace(/-/g, '').slice(0, 16)
     const amountInCents = Math.round(totalAmount * 100)
 
-    const accessToken = await getRedeAccessToken()
+    // O cartão (v2) usa OAuth2 — token Bearer obtido via client_credentials.
+    // O PIX (v1) é uma API mais antiga da Rede que não fala OAuth2: o
+    // suporte da Rede confirmou (chamado RITM7838124/RITM7845169) que o
+    // endpoint v1 espera Basic base64(pv:chave de integração) direto no
+    // header Authorization de cada chamada — era isso que gerava o erro
+    // "authorization"/"pv inválido", porque estávamos mandando um Bearer
+    // token (que não é um pv de verdade) pra um endpoint que não entende
+    // OAuth2. .trim() nos dois valores como segurança extra contra espaço
+    // ou quebra de linha invisível colados na hora de configurar a secret.
+    const accessToken = paymentMethod === 'cartao' ? await getRedeAccessToken() : null
+    const pixAuthHeader = `Basic ${btoa(`${REDE_PV.trim()}:${REDE_CLIENT_SECRET.trim()}`)}`
 
     let redeBody: Record<string, unknown>
     // corpo sem threeDSecure, usado como plano B se o banco pedir um
@@ -501,7 +511,7 @@ Deno.serve(async (req) => {
     let redeResponse = await fetch(transactionsUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: paymentMethod === 'pix' ? pixAuthHeader : `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(redeBody),
