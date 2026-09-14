@@ -60,16 +60,18 @@ export function Vendas() {
     return Array.from(present).sort()
   }, [sales])
 
-  // Faturamento já realizado (vendas não canceladas, pelo preço de venda
-  // registrado em cada item) vs. o potencial de faturamento ainda "parado"
-  // no estoque atual, pelo preço de venda de tabela de cada SKU.
+  // Faturamento já realizado (total efetivamente cobrado em vendas não
+  // canceladas: itens - desconto + frete + juros de parcelamento, mesma
+  // conta do "Total" de cada linha da tabela e da Visão Geral) vs. o
+  // potencial de faturamento ainda "parado" no estoque atual, pelo preço
+  // de venda de tabela de cada SKU.
   const revenuePotential = useMemo(() => {
     const realized = sales
       .filter((s) => s.status !== 'cancelado')
       .reduce((sum, s) => {
         const items = saleItems.filter((i) => i.sale_id === s.id)
         const itemsTotal = items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0)
-        return sum + itemsTotal - s.discount_brl
+        return sum + itemsTotal - s.discount_brl + s.shipping_cost_brl + (s.installment_fee_brl ?? 0)
       }, 0)
     const remainingStockPotential = stock.reduce((sum, p) => sum + p.quantity_in_stock * p.sale_price_brl, 0)
     const maxPotential = realized + remainingStockPotential
