@@ -10,6 +10,7 @@ import {
   getMyAddresses,
   getMyOrders,
   getMyProfile,
+  getOrderStatus,
   getShippingOptions,
   isDemoMode,
   validateCoupon,
@@ -64,6 +65,7 @@ export function Checkout() {
   const [cardExpiry, setCardExpiry] = useState('')
   const [cardCvv, setCardCvv] = useState('')
   const [cardInstallments, setCardInstallments] = useState(1)
+  const [pixWaitingLong, setPixWaitingLong] = useState(false)
   const { containerRef: turnstileRef, getToken: getTurnstileToken } = useTurnstile()
 
   const copyToClipboard = useCallback((field: 'order' | 'pix', text: string) => {
@@ -114,6 +116,34 @@ export function Checkout() {
       })
       .catch(() => {})
   }, [session])
+
+  // PIX: a tela de "pedido registrado" fica só com o QR Code até o
+  // pagamento ser confirmado — nada de número do pedido, card de conta ou
+  // Spotify antes disso (essas informações só fazem sentido depois que a
+  // compra realmente aconteceu). Consulta o status a cada 5s; assim que
+  // vira "pago" (ou "cancelado"), o result é atualizado e a tela troca
+  // sozinha, sem precisar recarregar a página.
+  useEffect(() => {
+    if (step !== 'done' || method !== 'pix' || !result || result.status === 'pago' || result.status === 'cancelado') {
+      setPixWaitingLong(false)
+      return
+    }
+
+    const orderId = result.orderId
+    const poll = setInterval(async () => {
+      const order = await getOrderStatus(orderId, email).catch(() => null)
+      if (order && order.status !== result.status) {
+        setResult((current) => (current ? { ...current, status: order.status } : current))
+      }
+    }, 5000)
+
+    const longWaitTimer = setTimeout(() => setPixWaitingLong(true), 120000)
+
+    return () => {
+      clearInterval(poll)
+      clearTimeout(longWaitTimer)
+    }
+  }, [step, method, result, email])
 
   const items = useMemo(
     () =>
@@ -339,52 +369,20 @@ export function Checkout() {
     )
   }
 
-  if (step === 'done' && result) {
-    // Mesmo formato curto (8 primeiros caracteres do id) usado em Minha
-    // Conta e no e-mail de confirmação — o UUID inteiro nunca aparece pro
-    // cliente, só serve internamente pras chamadas de API.
-    const shortOrderId = result.orderId.slice(0, 8)
-    // Split em duas colunas no desktop: confirmação + card de conta à
-    // esquerda, playlists do Spotify à direita (ocupando a altura das
-    // duas). No mobile tudo empilha, mas o Spotify entra logo depois da
-    // confirmação principal — antes do card de conta — pra não ficar
-    // escondido lá embaixo, depois de tudo.
+  // PIX ainda não confirmado: só o QR Code + copia-e-cola, sem número do
+  // pedido, card de conta ou Spotify — essas informações só aparecem
+  // depois que o pagamento é confirmado de verdade (ver useEffect de
+  // polling acima, que troca pra tela de confirmação completa sozinho).
+  if (step === 'done' && result && method === 'pix' && result.status !== 'pago') {
     return (
-      <div className="mx-auto max-w-4xl px-6 py-32 text-center lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-12 lg:py-40 lg:text-left">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="lg:col-start-1 lg:row-start-1"
-        >
-          <div className="mb-5 text-4xl" style={{ color: 'var(--gold)' }}>✓</div>
-          <h1 className="mb-3 text-2xl">
-            {result.status === 'pago' ? 'Pagamento aprovado' : 'Pedido registrado'}
-          </h1>
-          <p className="mb-3 text-sm" style={{ color: 'var(--ink-secondary)' }}>
-            Recebemos seu pedido via{' '}
-            <strong style={{ color: 'var(--ink)' }}>{methods.find((m) => m.id === method)?.label}</strong>.
+      <div className="mx-auto max-w-lg px-6 py-40 text-center">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+          <h1 className="mb-3 text-2xl">Escaneie o QR Code pra pagar</h1>
+          <p className="mb-6 text-sm" style={{ color: 'var(--ink-secondary)' }}>
+            Abra o app do seu banco, escaneie o código abaixo (ou use o PIX copia e cola) e conclua o pagamento.
           </p>
 
-          <div
-            className="mb-6 flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-xs lg:justify-start"
-            style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)', color: 'var(--ink-muted)' }}
-          >
-            <span>Número do pedido:</span>
-            <code style={{ color: 'var(--gold-bright)' }}>{shortOrderId}</code>
-            <button
-              type="button"
-              onClick={() => copyToClipboard('order', shortOrderId)}
-              className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium transition-colors"
-              style={{
-                background: copiedField === 'order' ? '#3f7f4f' : 'var(--gold)',
-                color: copiedField === 'order' ? '#f3f1ec' : '#0a0a0a',
-              }}
-            >
-              {copiedField === 'order' ? '✓ Copiado!' : 'Copiar'}
-            </button>
-          </div>
-
-          {method === 'pix' && result.pix?.qrCodeBase64 && (
+          {result.pix?.qrCodeBase64 && (
             <div className="mb-6 rounded-xl border p-5" style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}>
               <img
                 src={`data:image/png;base64,${result.pix.qrCodeBase64}`}
@@ -413,9 +411,68 @@ export function Checkout() {
             </div>
           )}
 
+          <div className="flex items-center justify-center gap-2 text-xs" style={{ color: 'var(--ink-muted)' }}>
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: 'var(--gold)' }} />
+            Aguardando confirmação do pagamento...
+          </div>
+
+          {pixWaitingLong && (
+            <p className="mt-4 text-xs" style={{ color: 'var(--ink-muted)' }}>
+              Ainda não recebemos a confirmação. Verifique se você concluiu o PIX no app do seu banco — assim que
+              cair, esta tela atualiza sozinha.
+            </p>
+          )}
+        </motion.div>
+      </div>
+    )
+  }
+
+  if (step === 'done' && result) {
+    // Mesmo formato curto (8 primeiros caracteres do id) usado em Minha
+    // Conta e no e-mail de confirmação — o UUID inteiro nunca aparece pro
+    // cliente, só serve internamente pras chamadas de API.
+    const shortOrderId = result.orderId.slice(0, 8)
+    // Split em duas colunas no desktop: confirmação + card de conta à
+    // esquerda, playlists do Spotify à direita (ocupando a altura das
+    // duas). No mobile tudo empilha, mas o Spotify entra logo depois da
+    // confirmação principal — antes do card de conta — pra não ficar
+    // escondido lá embaixo, depois de tudo.
+    return (
+      <div className="mx-auto max-w-4xl px-6 py-32 text-center lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-12 lg:py-40 lg:text-left">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="lg:col-start-1 lg:row-start-1"
+        >
+          <div className="mb-5 text-4xl" style={{ color: 'var(--gold)' }}>✓</div>
+          <h1 className="mb-3 text-2xl">Pagamento aprovado</h1>
+          <p className="mb-3 text-sm" style={{ color: 'var(--ink-secondary)' }}>
+            Recebemos seu pedido via{' '}
+            <strong style={{ color: 'var(--ink)' }}>{methods.find((m) => m.id === method)?.label}</strong>.
+          </p>
+
+          <div
+            className="mb-6 flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-xs lg:justify-start"
+            style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)', color: 'var(--ink-muted)' }}
+          >
+            <span>Número do pedido:</span>
+            <code style={{ color: 'var(--gold-bright)' }}>{shortOrderId}</code>
+            <button
+              type="button"
+              onClick={() => copyToClipboard('order', shortOrderId)}
+              className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium transition-colors"
+              style={{
+                background: copiedField === 'order' ? '#3f7f4f' : 'var(--gold)',
+                color: copiedField === 'order' ? '#f3f1ec' : '#0a0a0a',
+              }}
+            >
+              {copiedField === 'order' ? '✓ Copiado!' : 'Copiar'}
+            </button>
+          </div>
+
           <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>
-            Assim que o pagamento for confirmado, nossa equipe já recebe o aviso automaticamente. Guarde o número
-            do pedido acima e o e-mail usado na compra.
+            Guarde o número do pedido acima e o e-mail usado na compra — você vai precisar deles pra acompanhar o
+            envio.
           </p>
         </motion.div>
 
