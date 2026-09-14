@@ -68,7 +68,8 @@ export function Vendas() {
       .filter((s) => s.status !== 'cancelado')
       .reduce((sum, s) => {
         const items = saleItems.filter((i) => i.sale_id === s.id)
-        return sum + items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0)
+        const itemsTotal = items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0)
+        return sum + itemsTotal - s.discount_brl
       }, 0)
     const remainingStockPotential = stock.reduce((sum, p) => sum + p.quantity_in_stock * p.sale_price_brl, 0)
     const maxPotential = realized + remainingStockPotential
