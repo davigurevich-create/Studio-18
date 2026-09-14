@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from 'framer-motion'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Crown } from 'lucide-react'
 
 const BOB_URL = 'https://brasilopenbadge.com.br/partner/studio-18'
 const INSTAGRAM_URL = 'https://www.instagram.com/studio18_bricks/'
@@ -18,8 +18,6 @@ const BANNERS = {
   heroTitleMobile: '/banner-hero-badges-mobile.png',
   flowDesktop: '/badges-flow-desktop.jpg',
   flowMobile: '/badges-flow-mobile.jpg',
-  discountDesktop: '/badges-gamification-discount-desktop.png',
-  discountMobile: '/badges-gamification-discount-mobile.png',
   ctaDesktop: '/badges-cta-desktop.png',
   ctaMobile: '/badges-cta-mobile.png',
 }
@@ -79,6 +77,93 @@ function StepBanner({ index, title, desktop, mobile }: { index: number; title: s
         onError={() => setFailed(true)}
       />
     </>
+  )
+}
+
+// Tamanho da medalha (px) e intensidade visual crescem a cada clube — a
+// mesma escada de "quanto mais alto, maior o prêmio" do esboço aprovado.
+const CLUB_MEDAL_SIZE = [64, 72, 80, 88, 100]
+
+function EliteClubCard({ club, index }: { club: (typeof eliteClubs)[number]; index: number }) {
+  const [imgFailed, setImgFailed] = useState(false)
+  const isTop = index === eliteClubs.length - 1
+  const cardBg = index >= 3 ? 'linear-gradient(180deg, var(--carbon-2), var(--carbon-3))' : index >= 1 ? 'var(--carbon-2)' : 'var(--carbon-1)'
+  const borderColor = isTop ? 'var(--gold-bright)' : index >= 3 ? 'rgba(230,199,120,0.35)' : index >= 1 ? 'var(--gold-dim)' : 'var(--hairline)'
+  const pctColor = isTop ? 'var(--gold-bright)' : index >= 2 ? 'var(--gold)' : 'var(--ink-secondary)'
+  const size = CLUB_MEDAL_SIZE[index]
+
+  return (
+    <motion.div
+      variants={fadeUp}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ delay: index * 0.08 }}
+      whileHover={{ y: -6 }}
+      className="group relative flex h-full flex-col items-center overflow-hidden rounded-2xl px-4 py-6"
+      style={{
+        background: cardBg,
+        border: `1px solid ${borderColor}`,
+        boxShadow: isTop ? '0 0 0 1px rgba(230,199,120,0.15), 0 18px 40px -14px rgba(205,164,77,0.4)' : 'none',
+        transform: isTop ? 'scale(1.04)' : undefined,
+      }}
+    >
+      {/* Brilho de fundo — pulsa devagar só no clube máximo, pra destacar
+          sem virar uma distração animada o tempo todo. */}
+      <motion.div
+        className="pointer-events-none absolute inset-0"
+        style={{ background: `radial-gradient(ellipse 140% 60% at 50% -20%, ${isTop ? 'rgba(230,199,120,0.28)' : 'rgba(205,164,77,0.08)'}, transparent 70%)` }}
+        animate={isTop ? { opacity: [0.6, 1, 0.6] } : undefined}
+        transition={isTop ? { duration: 3, repeat: Infinity, ease: 'easeInOut' } : undefined}
+      />
+
+      {isTop && (
+        <div className="relative z-10 mb-3 flex items-center gap-1" style={{ color: 'var(--gold-bright)' }}>
+          <Crown size={12} strokeWidth={2.5} />
+          <span className="text-[10px] font-semibold tracking-widest">CLUBE MÁXIMO</span>
+        </div>
+      )}
+
+      <div className="relative z-10 mb-1 text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+        NÍVEL {index + 1}
+      </div>
+
+      <div className="relative z-10 mb-4 flex items-center justify-center" style={{ width: size, height: size }}>
+        {imgFailed ? (
+          <div
+            className="flex h-full w-full items-center justify-center rounded-full text-center font-black"
+            style={{ background: 'radial-gradient(circle at 32% 28%, var(--gold-bright), var(--gold) 55%, #7a5f28 85%)', color: '#241a08', fontSize: size * 0.28 }}
+          >
+            {club.club.replace('Clube ', '')}
+          </div>
+        ) : (
+          <img
+            src={club.image}
+            alt={`${club.club} — ${club.title}`}
+            className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+            onError={() => setImgFailed(true)}
+          />
+        )}
+      </div>
+
+      <div className="relative z-10 text-[11px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+        {club.club.toUpperCase()}
+      </div>
+      <h3 className="relative z-10 mt-0.5 min-h-[2.5em] text-sm font-semibold" style={{ color: isTop ? 'var(--gold-bright)' : 'var(--ink)' }}>
+        {club.title}
+      </h3>
+
+      <div className="relative z-10 mt-3 tabular font-black leading-none" style={{ color: pctColor, fontSize: isTop ? 34 : 26 + index * 2 }}>
+        {club.pct}
+        <span style={{ fontSize: '0.5em' }}>%</span>
+      </div>
+      <div className="relative z-10 mt-1 text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+        DE DESCONTO
+      </div>
+      <div className="relative z-10 mt-4 text-[11px]" style={{ color: 'var(--ink-muted)' }}>
+        {club.points}
+      </div>
+    </motion.div>
   )
 }
 
@@ -377,19 +462,15 @@ const steps: { title: string; text: ReactNode; bannerDesktop: string; bannerMobi
   },
 ]
 
-const marcos = [
-  {
-    image: '/mestre-construtor.png',
-    title: 'Medalha: Mestre Construtor',
-    criteria: '3 sets distintos concluídos',
-    url: 'https://brasilopenbadge.com.br/partner/studio-18&pg=1be28d1fda591a84d6d478dc897495d4&b=11443',
-  },
-  {
-    image: '/clube-10k.png',
-    title: 'Medalha: Clube 10K — Engenheiro Chefe',
-    criteria: '10.000 pontos acumulados',
-    url: 'https://brasilopenbadge.com.br/partner/studio-18&pg=1be28d1fda591a84d6d478dc897495d4&b=11444',
-  },
+// Vitrine de Elite — escada de recompensa por pontos acumulados (1 peça
+// montada = 1 ponto). Cada clube fica visualmente mais "premiado" que o
+// anterior (borda, brilho, tamanho da medalha), culminando no Clube 100K.
+const eliteClubs = [
+  { club: 'Clube 10K', title: 'Mecânico de Elite', points: '10.000 pontos', pct: 5, image: '/clube-10k-mecanico-elite.png' },
+  { club: 'Clube 25K', title: 'Engenheiro de Pista', points: '25.000 pontos', pct: 10, image: '/clube-25k-engenheiro-pista.png' },
+  { club: 'Clube 50K', title: 'Projetista Chefe', points: '50.000 pontos', pct: 20, image: '/clube-50k-projetista-chefe.png' },
+  { club: 'Clube 75K', title: 'Estrategista Supremo', points: '75.000 pontos', pct: 35, image: '/clube-75k-estrategista-supremo.png' },
+  { club: 'Clube 100K', title: 'Chefe de Equipe', points: '100.000 pontos', pct: 50, image: '/clube-100k-chefe-equipe.png' },
 ]
 
 export function Badges() {
@@ -410,7 +491,6 @@ export function Badges() {
   // invés disso, escondemos a tag e mostramos um título simples no lugar,
   // que some sozinho assim que o arquivo certo for enviado.
   const [heroBannerFailed, setHeroBannerFailed] = useState(false)
-  const [discountBannerFailed, setDiscountBannerFailed] = useState(false)
 
   return (
     <div>
@@ -595,7 +675,12 @@ export function Badges() {
         />
       </div>
 
-      {/* GAMIFICAÇÃO */}
+      {/* GAMIFICAÇÃO — vitrine de elite: 5 clubes por pontos acumulados (1
+          peça montada = 1 ponto), cada um mais "premiado" que o anterior em
+          borda/brilho/tamanho da medalha, até o Clube 100K. Grid de 5 no
+          desktop; carrossel com scroll-snap no mobile (mesmo padrão já usado
+          nos "stories" do Manifesto) — 5 cards lado a lado nunca caberiam
+          legíveis numa tela de celular. */}
       <section className="px-6 py-24 text-center sm:py-32" style={{ background: '#000' }}>
         <motion.div
           variants={fadeUp}
@@ -606,73 +691,34 @@ export function Badges() {
         >
           <p className="eyebrow mb-2">A gamificação</p>
           <h2 className="text-3xl font-medium sm:text-4xl">1 peça = 1 ponto</h2>
+          <p className="mx-auto mt-4 max-w-md text-sm" style={{ color: 'var(--ink-secondary)' }}>
+            Suba de clube conforme acumula pontos e destrave descontos cada vez maiores no seu próximo set.
+          </p>
         </motion.div>
 
-        <div className="mx-auto grid max-w-2xl grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-8">
-          {marcos.map((marco, i) => (
-            <motion.a
-              key={marco.title}
-              href={marco.url}
-              target="_blank"
-              rel="noreferrer"
-              variants={fadeUp}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ delay: i * 0.1 }}
-              whileHover={{ y: -6 }}
-              className="group flex flex-col items-center"
-            >
-              <div className="relative mb-5 flex h-32 w-32 items-center justify-center sm:h-64 sm:w-64">
-                <div
-                  className="pointer-events-none absolute inset-0 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-60"
-                  style={{ background: 'radial-gradient(circle, var(--gold-bright), transparent 70%)' }}
-                />
-                <img
-                  src={marco.image}
-                  alt={marco.title}
-                  className="relative h-32 w-32 object-contain transition-transform duration-500 group-hover:scale-105 sm:h-64 sm:w-64"
-                />
-              </div>
-              <h3 className="mb-1 text-base font-medium sm:text-lg" style={{ color: 'var(--ink)' }}>
-                {marco.title}
-              </h3>
-              <p className="text-xs tracking-widest" style={{ color: 'var(--gold-bright)' }}>
-                {marco.criteria.toUpperCase()}
-              </p>
-            </motion.a>
+        {/* Desktop */}
+        <div className="mx-auto hidden max-w-6xl gap-4 sm:grid sm:grid-cols-5">
+          {eliteClubs.map((c, i) => (
+            <EliteClubCard key={c.club} club={c} index={i} />
           ))}
         </div>
 
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ delay: 0.15 }}
-          className="mt-20 sm:mt-28"
-        >
-          {discountBannerFailed ? (
-            <div>
-              <p className="mb-4 text-sm" style={{ color: 'var(--ink-secondary)' }}>
-                As duas medalhas de marco também liberam
-              </p>
-              <h3 className="text-3xl font-medium sm:text-4xl">10% de desconto</h3>
-              <p className="mt-6 text-sm" style={{ color: 'var(--ink-muted)' }}>
-                no seu próximo set, revelado na página da sua medalha dentro do portal BOB.
-              </p>
-            </div>
-          ) : (
-            <TiltBanner
-              desktopSrc={BANNERS.discountDesktop}
-              mobileSrc={BANNERS.discountMobile}
-              alt="Estas medalhas destravam um cupom de 10% de desconto no seu próximo set, disponibilizado dentro da sua medalha"
-              onError={() => setDiscountBannerFailed(true)}
-              desktopMaxW="max-w-[460px]"
-              mobileMaxW="max-w-[300px]"
-            />
-          )}
-        </motion.div>
+        {/* Mobile — carrossel com scroll-snap */}
+        <div className="sm:hidden">
+          <div
+            className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-[10vw] pb-2 [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: 'none' }}
+          >
+            {eliteClubs.map((c, i) => (
+              <div key={c.club} className="w-[74vw] shrink-0 snap-center">
+                <EliteClubCard club={c} index={i} />
+              </div>
+            ))}
+          </div>
+          <p className="mt-5 text-[11px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
+            ARRASTE PARA VER TODOS OS CLUBES →
+          </p>
+        </div>
       </section>
 
       {/* CTA FINAL — banner de fundo (arte pronta, já traz a vitrine de
