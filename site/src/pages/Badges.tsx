@@ -1,8 +1,9 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 
 const BOB_URL = 'https://brasilopenbadge.com.br/partner/studio-18'
+const INSTAGRAM_URL = 'https://www.instagram.com/studio18_bricks/'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -341,7 +342,7 @@ function CountUp({ value, prefix = '' }: { value: number; prefix?: string }) {
   )
 }
 
-const steps = [
+const steps: { title: string; text: ReactNode; bannerDesktop: string; bannerMobile: string }[] = [
   {
     title: 'Monte seu set',
     text: 'Termine a montagem de qualquer set Studio 18 — do primeiro carro à moto mais complexa do catálogo.',
@@ -350,7 +351,15 @@ const steps = [
   },
   {
     title: 'Poste no Instagram',
-    text: 'Compartilhe uma foto ou vídeo do set montado, marcando @studio18bricks no Instagram.',
+    text: (
+      <>
+        Compartilhe uma foto ou vídeo do set montado, marcando{' '}
+        <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className="underline" style={{ color: 'var(--gold-bright)' }}>
+          @studio18_bricks
+        </a>{' '}
+        no Instagram.
+      </>
+    ),
     bannerDesktop: '/badges-step-02-desktop.png',
     bannerMobile: '/badges-step-02-mobile.png',
   },
