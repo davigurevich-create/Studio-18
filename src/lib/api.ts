@@ -374,6 +374,23 @@ export async function emitInvoice(
   return data
 }
 
+/**
+ * Cancela uma NF-e já autorizada via Focus NFe — só é chamado quando a
+ * equipe clica no botão "Cancelar nota" (nunca automaticamente). A SEFAZ
+ * exige uma justificativa com pelo menos 15 caracteres.
+ */
+export async function cancelInvoice(saleId: string, justificativa: string): Promise<{ status: string }> {
+  if (!supabase) throw new Error('Conecte o Supabase para cancelar nota fiscal.')
+  const { data, error } = await supabase.functions.invoke('cancel-invoice', { body: { saleId, justificativa } })
+  if (error) {
+    const context = (error as { context?: Response }).context
+    const parsed = await context?.clone().json().catch(() => null)
+    throw new Error(parsed?.error || error.message)
+  }
+  if (data?.error) throw new Error(data.error)
+  return data
+}
+
 // ---------------------------------------------------------------------------
 // Expenses
 // ---------------------------------------------------------------------------

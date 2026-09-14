@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { createSale, emitInvoice, generateShippingLabel, getProducts, getSaleItems, getSales, getStock, updateSaleStatus } from '@/lib/api'
+import { cancelInvoice, createSale, emitInvoice, generateShippingLabel, getProducts, getSaleItems, getSales, getStock, updateSaleStatus } from '@/lib/api'
 import { Badge, Button, Card, PageHeader, formatBRL } from '@/components/ui'
 import type { NewSaleItemInput } from '@/lib/api'
 import type { Product, ProductStock, Sale, SaleItem, SaleStatus } from '@/types/domain'
@@ -313,6 +313,31 @@ export function Vendas() {
 function InvoiceCell({ sale, onUpdated }: { sale: Sale; onUpdated: () => void }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState<string | null>(null)
+
+  const cancel = async () => {
+    const justificativa = window.prompt(
+      'Motivo do cancelamento (a SEFAZ exige pelo menos 15 caracteres):',
+    )
+    if (justificativa === null) return
+    if (justificativa.trim().length < 15) {
+      setCancelError('A justificativa precisa ter pelo menos 15 caracteres.')
+      return
+    }
+    if (!window.confirm('Cancelar essa nota fiscal? Essa ação não pode ser desfeita.')) return
+
+    setCancelling(true)
+    setCancelError(null)
+    try {
+      await cancelInvoice(sale.id, justificativa)
+      onUpdated()
+    } catch (err) {
+      setCancelError(err instanceof Error ? err.message : 'Falha ao cancelar nota fiscal.')
+    } finally {
+      setCancelling(false)
+    }
+  }
 
   if (sale.invoice_status === 'autorizada' && sale.invoice_pdf_url) {
     return (
@@ -322,6 +347,20 @@ function InvoiceCell({ sale, onUpdated }: { sale: Sale; onUpdated: () => void })
         </a>
         {sale.invoice_number && (
           <span style={{ color: 'var(--text-muted)' }}>Nº {sale.invoice_number}</span>
+        )}
+        <button
+          type="button"
+          onClick={cancel}
+          disabled={cancelling}
+          className="text-left"
+          style={{ color: 'var(--status-critical)' }}
+        >
+          {cancelling ? 'Cancelando...' : 'Cancelar nota'}
+        </button>
+        {cancelError && (
+          <span className="max-w-[180px] text-[11px]" style={{ color: 'var(--status-critical)' }}>
+            {cancelError}
+          </span>
         )}
       </div>
     )
@@ -349,10 +388,17 @@ function InvoiceCell({ sale, onUpdated }: { sale: Sale; onUpdated: () => void })
       ? 'Verificar status'
       : sale.invoice_status === 'erro'
         ? 'Tentar de novo'
-        : 'Emitir nota'
+        : sale.invoice_status === 'cancelada'
+          ? 'Emitir nova nota'
+          : 'Emitir nota'
 
   return (
     <div className="flex flex-col gap-1">
+      {sale.invoice_status === 'cancelada' && (
+        <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+          Nota cancelada
+        </span>
+      )}
       <Button variant="secondary" onClick={emit} disabled={loading}>
         {loading ? 'Emitindo...' : label}
       </Button>
