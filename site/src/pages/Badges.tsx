@@ -82,15 +82,37 @@ function StepBanner({ index, title, desktop, mobile }: { index: number; title: s
 
 // Tamanho da medalha (px) e intensidade visual crescem a cada clube — a
 // mesma escada de "quanto mais alto, maior o prêmio" do esboço aprovado.
-const CLUB_MEDAL_SIZE = [64, 72, 80, 88, 100]
+// Medalha e todo o texto ficam no MESMO tamanho nos 5 cards — quem carrega
+// a sensação de progresso é só o "estojo" do card (fundo/borda/brilho,
+// cada vez mais rico) e a cor do número de desconto, nunca o tamanho de
+// nada dentro dele.
+const MEDAL_SIZE = 84
+const PCT_FONT_SIZE = 30
+
+// Um degrau visual bem marcado por nível, do mais discreto (10K) ao mais
+// rico (100K): fundo, espessura/cor da borda e intensidade do brilho.
+const CARD_BG = [
+  'var(--carbon-1)',
+  'var(--carbon-1)',
+  'var(--carbon-2)',
+  'var(--carbon-2)',
+  'linear-gradient(180deg, var(--carbon-2), var(--carbon-3))',
+]
+const CARD_BORDER = ['var(--hairline)', 'rgba(205,164,77,0.28)', 'rgba(205,164,77,0.5)', 'rgba(230,199,120,0.65)', 'var(--gold-bright)']
+const CARD_BORDER_WIDTH = [1, 1, 1, 1.5, 2]
+const CARD_SHADOW = [
+  'none',
+  '0 8px 20px -12px rgba(205,164,77,0.2)',
+  '0 12px 28px -12px rgba(205,164,77,0.35)',
+  '0 16px 36px -12px rgba(230,199,120,0.5)',
+  '0 0 0 1px rgba(230,199,120,0.2), 0 22px 48px -14px rgba(205,164,77,0.6)',
+]
+const GLOW_OPACITY = [0.02, 0.06, 0.11, 0.2, 0.32]
+const PCT_COLOR = ['var(--ink-secondary)', 'var(--ink)', 'var(--gold)', 'var(--gold)', 'var(--gold-bright)']
 
 function EliteClubCard({ club, index }: { club: (typeof eliteClubs)[number]; index: number }) {
   const [imgFailed, setImgFailed] = useState(false)
   const isTop = index === eliteClubs.length - 1
-  const cardBg = index >= 3 ? 'linear-gradient(180deg, var(--carbon-2), var(--carbon-3))' : index >= 1 ? 'var(--carbon-2)' : 'var(--carbon-1)'
-  const borderColor = isTop ? 'var(--gold-bright)' : index >= 3 ? 'rgba(230,199,120,0.35)' : index >= 1 ? 'var(--gold-dim)' : 'var(--hairline)'
-  const pctColor = isTop ? 'var(--gold-bright)' : index >= 2 ? 'var(--gold)' : 'var(--ink-secondary)'
-  const size = CLUB_MEDAL_SIZE[index]
 
   return (
     <motion.div
@@ -102,17 +124,17 @@ function EliteClubCard({ club, index }: { club: (typeof eliteClubs)[number]; ind
       whileHover={{ y: -6 }}
       className="group relative flex h-full flex-col items-center overflow-hidden rounded-2xl px-4 py-6"
       style={{
-        background: cardBg,
-        border: `1px solid ${borderColor}`,
-        boxShadow: isTop ? '0 0 0 1px rgba(230,199,120,0.15), 0 18px 40px -14px rgba(205,164,77,0.4)' : 'none',
-        transform: isTop ? 'scale(1.04)' : undefined,
+        background: CARD_BG[index],
+        border: `${CARD_BORDER_WIDTH[index]}px solid ${CARD_BORDER[index]}`,
+        boxShadow: CARD_SHADOW[index],
+        transform: isTop ? 'scale(1.05)' : undefined,
       }}
     >
-      {/* Brilho de fundo — pulsa devagar só no clube máximo, pra destacar
-          sem virar uma distração animada o tempo todo. */}
+      {/* Brilho de fundo — mais intenso a cada nível; pulsa devagar só no
+          clube máximo, pra destacar sem virar uma distração o tempo todo. */}
       <motion.div
         className="pointer-events-none absolute inset-0"
-        style={{ background: `radial-gradient(ellipse 140% 60% at 50% -20%, ${isTop ? 'rgba(230,199,120,0.28)' : 'rgba(205,164,77,0.08)'}, transparent 70%)` }}
+        style={{ background: `radial-gradient(ellipse 140% 60% at 50% -20%, rgba(230,199,120,${GLOW_OPACITY[index]}), transparent 70%)` }}
         animate={isTop ? { opacity: [0.6, 1, 0.6] } : undefined}
         transition={isTop ? { duration: 3, repeat: Infinity, ease: 'easeInOut' } : undefined}
       />
@@ -128,11 +150,11 @@ function EliteClubCard({ club, index }: { club: (typeof eliteClubs)[number]; ind
         NÍVEL {index + 1}
       </div>
 
-      <div className="relative z-10 mb-4 flex items-center justify-center" style={{ width: size, height: size }}>
+      <div className="relative z-10 mb-4 flex items-center justify-center" style={{ width: MEDAL_SIZE, height: MEDAL_SIZE }}>
         {imgFailed ? (
           <div
             className="flex h-full w-full items-center justify-center rounded-full text-center font-black"
-            style={{ background: 'radial-gradient(circle at 32% 28%, var(--gold-bright), var(--gold) 55%, #7a5f28 85%)', color: '#241a08', fontSize: size * 0.28 }}
+            style={{ background: 'radial-gradient(circle at 32% 28%, var(--gold-bright), var(--gold) 55%, #7a5f28 85%)', color: '#241a08', fontSize: MEDAL_SIZE * 0.28 }}
           >
             {club.club.replace('Clube ', '')}
           </div>
@@ -149,11 +171,11 @@ function EliteClubCard({ club, index }: { club: (typeof eliteClubs)[number]; ind
       <div className="relative z-10 text-[11px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
         {club.club.toUpperCase()}
       </div>
-      <h3 className="relative z-10 mt-0.5 min-h-[2.5em] text-sm font-semibold" style={{ color: isTop ? 'var(--gold-bright)' : 'var(--ink)' }}>
+      <h3 className="relative z-10 mt-0.5 min-h-[2.5em] text-sm font-semibold" style={{ color: 'var(--ink)' }}>
         {club.title}
       </h3>
 
-      <div className="relative z-10 mt-3 tabular font-black leading-none" style={{ color: pctColor, fontSize: isTop ? 34 : 26 + index * 2 }}>
+      <div className="relative z-10 mt-3 tabular font-black leading-none" style={{ color: PCT_COLOR[index], fontSize: PCT_FONT_SIZE }}>
         {club.pct}
         <span style={{ fontSize: '0.5em' }}>%</span>
       </div>
