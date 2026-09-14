@@ -69,16 +69,18 @@ function pixAuthHeader(): string {
   return `Basic ${btoa(`${REDE_PV.trim()}:${REDE_CLIENT_SECRET.trim()}`)}`
 }
 
-// A resposta real da consulta v1 (confirmado num teste de verdade em
-// produção) vem toda aninhada dentro de "qrCodeResponse" — inclusive o
-// "returnCode", que só diz se a CONSULTA em si funcionou ("00" = sucesso
-// em buscar os dados, não em ter sido pago). Quem diz se o PIX foi pago
-// de fato é qrCodeResponse.status: visto "Pending" antes do pagamento
-// cair; os valores abaixo cobrem os nomes mais prováveis de sucesso pra
-// essa mesma convenção de API (ainda não confirmados com um pagamento
-// aprovado de verdade — o console.log logo abaixo captura a resposta
-// bruta pra ajustar aqui se o valor real vier diferente).
-const PAID_STATUSES = new Set(['Paid', 'Concluded', 'Completed', 'Approved', 'Confirmed', 'Settled'])
+// Confirmado com uma transação real: o formato da resposta MUDA conforme o
+// momento. Antes do pagamento, vem em qrCodeResponse.status ("Pending").
+// Depois de pago, some o qrCodeResponse e aparece um bloco "authorization"
+// novo, com o status em authorization.status ("Approved") — igual ao
+// formato do cartão (v2). Por isso checa os dois campos.
+function extractPixStatus(transaction: Record<string, unknown>): string | undefined {
+  const authorization = transaction.authorization as { status?: string } | undefined
+  const qrCodeResponse = transaction.qrCodeResponse as { status?: string } | undefined
+  return authorization?.status ?? qrCodeResponse?.status
+}
+
+const PAID_STATUSES = new Set(['Approved', 'Paid', 'Concluded', 'Completed', 'Confirmed', 'Settled'])
 
 function mapStatus(pixStatus: string | undefined): string {
   if (pixStatus && PAID_STATUSES.has(pixStatus)) return 'pago'
@@ -116,11 +118,12 @@ Deno.serve(async (req) => {
 
     if (!existingSale) return new Response('ok', { status: 200 })
 
-    const newStatus = mapStatus(transaction.qrCodeResponse?.status)
+    const pixStatus = extractPixStatus(transaction)
+    const newStatus = mapStatus(pixStatus)
     await supabase
       .from('sales')
       .update({
-        provider_status: transaction.qrCodeResponse?.status ?? null,
+        provider_status: pixStatus ?? null,
         status: newStatus,
       })
       .eq('id', existingSale.id)

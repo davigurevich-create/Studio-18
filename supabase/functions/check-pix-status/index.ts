@@ -35,9 +35,18 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const EMAIL_FROM = Deno.env.get('EMAIL_FROM') ?? 'Studio 18 <onboarding@resend.dev>'
 const SITE_URL = Deno.env.get('SITE_URL') ?? 'https://studio18.vercel.app'
 
-// Mesma convenção usada em rede-pix-webhook (qrCodeResponse.status — o
-// "returnCode" da raiz só diz se A CONSULTA funcionou, não se foi pago).
-const PAID_STATUSES = new Set(['Paid', 'Concluded', 'Completed', 'Approved', 'Confirmed', 'Settled'])
+// Confirmado com uma transação real: o formato da resposta MUDA conforme o
+// momento. Antes do pagamento, vem em qrCodeResponse.status ("Pending").
+// Depois de pago, some o qrCodeResponse e aparece um bloco "authorization"
+// novo, com o status em authorization.status ("Approved") — igual ao
+// formato do cartão (v2). Por isso checa os dois campos.
+function extractPixStatus(transaction: Record<string, unknown>): string | undefined {
+  const authorization = transaction.authorization as { status?: string } | undefined
+  const qrCodeResponse = transaction.qrCodeResponse as { status?: string } | undefined
+  return authorization?.status ?? qrCodeResponse?.status
+}
+
+const PAID_STATUSES = new Set(['Approved', 'Paid', 'Concluded', 'Completed', 'Confirmed', 'Settled'])
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -123,7 +132,7 @@ Deno.serve(async (req) => {
       return json({ status: sale.status })
     }
     const transaction = await queryResponse.json()
-    const pixStatus = transaction.qrCodeResponse?.status as string | undefined
+    const pixStatus = extractPixStatus(transaction)
     console.log(`check-pix-status [${orderId}]: pixStatus="${pixStatus}" — resposta completa:`, JSON.stringify(transaction))
 
     if (!pixStatus || !PAID_STATUSES.has(pixStatus)) {
