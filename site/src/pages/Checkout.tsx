@@ -41,6 +41,7 @@ export function Checkout() {
   const [zipCode, setZipCode] = useState('')
   const [cepLoading, setCepLoading] = useState(false)
   const [cepNotFound, setCepNotFound] = useState(false)
+  const zipCodeRef = useRef<HTMLInputElement>(null)
   const streetNumberRef = useRef<HTMLInputElement>(null)
   const [streetName, setStreetName] = useState('')
   const [streetNumber, setStreetNumber] = useState('')
@@ -215,7 +216,14 @@ export function Checkout() {
         setNeighborhood(data.bairro || '')
         setCity(data.localidade || '')
         setFederalUnit(data.uf || '')
-        streetNumberRef.current?.focus()
+        // Só rouba o foco pro campo Número se o cliente ainda estiver
+        // parado no campo do CEP esperando o preenchimento automático —
+        // a busca é assíncrona (viacep + frete), então se ele já clicou
+        // em outro campo nesse meio-tempo (ex: CPF), não faz sentido
+        // arrancar o foco de lá quando a resposta chegar.
+        if (document.activeElement === zipCodeRef.current) {
+          streetNumberRef.current?.focus()
+        }
       } else {
         setCepNotFound(true)
       }
@@ -577,6 +585,7 @@ export function Checkout() {
                 placeholder="00000-000"
                 autoComplete="postal-code"
                 hint={cepLoading ? 'Buscando endereço e frete...' : cepNotFound ? 'CEP não encontrado — preencha manualmente.' : undefined}
+                ref={zipCodeRef}
               />
               <Field label="Número" value={streetNumber} onChange={setStreetNumber} required ref={streetNumberRef} />
               <div className="col-span-2">
@@ -920,14 +929,28 @@ export function Checkout() {
             type="submit"
             form="checkout-form"
             disabled={submitting}
-            className="rounded-full px-8 py-3 text-sm font-medium tracking-wide disabled:opacity-50"
+            className="relative overflow-hidden rounded-full px-8 py-3 text-sm font-medium tracking-wide disabled:opacity-100"
             style={{ background: 'var(--gold)', color: '#0a0a0a' }}
           >
-            {submitting
-              ? 'Processando pedido...'
-              : method === 'cartao'
-                ? `Pagar ${formatBRL(cardTotal)}`
-                : `Confirmar pedido — ${formatBRL(total)}`}
+            {submitting && (
+              // Preenchimento da esquerda pra direita: uma faixa escura
+              // ancorada na direita encolhe até sumir, dando a sensação de
+              // progresso enquanto o pedido é confirmado.
+              <motion.span
+                className="absolute inset-y-0 right-0"
+                style={{ background: 'rgba(10,10,10,0.22)' }}
+                initial={{ width: '100%' }}
+                animate={{ width: '0%' }}
+                transition={{ duration: 2.2, ease: 'easeOut' }}
+              />
+            )}
+            <span className="relative z-10">
+              {submitting
+                ? 'Processando pedido...'
+                : method === 'cartao'
+                  ? `Pagar ${formatBRL(cardTotal)}`
+                  : `Confirmar pedido — ${formatBRL(total)}`}
+            </span>
           </button>
         </div>
       </div>
