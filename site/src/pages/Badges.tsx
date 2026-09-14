@@ -466,11 +466,11 @@ const steps: { title: string; text: ReactNode; bannerDesktop: string; bannerMobi
 // montada = 1 ponto). Cada clube fica visualmente mais "premiado" que o
 // anterior (borda, brilho, tamanho da medalha), culminando no Clube 100K.
 const eliteClubs = [
-  { club: 'Clube 10K', title: 'Mecânico de Elite', points: '10.000 pontos', pct: 5, image: '/clube-10k-mecanico-elite.png' },
-  { club: 'Clube 25K', title: 'Engenheiro de Pista', points: '25.000 pontos', pct: 10, image: '/clube-25k-engenheiro-pista.png' },
-  { club: 'Clube 50K', title: 'Projetista Chefe', points: '50.000 pontos', pct: 20, image: '/clube-50k-projetista-chefe.png' },
-  { club: 'Clube 75K', title: 'Estrategista Supremo', points: '75.000 pontos', pct: 35, image: '/clube-75k-estrategista-supremo.png' },
-  { club: 'Clube 100K', title: 'Chefe de Equipe', points: '100.000 pontos', pct: 50, image: '/clube-100k-chefe-equipe.png' },
+  { club: 'Clube 10K', title: 'Mecânico de Elite', points: '10.000 pontos', pct: 5, image: '/clube-10k.png' },
+  { club: 'Clube 25K', title: 'Engenheiro de Pista', points: '25.000 pontos', pct: 10, image: '/clube-25k.png' },
+  { club: 'Clube 50K', title: 'Projetista Chefe', points: '50.000 pontos', pct: 20, image: '/clube-50k.png' },
+  { club: 'Clube 75K', title: 'Estrategista Supremo', points: '75.000 pontos', pct: 35, image: '/clube-75k.png' },
+  { club: 'Clube 100K', title: 'Chefe de Equipe', points: '100.000 pontos', pct: 50, image: '/clube-100k.png' },
 ]
 
 export function Badges() {
