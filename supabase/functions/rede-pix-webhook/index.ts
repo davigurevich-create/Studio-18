@@ -69,10 +69,14 @@ function pixAuthHeader(): string {
   return `Basic ${btoa(`${REDE_PV.trim()}:${REDE_CLIENT_SECRET.trim()}`)}`
 }
 
-// status do PIX vem em authorization.status: "Approved" | "Canceled" | "Pending"
-function mapStatus(pixStatus: string | undefined): string {
-  if (pixStatus === 'Approved') return 'pago'
-  if (pixStatus === 'Canceled') return 'cancelado'
+// A v1 (PIX) devolve "returnCode" na raiz do JSON, igual à resposta da
+// criação (payment.returnCode em rede-create-payment) — não tem o campo
+// aninhado "authorization.status" que só existe na v2 (cartão). Usar o
+// campo errado aqui fazia essa consulta sempre cair em "pendente", mesmo
+// com o pagamento aprovado de verdade ("00" = sucesso, mesma convenção da
+// v2 e do cartão).
+function mapStatus(returnCode: string | undefined): string {
+  if (returnCode === '00') return 'pago'
   return 'pendente'
 }
 
@@ -94,6 +98,7 @@ Deno.serve(async (req) => {
       return new Response('ok', { status: 200 })
     }
     const transaction = await queryResponse.json()
+    console.log('Resposta da consulta PIX na Rede:', JSON.stringify(transaction))
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
@@ -105,11 +110,11 @@ Deno.serve(async (req) => {
 
     if (!existingSale) return new Response('ok', { status: 200 })
 
-    const newStatus = mapStatus(transaction.authorization?.status)
+    const newStatus = mapStatus(transaction.returnCode)
     await supabase
       .from('sales')
       .update({
-        provider_status: transaction.authorization?.status ?? null,
+        provider_status: transaction.returnCode ?? null,
         status: newStatus,
       })
       .eq('id', existingSale.id)
