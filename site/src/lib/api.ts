@@ -135,6 +135,19 @@ export async function getOrderStatus(orderId: string, email: string): Promise<Or
   return data[0] as OrderStatus
 }
 
+/**
+ * Consulta ATIVA do status de um PIX direto na Rede (em vez de só esperar
+ * o webhook) — usada no polling da tela de "aguardando confirmação" no
+ * checkout. Devolve o status atual do pedido (já atualizado no banco, se a
+ * consulta detectar que foi pago).
+ */
+export async function checkPixStatus(orderId: string, email: string): Promise<{ status: string } | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase.functions.invoke('check-pix-status', { body: { orderId, email } })
+  if (error || data?.error) return null
+  return data
+}
+
 export interface PartRequestInput {
   orderId: string
   productModel: string

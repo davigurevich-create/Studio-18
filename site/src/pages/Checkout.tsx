@@ -5,12 +5,12 @@ import { Gift, Lock, Truck } from 'lucide-react'
 import { SpotifySection } from '@/components/SpotifySection'
 import { TrustBadges } from '@/components/TrustBadges'
 import {
+  checkPixStatus,
   createPayment,
   getCatalog,
   getMyAddresses,
   getMyOrders,
   getMyProfile,
-  getOrderStatus,
   getShippingOptions,
   isDemoMode,
   validateCoupon,
@@ -122,9 +122,11 @@ export function Checkout() {
   // PIX: a tela de "pedido registrado" fica só com o QR Code até o
   // pagamento ser confirmado — nada de número do pedido, card de conta ou
   // Spotify antes disso (essas informações só fazem sentido depois que a
-  // compra realmente aconteceu). Consulta o status a cada 5s; assim que
-  // vira "pago" (ou "cancelado"), o result é atualizado e a tela troca
-  // sozinha, sem precisar recarregar a página.
+  // compra realmente aconteceu). Consulta ATIVAMENTE o status a cada 5s
+  // (check-pix-status consulta direto na Rede, em vez de só confiar no
+  // webhook — confirmado em produção que a notificação da Rede só chega na
+  // criação do QR Code, não na confirmação do pagamento). Assim que vira
+  // "pago" (ou "cancelado"), o result é atualizado e a tela troca sozinha.
   useEffect(() => {
     if (step !== 'done' || method !== 'pix' || !result || result.status === 'pago' || result.status === 'cancelado') {
       setPixWaitingLong(false)
@@ -133,7 +135,7 @@ export function Checkout() {
 
     const orderId = result.orderId
     const poll = setInterval(async () => {
-      const order = await getOrderStatus(orderId, email).catch(() => null)
+      const order = await checkPixStatus(orderId, email).catch(() => null)
       if (order && order.status !== result.status) {
         setResult((current) => (current ? { ...current, status: order.status } : current))
       }
