@@ -124,6 +124,7 @@ Deno.serve(async (req) => {
     }
     const transaction = await queryResponse.json()
     const pixStatus = transaction.qrCodeResponse?.status as string | undefined
+    console.log(`check-pix-status [${orderId}]: pixStatus="${pixStatus}" — resposta completa:`, JSON.stringify(transaction))
 
     if (!pixStatus || !PAID_STATUSES.has(pixStatus)) {
       return json({ status: sale.status })
