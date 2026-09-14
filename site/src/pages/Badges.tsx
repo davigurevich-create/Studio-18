@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from 'framer-motion'
-import { ChevronDown, Crown } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 
 const BOB_URL = 'https://brasilopenbadge.com.br/partner/studio-18'
 const INSTAGRAM_URL = 'https://www.instagram.com/studio18_bricks/'
@@ -138,13 +138,6 @@ function EliteClubCard({ club, index }: { club: (typeof eliteClubs)[number]; ind
         animate={isTop ? { opacity: [0.6, 1, 0.6] } : undefined}
         transition={isTop ? { duration: 3, repeat: Infinity, ease: 'easeInOut' } : undefined}
       />
-
-      {isTop && (
-        <div className="relative z-10 mb-3 flex items-center gap-1" style={{ color: 'var(--gold-bright)' }}>
-          <Crown size={12} strokeWidth={2.5} />
-          <span className="text-[10px] font-semibold tracking-widest">CLUBE MÁXIMO</span>
-        </div>
-      )}
 
       <div className="relative z-10 mb-1 text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
         NÍVEL {index + 1}
