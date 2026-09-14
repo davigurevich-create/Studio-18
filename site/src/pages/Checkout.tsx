@@ -51,6 +51,7 @@ export function Checkout() {
   const [federalUnit, setFederalUnit] = useState('')
   const [step, setStep] = useState<'form' | 'done'>('form')
   const [submitting, setSubmitting] = useState(false)
+  const [fillComplete, setFillComplete] = useState(false)
   const [result, setResult] = useState<CreatePaymentResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copiedField, setCopiedField] = useState<'order' | 'pix' | null>(null)
@@ -295,6 +296,7 @@ export function Checkout() {
 
     setError(null)
     setSubmitting(true)
+    setFillComplete(false)
     try {
       const turnstileToken = await getTurnstileToken()
       const res = await createPayment({
@@ -325,11 +327,19 @@ export function Checkout() {
         shipping: selectedShipping,
         turnstileToken,
       })
+      // Preenche a faixa dourada até o fim e só troca de tela 1 segundo
+      // depois disso — a barra "termina de carregar" antes da própria
+      // página, em vez de sumir de repente assim que a resposta chega.
+      setFillComplete(true)
+      // 350ms é o tempo que a barra leva pra terminar de preencher (ver
+      // transition abaixo) + 1000ms parada no 100% antes de trocar de tela.
+      await new Promise((resolve) => setTimeout(resolve, 350 + 1000))
       setResult(res)
       setStep('done')
       clear()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível processar seu pedido agora. Tente novamente.')
+      setFillComplete(false)
     } finally {
       setSubmitting(false)
     }
@@ -934,14 +944,17 @@ export function Checkout() {
           >
             {submitting && (
               // Preenchimento da esquerda pra direita: uma faixa escura
-              // ancorada na direita encolhe até sumir, dando a sensação de
-              // progresso enquanto o pedido é confirmado.
+              // ancorada na direita encolhe, dando a sensação de progresso
+              // enquanto o pedido é confirmado. Avança devagar (sem nunca
+              // terminar sozinha) enquanto aguarda a resposta do servidor;
+              // assim que ela chega, completa rápido e só troca de tela
+              // 1s depois — a barra "chega" antes da própria página.
               <motion.span
                 className="absolute inset-y-0 right-0"
                 style={{ background: 'rgba(10,10,10,0.22)' }}
                 initial={{ width: '100%' }}
-                animate={{ width: '0%' }}
-                transition={{ duration: 2.2, ease: 'easeOut' }}
+                animate={{ width: fillComplete ? '0%' : '8%' }}
+                transition={fillComplete ? { duration: 0.35, ease: 'easeInOut' } : { duration: 9, ease: 'easeOut' }}
               />
             )}
             <span className="relative z-10">
