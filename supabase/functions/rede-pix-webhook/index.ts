@@ -69,20 +69,26 @@ function pixAuthHeader(): string {
   return `Basic ${btoa(`${REDE_PV.trim()}:${REDE_CLIENT_SECRET.trim()}`)}`
 }
 
-// A v1 (PIX) devolve "returnCode" na raiz do JSON, igual à resposta da
-// criação (payment.returnCode em rede-create-payment) — não tem o campo
-// aninhado "authorization.status" que só existe na v2 (cartão). Usar o
-// campo errado aqui fazia essa consulta sempre cair em "pendente", mesmo
-// com o pagamento aprovado de verdade ("00" = sucesso, mesma convenção da
-// v2 e do cartão).
-function mapStatus(returnCode: string | undefined): string {
-  if (returnCode === '00') return 'pago'
+// A resposta real da consulta v1 (confirmado num teste de verdade em
+// produção) vem toda aninhada dentro de "qrCodeResponse" — inclusive o
+// "returnCode", que só diz se a CONSULTA em si funcionou ("00" = sucesso
+// em buscar os dados, não em ter sido pago). Quem diz se o PIX foi pago
+// de fato é qrCodeResponse.status: visto "Pending" antes do pagamento
+// cair; os valores abaixo cobrem os nomes mais prováveis de sucesso pra
+// essa mesma convenção de API (ainda não confirmados com um pagamento
+// aprovado de verdade — o console.log logo abaixo captura a resposta
+// bruta pra ajustar aqui se o valor real vier diferente).
+const PAID_STATUSES = new Set(['Paid', 'Concluded', 'Completed', 'Approved', 'Confirmed', 'Settled'])
+
+function mapStatus(pixStatus: string | undefined): string {
+  if (pixStatus && PAID_STATUSES.has(pixStatus)) return 'pago'
   return 'pendente'
 }
 
 Deno.serve(async (req) => {
   try {
     const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {}
+    console.log('Notificação recebida da Rede:', JSON.stringify(body))
     const tid = body?.data?.id
     const events: string[] = body?.events ?? []
 
@@ -110,11 +116,11 @@ Deno.serve(async (req) => {
 
     if (!existingSale) return new Response('ok', { status: 200 })
 
-    const newStatus = mapStatus(transaction.returnCode)
+    const newStatus = mapStatus(transaction.qrCodeResponse?.status)
     await supabase
       .from('sales')
       .update({
-        provider_status: transaction.returnCode ?? null,
+        provider_status: transaction.qrCodeResponse?.status ?? null,
         status: newStatus,
       })
       .eq('id', existingSale.id)
