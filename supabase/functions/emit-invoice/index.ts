@@ -177,6 +177,16 @@ Deno.serve(async (req) => {
     const freightRounding = Math.round((shippingCost - itemFreights.reduce((t, v) => t + v, 0)) * 100) / 100
     if (itemFreights.length > 0) itemFreights[itemFreights.length - 1] += freightRounding
 
+    // Mesma exigência da SEFAZ vale pro desconto: precisa bater exatamente
+    // com a soma distribuída item a item (rejeição "Total do Desconto
+    // difere do somatório dos itens" quando só é declarado no nível geral).
+    const discountTotal = Number(sale.discount_brl ?? 0)
+    const itemDiscounts: number[] = items.map((it: any) =>
+      itemsTotal > 0 ? Math.round((Number(it.unit_price_brl) * it.quantity / itemsTotal) * discountTotal * 100) / 100 : 0,
+    )
+    const discountRounding = Math.round((discountTotal - itemDiscounts.reduce((t, v) => t + v, 0)) * 100) / 100
+    if (itemDiscounts.length > 0) itemDiscounts[itemDiscounts.length - 1] += discountRounding
+
     const payload = {
       natureza_operacao: 'Venda de mercadoria',
       data_emissao: new Date().toISOString(),
@@ -218,6 +228,7 @@ Deno.serve(async (req) => {
         valor_unitario_comercial: Number(it.unit_price_brl),
         valor_bruto: Number(it.unit_price_brl) * it.quantity,
         valor_frete: itemFreights[idx] || undefined,
+        valor_desconto: itemDiscounts[idx] || undefined,
         unidade_tributavel: 'UN',
         quantidade_tributavel: it.quantity,
         valor_unitario_tributacao: Number(it.unit_price_brl),
