@@ -325,6 +325,15 @@ Deno.serve(async (req) => {
       : 0
     const totalAmount = Math.round((baseAmount + installmentFee) * 100) / 100
     const discountAmount = Math.round((fullTotalAmount - productsTotal) * 100) / 100
+    // sale_items.unit_price_brl já sai com o desconto do PIX embutido (é o
+    // preço de fato usado pra montar o item da venda) — sales.discount_brl
+    // precisa guardar só a parte do CUPOM, senão o painel de Vendas (que
+    // calcula total = soma dos itens - discount_brl) subtrai o desconto do
+    // PIX duas vezes: uma já embutida no preço do item, outra aqui. Isso
+    // fazia o total mostrado no painel vir sempre uns 5% abaixo do valor
+    // realmente cobrado do cliente (confirmado com um pedido de teste real:
+    // cobrança certa de R$0,95, painel mostrando R$0,90).
+    const couponOnlyDiscount = Math.round((pixAdjustedTotal - productsTotal) * 100) / 100
     const description =
       lineItems.length === 1
         ? lineItems[0].product.name
@@ -346,7 +355,7 @@ Deno.serve(async (req) => {
         shipping_service: `${shipping.company} ${shipping.service}`.trim(),
         shipping_service_id: String(shipping.id),
         shipping_days: shipping.deliveryDays,
-        discount_brl: discountAmount,
+        discount_brl: couponOnlyDiscount,
         installments: clampedInstallments,
         installment_fee_brl: installmentFee,
         notes: `Pedido feito pelo site — ${description}`,
