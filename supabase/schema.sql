@@ -17,7 +17,7 @@ create table if not exists products (
   piece_count integer,
   cost_price_brl numeric(12, 2) not null default 0,
   sale_price_brl numeric(12, 2) not null default 0,
-  min_stock_alert integer not null default 3,
+  min_stock_alert integer not null default 2,
   image_url text,
   image_urls text[] not null default '{}',
   manufacturer text,

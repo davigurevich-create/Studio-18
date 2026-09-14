@@ -537,7 +537,7 @@ function ProductForm({ onDone }: { onDone: () => void }) {
     piece_count: '',
     cost_price_brl: '',
     sale_price_brl: '',
-    min_stock_alert: '5',
+    min_stock_alert: '2',
     length_cm: '',
     height_cm: '',
     width_cm: '',
