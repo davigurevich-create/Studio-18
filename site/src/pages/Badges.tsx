@@ -115,14 +115,17 @@ function EliteClubCard({ club, index }: { club: (typeof eliteClubs)[number]; ind
   const isTop = index === eliteClubs.length - 1
 
   return (
-    <motion.div
+    <motion.a
+      href={club.url}
+      target="_blank"
+      rel="noreferrer"
       variants={fadeUp}
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, margin: '-60px' }}
       transition={{ delay: index * 0.08 }}
       whileHover={{ y: -6 }}
-      className="group relative flex h-full flex-col items-center overflow-hidden rounded-2xl px-4 py-6"
+      className="group relative flex h-full cursor-pointer flex-col items-center overflow-hidden rounded-2xl px-4 py-6"
       style={{
         background: CARD_BG[index],
         border: `${CARD_BORDER_WIDTH[index]}px solid ${CARD_BORDER[index]}`,
@@ -178,7 +181,7 @@ function EliteClubCard({ club, index }: { club: (typeof eliteClubs)[number]; ind
       <div className="relative z-10 mt-4 text-sm font-medium" style={{ color: 'var(--ink-muted)' }}>
         {club.points}
       </div>
-    </motion.div>
+    </motion.a>
   )
 }
 
@@ -481,11 +484,46 @@ const steps: { title: string; text: ReactNode; bannerDesktop: string; bannerMobi
 // montada = 1 ponto). Cada clube fica visualmente mais "premiado" que o
 // anterior (borda, brilho, tamanho do selo), culminando no Clube 100K.
 const eliteClubs = [
-  { club: 'Clube 10K', title: 'Mecânico de Elite', points: '10.000 pontos', pct: 5, image: '/clube-10k.png' },
-  { club: 'Clube 25K', title: 'Engenheiro de Pista', points: '25.000 pontos', pct: 10, image: '/clube-25k.png' },
-  { club: 'Clube 50K', title: 'Projetista Chefe', points: '50.000 pontos', pct: 20, image: '/clube-50k.png' },
-  { club: 'Clube 75K', title: 'Estrategista Supremo', points: '75.000 pontos', pct: 35, image: '/clube-75k.png' },
-  { club: 'Clube 100K', title: 'Chefe de Equipe', points: '100.000 pontos', pct: 50, image: '/clube-100k.png' },
+  {
+    club: 'Clube 10K',
+    title: 'Mecânico de Elite',
+    points: '10.000 pontos',
+    pct: 5,
+    image: '/clube-10k.png',
+    url: 'https://brasilopenbadge.com.br/partner/studio-18&pg=1be28d1fda591a84d6d478dc897495d4&b=11444',
+  },
+  {
+    club: 'Clube 25K',
+    title: 'Engenheiro de Pista',
+    points: '25.000 pontos',
+    pct: 10,
+    image: '/clube-25k.png',
+    url: 'https://brasilopenbadge.com.br/partner/studio-18&pg=1be28d1fda591a84d6d478dc897495d4&b=11470',
+  },
+  {
+    club: 'Clube 50K',
+    title: 'Projetista Chefe',
+    points: '50.000 pontos',
+    pct: 20,
+    image: '/clube-50k.png',
+    url: 'https://brasilopenbadge.com.br/partner/studio-18&pg=1be28d1fda591a84d6d478dc897495d4&b=11471',
+  },
+  {
+    club: 'Clube 75K',
+    title: 'Estrategista Supremo',
+    points: '75.000 pontos',
+    pct: 35,
+    image: '/clube-75k.png',
+    url: 'https://brasilopenbadge.com.br/partner/studio-18&pg=1be28d1fda591a84d6d478dc897495d4&b=11472',
+  },
+  {
+    club: 'Clube 100K',
+    title: 'Chefe de Equipe',
+    points: '100.000 pontos',
+    pct: 50,
+    image: '/clube-100k.png',
+    url: 'https://brasilopenbadge.com.br/partner/studio-18&pg=1be28d1fda591a84d6d478dc897495d4&b=11473',
+  },
 ]
 
 export function Badges() {
