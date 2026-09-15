@@ -80,9 +80,9 @@ function StepBanner({ index, title, desktop, mobile }: { index: number; title: s
   )
 }
 
-// Tamanho da medalha (px) e intensidade visual crescem a cada clube — a
+// Tamanho do selo (px) e intensidade visual crescem a cada clube — a
 // mesma escada de "quanto mais alto, maior o prêmio" do esboço aprovado.
-// Medalha e todo o texto ficam no MESMO tamanho nos 5 cards — quem carrega
+// Selo e todo o texto ficam no MESMO tamanho nos 5 cards — quem carrega
 // a sensação de progresso é só o "estojo" do card (fundo/borda/brilho,
 // cada vez mais rico) e a cor do número de desconto, nunca o tamanho de
 // nada dentro dele.
@@ -290,7 +290,7 @@ function TiltBanner({
   )
 }
 
-// Medalhas circulares por modelo — mostradas na vitrine do CTA final.
+// Selos circulares por modelo — mostrados na vitrine do CTA final.
 // Mesma lógica de "sobe o arquivo com esse nome e ele aparece sozinho":
 // se a imagem não existir ainda, a própria tag <img> se esconde (onError),
 // sem ícone quebrado nem espaço vazio na fileira.
@@ -397,7 +397,7 @@ function ScrollCue({ label }: { label: string }) {
 
 const stats = [
   { value: 52000, prefix: '+', label: 'peças montadas' },
-  { value: 18, prefix: '+', label: 'medalhas emitidas' },
+  { value: 18, prefix: '+', label: 'selos emitidos' },
   { value: 80, prefix: '+', label: 'colecionadores' },
 ]
 
@@ -464,14 +464,14 @@ const steps: { title: string; text: ReactNode; bannerDesktop: string; bannerMobi
     bannerMobile: '/badges-step-02-mobile.png',
   },
   {
-    title: 'Receba sua medalha',
-    text: 'Sua conquista vira uma medalha digital verificável, emitida pela BOB e guardada no seu portal de medalhas.',
+    title: 'Receba seu selo',
+    text: 'Sua conquista vira um selo digital verificável, emitido pela BOB e guardado no seu portal de selos.',
     bannerDesktop: '/badges-step-03-desktop.png',
     bannerMobile: '/badges-step-03-mobile.png',
   },
   {
     title: 'Suba no ranking',
-    text: 'Cada medalha vale pontos — o mesmo número de peças do set. Acumule pontos e ganhe benefícios exclusivos.',
+    text: 'Cada selo vale pontos — o mesmo número de peças do set. Acumule pontos e ganhe benefícios exclusivos.',
     bannerDesktop: '/badges-step-04-desktop.png',
     bannerMobile: '/badges-step-04-mobile.png',
   },
@@ -479,7 +479,7 @@ const steps: { title: string; text: ReactNode; bannerDesktop: string; bannerMobi
 
 // Vitrine de Elite — escada de recompensa por pontos acumulados (1 peça
 // montada = 1 ponto). Cada clube fica visualmente mais "premiado" que o
-// anterior (borda, brilho, tamanho da medalha), culminando no Clube 100K.
+// anterior (borda, brilho, tamanho do selo), culminando no Clube 100K.
 const eliteClubs = [
   { club: 'Clube 10K', title: 'Mecânico de Elite', points: '10.000 pontos', pct: 5, image: '/clube-10k.png' },
   { club: 'Clube 25K', title: 'Engenheiro de Pista', points: '25.000 pontos', pct: 10, image: '/clube-25k.png' },
@@ -493,7 +493,7 @@ export function Badges() {
   const { scrollYProgress: lineProgress } = useScroll({ target: stepsListRef, offset: ['start 0.75', 'end 0.4'] })
   const lineScale = useTransform(lineProgress, [0, 1], [0, 1])
 
-  // Luzes douradas da seção "o que é uma medalha digital" — derivam
+  // Luzes douradas da seção "o que é um selo digital" — derivam
   // (drift) verticalmente em direções opostas e respiram em brilho
   // conforme a rolagem passa pela seção, só enquanto ela está em cena.
   const whatIsRef = useRef<HTMLDivElement>(null)
@@ -553,14 +553,14 @@ export function Badges() {
             <div>
               <p className="eyebrow mb-4">Uma comunidade baseada em</p>
               <p className="text-4xl font-black uppercase leading-none tracking-tight sm:text-6xl" style={{ color: 'var(--ink)' }}>
-                Medalhas Digitais
+                Selos Digitais Colecionáveis
               </p>
             </div>
           ) : (
             <TiltBanner
               desktopSrc={BANNERS.heroTitleDesktop}
               mobileSrc={BANNERS.heroTitleMobile}
-              alt="Uma comunidade baseada em Medalhas Digitais"
+              alt="Uma comunidade baseada em Selos Digitais Colecionáveis"
               onError={() => setHeroBannerFailed(true)}
             />
           )}
@@ -593,7 +593,7 @@ export function Badges() {
         </div>
       </section>
 
-      {/* O QUE É UMA MEDALHA DIGITAL */}
+      {/* O QUE É UM SELO DIGITAL */}
       <section
         ref={whatIsRef}
         className="relative overflow-hidden px-6 pb-16 pt-24 sm:pt-32"
@@ -615,12 +615,12 @@ export function Badges() {
           className="relative z-10 mx-auto max-w-2xl text-center"
         >
           <p className="eyebrow mb-4">Studio 18 × BOB</p>
-          <h2 className="mb-6 text-3xl font-medium sm:text-4xl">O que é uma Medalha Digital?</h2>
+          <h2 className="mb-6 text-3xl font-medium sm:text-4xl">O que é um Selo Digital Colecionável?</h2>
           <BlurRevealParagraph
             className="mb-6 text-base leading-relaxed sm:text-lg"
             style={{ color: 'var(--ink-secondary)' }}
             goldPhrase="BOB"
-            text="É um certificado digital exclusivo que comprova a montagem do seu set — à prova de falsificação, com todos os detalhes de quando e como você conquistou. Suas medalhas ficam guardadas num portal 100% Studio 18, em parceria com a BOB, a maior plataforma do Brasil nesse formato."
+            text="É um certificado digital exclusivo que comprova a montagem do seu set — à prova de falsificação, com todos os detalhes de quando e como você conquistou. Seus selos ficam guardados num portal 100% Studio 18, em parceria com a BOB, a maior plataforma do Brasil nesse formato."
           />
           <BlurRevealParagraph
             className="mb-8 text-lg font-medium sm:text-xl"
@@ -635,7 +635,7 @@ export function Badges() {
             className="inline-block rounded-full px-8 py-3 text-sm font-medium tracking-wide transition hover:scale-[1.03]"
             style={{ background: 'var(--gold)', color: '#0a0a0a' }}
           >
-            Acessar o portal de medalhas
+            Acessar o portal de selos
           </a>
         </motion.div>
 
@@ -657,7 +657,7 @@ export function Badges() {
           className="mx-auto mb-20 max-w-2xl text-center sm:mb-28"
         >
           <p className="eyebrow mb-2">Como funciona</p>
-          <h2 className="text-3xl font-medium sm:text-4xl">Da montagem à medalha</h2>
+          <h2 className="text-3xl font-medium sm:text-4xl">Da montagem ao selo</h2>
         </motion.div>
 
         <div ref={stepsListRef} className="relative mx-auto max-w-3xl">
@@ -724,7 +724,7 @@ export function Badges() {
 
       {/* GAMIFICAÇÃO — vitrine de elite: 5 clubes por pontos acumulados (1
           peça montada = 1 ponto), cada um mais "premiado" que o anterior em
-          borda/brilho/tamanho da medalha, até o Clube 100K. Grid de 5 no
+          borda/brilho/tamanho do selo, até o Clube 100K. Grid de 5 no
           desktop; carrossel com scroll-snap no mobile (mesmo padrão já usado
           nos "stories" do Manifesto) — 5 cards lado a lado nunca caberiam
           legíveis numa tela de celular. */}
@@ -803,7 +803,7 @@ export function Badges() {
       </section>
 
       {/* CTA FINAL — banner de fundo (arte pronta, já traz a vitrine de
-          medalhas dos modelos "impressa" na parte de baixo), fixado pela
+          selos dos modelos "impressa" na parte de baixo), fixado pela
           base pra essa vitrine ficar sempre visível. Degradê pro preto só
           no topo (pedido do usuário) pra fundir com a seção anterior. */}
       <section
@@ -836,7 +836,7 @@ export function Badges() {
             className="inline-block rounded-full px-10 py-4 text-sm font-medium tracking-wide transition hover:scale-[1.03]"
             style={{ background: 'var(--gold)', color: '#0a0a0a' }}
           >
-            Acessar o portal de medalhas →
+            Acessar o portal de selos →
           </a>
         </motion.div>
       </section>

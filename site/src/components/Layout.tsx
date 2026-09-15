@@ -26,7 +26,7 @@ const navLinks = [
   { href: '/recomendador', label: 'Recomendação IA' },
   { href: '/quem-somos', label: 'Quem Somos' },
   { href: '/diferenciais', label: 'Diferenciais' },
-  { href: '/badges', label: 'Medalhas Digitais' },
+  { href: '/badges', label: 'Selos Digitais' },
   { href: '/#pecas-faltantes', label: 'Peças faltantes' },
   { href: '/blog', label: 'Blog' },
 ]
