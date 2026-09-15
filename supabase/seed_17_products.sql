@@ -14,7 +14,7 @@ insert into products (sku, name, category, manufacturer, collection_tag, scale, 
 values
   ('S18-001', 'Lamborghini Countach', 'carro', 'GULY', 'Vintage', '1:8', 3970, 0, 1564.40, 3),
   ('S18-002', 'BMW R1300GS', 'moto', 'GULY', 'Motocicleta', '1:5', 2489, 0, 1827.44, 3),
-  ('S18-003', '963 (Edição Limitada Cromada)', 'carro', 'GULY', 'Lemans', '1:8', 3069, 0, 1287.52, 3),
+  ('S18-003', 'Porsche 963 LEMANS', 'carro', 'GULY', 'Lemans', '1:8', 3069, 0, 1287.52, 3),
   ('S18-004', 'BMW M4 GT4', 'carro', 'CBOX', 'Série GT', '1:8', 4556, 0, 1739.36, 3),
   ('S18-005', 'Pagani Utopia', 'carro', 'CBOX', 'Supercarro', '1:8', 4688, 0, 1353.66, 3),
   ('S18-006', 'Lotus Exige Cup 430', 'carro', 'CADA', 'Supercarro', '1:8', 3730, 0, 707.60, 3),

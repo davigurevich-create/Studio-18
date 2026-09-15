@@ -41,7 +41,7 @@ export const categories: CategoryDef[] = [
     banner: '/banner-lemans-gt.png',
     bannerMobile: '/banner-lemans-gt-mobile.png',
     skus: [
-      'S18-003', // Porsche 963
+      'S18-003', // Porsche 963 LEMANS
       'S18-007', // Mazda 787B
       'S18-004', // BMW M4 GT4
     ],
