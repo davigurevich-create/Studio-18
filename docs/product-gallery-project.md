@@ -55,7 +55,7 @@ de verdade visual pra cada ângulo.
 
 | SKU | Produto | Capa | Galeria | SQL migration | Observação |
 |---|---|---|---|---|---|
-| S18-001 | Lamborghini LP5000 | ✅ já estava certa | ✅ 4 fotos (frente, lateral, traseira, caixa) | `031` | — |
+| S18-001 | Lamborghini Countach | ✅ já estava certa | ✅ 4 fotos (frente, lateral, traseira, caixa) | `031` | — |
 | S18-002 | Moto "BMW R1300GS" (GULY) | ✅ corrigida | ✅ 3 fotos (falta "frente", decisão do usuário) | `035` | Nome "BMW R1300GS" mantido no catálogo — decisão do usuário, não mexer |
 | S18-003 | Porsche 963 | ✅ já estava certa | ✅ 5 fotos (frente, lateral, traseira, aberto, caixa) | `032` | — |
 | S18-004 | BMW M4 GT4 | ✅ já estava certa | ✅ 6 fotos (frente, traseira, aberto, motor, interior, caixa) | `038` | Primeiro produto a usar a técnica de "detalhe com fundo trocado" (pipeline item 13) |
@@ -104,7 +104,7 @@ apontava pro mesmo caminho).
 capa no futuro):
 
 1. **Não copiar detalhes da capa antiga/errada pro prompt.** No S18-001
-   (LP5000) e no S18-003 (Porsche 963) o prompt inicial descreveu
+   (Countach) e no S18-003 (Porsche 963) o prompt inicial descreveu
    aerofólio/adesivos que eu lembrava da versão antiga do site, não os
    que realmente apareciam na foto de referência nova — saiu aerofólio
    preto em vez de branco, e sem os adesivos "RACEFORGE"/"GULY" corretos.

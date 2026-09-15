@@ -18,7 +18,7 @@ export const categories: CategoryDef[] = [
     banner: '/banner-supercarros.png',
     bannerMobile: '/banner-supercarros-mobile.png',
     skus: [
-      'S18-001', // Lamborghini LP5000
+      'S18-001', // Lamborghini Countach
       'S18-005', // Pagani Utopia
       'S18-006', // Lotus Exige Cup 430
       'S18-008', // Lamborghini Centenario

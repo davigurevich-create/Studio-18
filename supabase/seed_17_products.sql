@@ -12,7 +12,7 @@
 
 insert into products (sku, name, category, manufacturer, collection_tag, scale, piece_count, cost_price_brl, sale_price_brl, min_stock_alert)
 values
-  ('S18-001', 'Lamborghini LP5000', 'carro', 'GULY', 'Vintage', '1:8', 3970, 0, 1564.40, 3),
+  ('S18-001', 'Lamborghini Countach', 'carro', 'GULY', 'Vintage', '1:8', 3970, 0, 1564.40, 3),
   ('S18-002', 'BMW R1300GS', 'moto', 'GULY', 'Motocicleta', '1:5', 2489, 0, 1827.44, 3),
   ('S18-003', '963 (Edição Limitada Cromada)', 'carro', 'GULY', 'Lemans', '1:8', 3069, 0, 1287.52, 3),
   ('S18-004', 'BMW M4 GT4', 'carro', 'CBOX', 'Série GT', '1:8', 4556, 0, 1739.36, 3),
