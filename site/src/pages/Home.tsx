@@ -295,7 +295,7 @@ export function Home() {
             style={{ color: 'var(--ink-muted)' }}
           >
             Somos os únicos com impressora 3D própria para produzir peças provisórias em tempo recorde. Conte pra
-            gente qual peça faltou no seu set e escolha como prefere recebê-la — sempre sem nenhum custo.
+            gente qual peça faltou no seu set e a gente imprime e envia — sempre sem nenhum custo.
           </motion.p>
 
           <motion.div

@@ -1,5 +1,5 @@
-import { Link, Outlet, useLocation } from 'react-router-dom'
-import { createContext, useContext, useEffect, useState } from 'react'
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { createContext, useContext, useEffect, useState, type MouseEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { User } from 'lucide-react'
 import { ChatWidget } from '@/components/ChatWidget'
@@ -31,8 +31,27 @@ const navLinks = [
   { href: '/blog', label: 'Blog' },
 ]
 
+// Rola até a seção com esse id, corrigindo a posição algumas vezes seguidas —
+// o conteúdo acima da seção (ex: grade de produtos da Coleção, carregada de
+// forma assíncrona do Supabase) pode mudar de altura bem depois do clique e
+// "empurrar" a seção alvo para baixo, deixando a rolagem original errada.
+function scrollToSectionId(id: string) {
+  const scrollToTarget = () => {
+    const el = document.getElementById(id)
+    if (el) {
+      const headerOffset = 96
+      const top = el.getBoundingClientRect().top + window.scrollY - headerOffset
+      window.scrollTo({ top, behavior: 'smooth' })
+    }
+  }
+  const timers = [80, 400, 900, 1600, 2500].map((delay) => window.setTimeout(scrollToTarget, delay))
+  scrollToTarget()
+  return () => timers.forEach((timer) => window.clearTimeout(timer))
+}
+
 export function Layout() {
   const location = useLocation()
+  const navigate = useNavigate()
   const [scrolled, setScrolled] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
   const [floatingHeaderReady, setFloatingHeaderReady] = useState(true)
@@ -62,24 +81,10 @@ export function Layout() {
     setMenuOpen(false)
 
     if (location.hash) {
-      const id = location.hash.slice(1)
-      const scrollToTarget = () => {
-        const el = document.getElementById(id)
-        if (el) {
-          const headerOffset = 96
-          const top = el.getBoundingClientRect().top + window.scrollY - headerOffset
-          window.scrollTo({ top, behavior: 'smooth' })
-        }
-      }
       // A seção alvo só existe no DOM depois que a nova rota termina de
-      // renderizar (ex: vindo do /blog para "/"), então esperamos um
-      // instante antes de rolar até ela. Repetimos a rolagem mais algumas
-      // vezes depois disso porque o conteúdo acima da seção (ex: a grade de
-      // produtos da Coleção, carregada de forma assíncrona) pode mudar de
-      // altura e "empurrar" a seção-alvo para baixo — sem essas correções a
-      // página fica presa na posição de antes desse carregamento terminar.
-      const timers = [80, 400, 900].map((delay) => window.setTimeout(scrollToTarget, delay))
-      return () => timers.forEach((timer) => window.clearTimeout(timer))
+      // renderizar (ex: vindo do /blog para "/"), então scrollToSectionId já
+      // espera um instante e repete a rolagem algumas vezes.
+      return scrollToSectionId(location.hash.slice(1))
     }
 
     // voltando de um produto pra Home, quem cuida da rolagem é o próprio
@@ -101,6 +106,23 @@ export function Layout() {
   // Só vira o card flutuante quando já rolou (nunca no carregamento) e só
   // no desktop — no mobile, mesmo rolado, continua a barra reta de sempre.
   const floatingCard = scrolled && !menuOpen && isDesktop && floatingHeaderReady
+
+  // Links do tipo "/#secao" (ex: "Peças faltantes") só disparam a rolagem via
+  // useEffect acima quando location.hash muda de valor — se a pessoa já
+  // tinha clicado nesse mesmo link antes (hash na URL não muda) e rolou pra
+  // outro lugar da página manualmente, um novo clique não fazia nada, porque
+  // pro React Router é a "mesma" navegação. Interceptamos o clique nesses
+  // links pra rolar direto, sem depender de o hash ter mudado.
+  const handleHashLinkClick = (href: string) => (e: MouseEvent<HTMLAnchorElement>) => {
+    const hashIndex = href.indexOf('#')
+    if (hashIndex === -1) return
+    const targetPath = href.slice(0, hashIndex) || '/'
+    const id = href.slice(hashIndex + 1)
+    if (location.pathname !== targetPath) return // deixa a navegação normal acontecer
+    e.preventDefault()
+    if (location.hash !== `#${id}`) navigate(href, { replace: true })
+    scrollToSectionId(id)
+  }
 
   // Sempre centralizado via left:50% + translateX(-50%) nos dois estados —
   // só a largura anima (100% -> calc(100% - 2rem)). Isso evita a troca de
@@ -146,7 +168,7 @@ export function Layout() {
           <div className="flex items-center gap-6">
             <nav className="hidden gap-8 text-sm tracking-wide sm:flex" style={{ color: 'var(--ink-secondary)' }}>
               {navLinks.map((l) => (
-                <Link key={l.href} to={l.href} className="hover:text-[var(--gold)]">
+                <Link key={l.href} to={l.href} onClick={handleHashLinkClick(l.href)} className="hover:text-[var(--gold)]">
                   {l.label}
                 </Link>
               ))}
@@ -238,6 +260,7 @@ export function Layout() {
                 >
                   <Link
                     to={l.href}
+                    onClick={handleHashLinkClick(l.href)}
                     className="block px-6 py-2.5 text-center text-3xl font-bold uppercase tracking-tight"
                     style={{ color: 'var(--ink)' }}
                   >

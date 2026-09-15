@@ -1,30 +1,14 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { Factory, ImagePlus, Printer, X } from 'lucide-react'
-import { submitPartRequest, uploadPartRequestPhoto, type MyOrder, type PartRequestInput } from '@/lib/api'
+import { ImagePlus, Printer, X } from 'lucide-react'
+import { submitPartRequest, uploadPartRequestPhoto, type MyOrder } from '@/lib/api'
 import { formatBRL } from '@/lib/format'
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024
 
-const replacementOptions: {
-  id: PartRequestInput['replacementType']
-  icon: typeof Printer
-  title: string
-  hint: string
-}[] = [
-  {
-    id: 'impressao_3d',
-    icon: Printer,
-    title: 'Peça impressa em 3D',
-    hint: 'Produzida no nosso estúdio e enviada em até 2 dias úteis.',
-  },
-  {
-    id: 'original_fabricante',
-    icon: Factory,
-    title: 'Peça original do fabricante',
-    hint: 'Solicitada direto ao fabricante — prazo de envio maior.',
-  },
-]
+// Studio 18 só repõe peças por impressão 3D própria (diferencial da marca) —
+// não existe mais escolha entre impressão 3D e pedido ao fabricante.
+const REPLACEMENT_TYPE = 'impressao_3d' as const
 
 /**
  * Formulário de peça faltante dentro da área logada — o pedido é escolhido
@@ -35,7 +19,6 @@ export function PartRequestForm({ orders, onSubmitted }: { orders: MyOrder[]; on
   const [orderId, setOrderId] = useState(orders[0]?.id ?? '')
   const [productModel, setProductModel] = useState('')
   const [partDescription, setPartDescription] = useState('')
-  const [replacementType, setReplacementType] = useState<PartRequestInput['replacementType']>('impressao_3d')
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -99,7 +82,7 @@ export function PartRequestForm({ orders, onSubmitted }: { orders: MyOrder[]; on
         orderId,
         productModel,
         partDescription,
-        replacementType,
+        replacementType: REPLACEMENT_TYPE,
         photoUrl,
       })
       setDone(true)
@@ -253,39 +236,16 @@ export function PartRequestForm({ orders, onSubmitted }: { orders: MyOrder[]; on
         )}
       </div>
 
-      <div>
-        <label className="mb-3 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-          COMO VOCÊ PREFERE RECEBER A REPOSIÇÃO?
-        </label>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {replacementOptions.map((opt) => {
-            const Icon = opt.icon
-            const active = replacementType === opt.id
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setReplacementType(opt.id)}
-                className="rounded-xl border p-4 text-left transition"
-                style={{
-                  borderColor: active ? 'var(--gold)' : 'var(--hairline)',
-                  background: active ? 'var(--gold-wash)' : 'var(--carbon-1)',
-                }}
-              >
-                <Icon size={20} strokeWidth={1.75} style={{ color: active ? 'var(--gold-bright)' : 'var(--ink-muted)' }} />
-                <div className="mt-2 text-sm font-medium" style={{ color: active ? 'var(--gold-bright)' : 'var(--ink)' }}>
-                  {opt.title}
-                </div>
-                <div className="mt-1 text-xs" style={{ color: 'var(--ink-muted)' }}>
-                  {opt.hint}
-                </div>
-              </button>
-            )
-          })}
+      <div className="flex items-center gap-3 rounded-xl border p-4" style={{ borderColor: 'var(--gold)', background: 'var(--gold-wash)' }}>
+        <Printer size={20} strokeWidth={1.75} style={{ color: 'var(--gold-bright)' }} />
+        <div>
+          <div className="text-sm font-medium" style={{ color: 'var(--gold-bright)' }}>
+            Peça impressa em 3D no nosso estúdio
+          </div>
+          <div className="mt-0.5 text-xs" style={{ color: 'var(--ink-muted)' }}>
+            Enviada em até 2 dias úteis, sempre sem nenhum custo.
+          </div>
         </div>
-        <p className="mt-3 text-xs" style={{ color: 'var(--gold-bright)' }}>
-          As duas opções são 100% gratuitas — nunca cobramos pela reposição de peças.
-        </p>
       </div>
 
       {error && (

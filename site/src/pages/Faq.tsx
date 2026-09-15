@@ -30,8 +30,8 @@ const faqs: { q: string; a: ReactNode }[] = [
         <a href="/#pecas-faltantes" className="underline" style={{ color: 'var(--gold)' }}>
           formulário de peças faltantes
         </a>{' '}
-        informando o número do pedido. Você escolhe entre receber uma peça impressa em 3D pelo nosso próprio
-        estúdio em até 2 dias úteis, ou a peça original pedida ao fabricante — sempre sem nenhum custo.
+        informando o número do pedido. A gente produz a peça na nossa própria impressora 3D e envia em até 2 dias
+        úteis — sempre sem nenhum custo.
       </>
     ),
   },
