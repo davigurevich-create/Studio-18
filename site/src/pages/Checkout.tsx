@@ -21,6 +21,7 @@ import { INSTALLMENT_SURCHARGE_FROM, installmentTotal, installmentValue, pixPric
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { useTurnstile } from '@/lib/useTurnstile'
+import { trackEvent } from '@/lib/metaPixel'
 import type { CatalogProduct, PaymentMethod, ShippingOption } from '@/types/catalog'
 
 const methods: { id: PaymentMethod; label: string; hint: string; badge?: string }[] = [
@@ -69,6 +70,9 @@ export function Checkout() {
   const [cardInstallments, setCardInstallments] = useState(1)
   const [pixWaitingLong, setPixWaitingLong] = useState(false)
   const { containerRef: turnstileRef, getToken: getTurnstileToken } = useTurnstile()
+  const initiateCheckoutFiredRef = useRef(false)
+  const purchaseFiredRef = useRef(false)
+  const orderSnapshotRef = useRef<{ contentIds: string[]; value: number; numItems: number } | null>(null)
 
   const copyToClipboard = useCallback((field: 'order' | 'pix', text: string) => {
     navigator.clipboard.writeText(text)
@@ -172,6 +176,30 @@ export function Checkout() {
     : priceBeforeCoupon
   const total = Math.round((productsTotal + (selectedShipping?.price ?? 0)) * 100) / 100
   const cardTotal = method === 'cartao' ? installmentTotal(total, cardInstallments) : total
+
+  useEffect(() => {
+    if (initiateCheckoutFiredRef.current || items.length === 0) return
+    initiateCheckoutFiredRef.current = true
+    trackEvent('InitiateCheckout', {
+      content_ids: items.map((i) => i.product.id),
+      value: subtotal,
+      currency: 'BRL',
+      num_items: items.reduce((t, i) => t + i.line.quantity, 0),
+    })
+  }, [items, subtotal])
+
+  useEffect(() => {
+    if (result?.status === 'pago' && !purchaseFiredRef.current && orderSnapshotRef.current) {
+      purchaseFiredRef.current = true
+      trackEvent('Purchase', {
+        content_ids: orderSnapshotRef.current.contentIds,
+        value: orderSnapshotRef.current.value,
+        num_items: orderSnapshotRef.current.numItems,
+        currency: 'BRL',
+        order_id: result.orderId,
+      })
+    }
+  }, [result])
 
   const applyCoupon = useCallback(async () => {
     const code = couponInput.trim()
@@ -344,6 +372,11 @@ export function Checkout() {
       // 350ms é o tempo que a barra leva pra terminar de preencher (ver
       // transition abaixo) + 1000ms parada no 100% antes de trocar de tela.
       await new Promise((resolve) => setTimeout(resolve, 350 + 1000))
+      orderSnapshotRef.current = {
+        contentIds: checkoutItems.map((i) => i.productId),
+        value: method === 'cartao' ? cardTotal : total,
+        numItems: checkoutItems.reduce((t, i) => t + i.quantity, 0),
+      }
       setResult(res)
       setStep('done')
       clear()

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { joinRestockWaitlist } from '@/lib/api'
+import { trackEvent } from '@/lib/metaPixel'
 
 export function RestockWaitlistForm({
   productId,
@@ -20,6 +21,7 @@ export function RestockWaitlistForm({
     setSubmitting(true)
     try {
       await joinRestockWaitlist({ productId, customerName: name || undefined, customerEmail: email })
+      trackEvent('Lead', { content_ids: [productId], content_category: 'restock_waitlist' })
       setDone(true)
     } catch {
       setError('Não foi possível registrar seu e-mail agora. Tente novamente em instantes.')
