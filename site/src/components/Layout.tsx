@@ -57,6 +57,7 @@ export function Layout() {
   const [isDesktop, setIsDesktop] = useState(false)
   const [floatingHeaderReady, setFloatingHeaderReady] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [mobileCollectionOpen, setMobileCollectionOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
   const { totalCount } = useCart()
   const { session } = useAuth()
@@ -103,6 +104,7 @@ export function Layout() {
 
   useEffect(() => {
     setMenuOpen(false)
+    setMobileCollectionOpen(false)
     trackPageView()
 
     if (location.hash) {
@@ -298,7 +300,7 @@ export function Layout() {
                   handleHashLinkClick(`/#${cat.slug}`)(e)
                   setCollectionMenuOpen(false)
                 }}
-                className="px-4 py-2.5 text-sm tracking-wide hover:text-[var(--gold)]"
+                className="px-4 py-2.5 text-sm tracking-wide transition-colors hover:bg-[var(--gold-wash)] hover:text-[var(--gold)]"
                 style={{ color: 'var(--ink-secondary)' }}
               >
                 {cat.title.toUpperCase()}
@@ -322,23 +324,77 @@ export function Layout() {
             style={{ background: '#000000' }}
           >
             <nav className="flex flex-col items-center">
-              {navLinks.map((l, i) => (
-                <motion.div
-                  key={l.href}
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.04 * i, duration: 0.3, ease: 'easeOut' }}
-                >
-                  <Link
-                    to={l.href}
-                    onClick={handleHashLinkClick(l.href)}
-                    className="block px-6 py-2.5 text-center text-3xl font-bold uppercase tracking-tight"
-                    style={{ color: 'var(--ink)' }}
+              {navLinks.map((l, i) =>
+                l.href === '/#colecao' ? (
+                  <motion.div
+                    key={l.href}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.04 * i, duration: 0.3, ease: 'easeOut' }}
+                    className="flex flex-col items-center"
                   >
-                    {l.label}
-                  </Link>
-                </motion.div>
-              ))}
+                    <div className="flex items-center gap-2 px-6 py-2.5">
+                      <Link
+                        to={l.href}
+                        onClick={handleHashLinkClick(l.href)}
+                        className="text-center text-3xl font-bold uppercase tracking-tight"
+                        style={{ color: 'var(--ink)' }}
+                      >
+                        {l.label}
+                      </Link>
+                      <button
+                        type="button"
+                        aria-label={mobileCollectionOpen ? 'Fechar categorias' : 'Ver categorias'}
+                        onClick={() => setMobileCollectionOpen((v) => !v)}
+                        className="flex h-8 w-8 items-center justify-center"
+                      >
+                        <motion.span animate={{ rotate: mobileCollectionOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                          <ChevronDown size={22} strokeWidth={2} style={{ color: 'var(--ink-muted)' }} />
+                        </motion.span>
+                      </button>
+                    </div>
+                    <AnimatePresence>
+                      {mobileCollectionOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="flex flex-col items-center overflow-hidden"
+                        >
+                          {categories.map((cat) => (
+                            <Link
+                              key={cat.slug}
+                              to={`/#${cat.slug}`}
+                              onClick={handleHashLinkClick(`/#${cat.slug}`)}
+                              className="block px-6 py-2 text-center text-base font-medium uppercase tracking-wide"
+                              style={{ color: 'var(--ink-muted)' }}
+                            >
+                              {cat.title}
+                            </Link>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key={l.href}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.04 * i, duration: 0.3, ease: 'easeOut' }}
+                  >
+                    <Link
+                      to={l.href}
+                      onClick={handleHashLinkClick(l.href)}
+                      className="block px-6 py-2.5 text-center text-3xl font-bold uppercase tracking-tight"
+                      style={{ color: 'var(--ink)' }}
+                    >
+                      {l.label}
+                    </Link>
+                  </motion.div>
+                ),
+              )}
             </nav>
           </motion.div>
         )}
