@@ -6,6 +6,7 @@ import { ChatWidget } from '@/components/ChatWidget'
 import { CartDrawer } from '@/components/CartDrawer'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
+import { trackPageView } from '@/lib/metaPixel'
 
 // Por padrão, o header pode virar o card flutuante assim que a página
 // rola. Algumas páginas (ex: Diferenciais, que fica "presa" numa
@@ -79,6 +80,7 @@ export function Layout() {
 
   useEffect(() => {
     setMenuOpen(false)
+    trackPageView()
 
     if (location.hash) {
       // A seção alvo só existe no DOM depois que a nova rota termina de

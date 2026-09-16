@@ -10,6 +10,7 @@ import { installmentValue, INTEREST_FREE_INSTALLMENTS, LOW_STOCK_THRESHOLD, pixP
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { useFavorites } from '@/lib/favorites'
+import { trackEvent } from '@/lib/metaPixel'
 import type { CatalogProduct, ShippingOption } from '@/types/catalog'
 
 export function Product() {
@@ -27,6 +28,17 @@ export function Product() {
     if (!id) return
     getProduct(id).then((p) => setProduct(p ?? null))
   }, [id])
+
+  useEffect(() => {
+    if (!product) return
+    trackEvent('ViewContent', {
+      content_ids: [product.id],
+      content_name: product.name,
+      content_type: 'product',
+      value: product.sale_price_brl,
+      currency: 'BRL',
+    })
+  }, [product])
 
   if (product === undefined) {
     return <div className="px-6 py-40 text-center" style={{ color: 'var(--ink-muted)' }}>Carregando...</div>
@@ -233,6 +245,12 @@ export function Product() {
                   type="button"
                   onClick={() => {
                     addItem(product.id, quantity, product.name, withMotor)
+                    trackEvent('AddToCart', {
+                      content_ids: [product.id],
+                      content_name: product.name,
+                      value: effectivePrice * quantity,
+                      currency: 'BRL',
+                    })
                     setAdded(true)
                     setTimeout(() => setAdded(false), 2000)
                   }}
@@ -245,6 +263,12 @@ export function Product() {
                   type="button"
                   onClick={() => {
                     addItem(product.id, quantity, undefined, withMotor)
+                    trackEvent('AddToCart', {
+                      content_ids: [product.id],
+                      content_name: product.name,
+                      value: effectivePrice * quantity,
+                      currency: 'BRL',
+                    })
                     navigate('/checkout')
                   }}
                   className="flex-1 rounded-full px-8 py-3 text-sm font-medium tracking-wide"
