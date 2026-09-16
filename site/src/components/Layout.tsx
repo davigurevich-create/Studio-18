@@ -333,11 +333,11 @@ export function Layout() {
                     transition={{ delay: 0.04 * i, duration: 0.3, ease: 'easeOut' }}
                     className="flex flex-col items-center"
                   >
-                    <div className="flex items-center gap-2 px-6 py-2.5">
+                    <div className="flex items-center">
                       <Link
                         to={l.href}
                         onClick={handleHashLinkClick(l.href)}
-                        className="text-center text-3xl font-bold uppercase tracking-tight"
+                        className="py-2.5 pl-6 pr-2 text-center text-3xl font-bold uppercase tracking-tight"
                         style={{ color: 'var(--ink)' }}
                       >
                         {l.label}
@@ -346,7 +346,7 @@ export function Layout() {
                         type="button"
                         aria-label={mobileCollectionOpen ? 'Fechar categorias' : 'Ver categorias'}
                         onClick={() => setMobileCollectionOpen((v) => !v)}
-                        className="flex h-8 w-8 items-center justify-center"
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
                       >
                         <motion.span animate={{ rotate: mobileCollectionOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
                           <ChevronDown size={22} strokeWidth={2} style={{ color: 'var(--ink-muted)' }} />
