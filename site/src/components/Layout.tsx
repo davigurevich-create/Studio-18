@@ -1,12 +1,13 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { createContext, useContext, useEffect, useState, type MouseEvent } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { User } from 'lucide-react'
+import { ChevronDown, User } from 'lucide-react'
 import { ChatWidget } from '@/components/ChatWidget'
 import { CartDrawer } from '@/components/CartDrawer'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { trackPageView } from '@/lib/metaPixel'
+import { categories } from '@/lib/categories'
 
 // Por padrão, o header pode virar o card flutuante assim que a página
 // rola. Algumas páginas (ex: Diferenciais, que fica "presa" numa
@@ -24,7 +25,6 @@ export function useSetFloatingHeaderReady(ready: boolean) {
 
 const navLinks = [
   { href: '/#colecao', label: 'Coleção' },
-  { href: '/recomendador', label: 'Recomendação IA' },
   { href: '/quem-somos', label: 'Quem Somos' },
   { href: '/diferenciais', label: 'Diferenciais' },
   { href: '/badges', label: 'Selos Digitais' },
@@ -61,8 +61,31 @@ export function Layout() {
   const { totalCount } = useCart()
   const { session } = useAuth()
 
+  // Submenu de categorias no hover do "Coleção" (só desktop) — renderizado
+  // fora do <header>, porque o header usa overflow:hidden (pro recorte das
+  // bordas arredondadas do card flutuante) e cortaria um dropdown que fosse
+  // filho dele. Posição calculada a partir do link real (getBoundingClientRect)
+  // pra acompanhar tanto a barra reta quanto o card flutuante.
+  const collectionLinkRef = useRef<HTMLAnchorElement>(null)
+  const [collectionMenuOpen, setCollectionMenuOpen] = useState(false)
+  const [collectionMenuPos, setCollectionMenuPos] = useState<{ left: number; top: number } | null>(null)
+  const collectionCloseTimer = useRef<number | undefined>(undefined)
+
+  const openCollectionMenu = () => {
+    window.clearTimeout(collectionCloseTimer.current)
+    const rect = collectionLinkRef.current?.getBoundingClientRect()
+    if (rect) setCollectionMenuPos({ left: rect.left, top: rect.bottom + 10 })
+    setCollectionMenuOpen(true)
+  }
+  const scheduleCloseCollectionMenu = () => {
+    collectionCloseTimer.current = window.setTimeout(() => setCollectionMenuOpen(false), 150)
+  }
+
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24)
+    const onScroll = () => {
+      setScrolled(window.scrollY > 24)
+      setCollectionMenuOpen(false)
+    }
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
@@ -169,11 +192,25 @@ export function Layout() {
           </Link>
           <div className="flex items-center gap-6">
             <nav className="hidden gap-8 text-sm tracking-wide sm:flex" style={{ color: 'var(--ink-secondary)' }}>
-              {navLinks.map((l) => (
-                <Link key={l.href} to={l.href} onClick={handleHashLinkClick(l.href)} className="hover:text-[var(--gold)]">
-                  {l.label}
-                </Link>
-              ))}
+              {navLinks.map((l) =>
+                l.href === '/#colecao' ? (
+                  <span key={l.href} onMouseEnter={openCollectionMenu} onMouseLeave={scheduleCloseCollectionMenu}>
+                    <Link
+                      ref={collectionLinkRef}
+                      to={l.href}
+                      onClick={handleHashLinkClick(l.href)}
+                      className="flex items-center gap-1 hover:text-[var(--gold)]"
+                    >
+                      {l.label}
+                      <ChevronDown size={13} strokeWidth={2} />
+                    </Link>
+                  </span>
+                ) : (
+                  <Link key={l.href} to={l.href} onClick={handleHashLinkClick(l.href)} className="hover:text-[var(--gold)]">
+                    {l.label}
+                  </Link>
+                ),
+              )}
             </nav>
 
             <Link
@@ -238,6 +275,38 @@ export function Layout() {
         </div>
 
       </header>
+
+      {/* Submenu de categorias do "Coleção" — ver comentário do estado
+          collectionMenuOpen acima sobre por que fica fora do <header>. */}
+      <AnimatePresence>
+        {collectionMenuOpen && collectionMenuPos && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15 }}
+            onMouseEnter={openCollectionMenu}
+            onMouseLeave={scheduleCloseCollectionMenu}
+            className="fixed z-50 hidden min-w-[200px] flex-col overflow-hidden rounded-xl border py-2 sm:flex"
+            style={{ left: collectionMenuPos.left, top: collectionMenuPos.top, background: '#0a0a0a', borderColor: 'var(--hairline)', boxShadow: '0 16px 40px rgba(0,0,0,0.55)' }}
+          >
+            {categories.map((cat) => (
+              <Link
+                key={cat.slug}
+                to={`/#${cat.slug}`}
+                onClick={(e) => {
+                  handleHashLinkClick(`/#${cat.slug}`)(e)
+                  setCollectionMenuOpen(false)
+                }}
+                className="px-4 py-2.5 text-sm tracking-wide hover:text-[var(--gold)]"
+                style={{ color: 'var(--ink-secondary)' }}
+              >
+                {cat.title.toUpperCase()}
+              </Link>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* menu mobile — overlay em tela cheia com os itens grandes e
           centralizados (inspirado no menu mobile da Nifeliz), mas com
