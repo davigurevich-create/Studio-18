@@ -32,7 +32,7 @@ const methods: { id: PaymentMethod; label: string; hint: string; badge?: string 
 export function Checkout() {
   const navigate = useNavigate()
   const { session } = useAuth()
-  const { lines, clear } = useCart()
+  const { lines, clear, setQuantity, removeItem } = useCart()
   const [catalog, setCatalog] = useState<CatalogProduct[] | undefined>(undefined)
   const [method, setMethod] = useState<PaymentMethod>('cartao')
   const [name, setName] = useState('')
@@ -878,11 +878,40 @@ export function Checkout() {
               <div className="flex flex-1 items-center justify-between gap-3">
                 <div>
                   <div className="text-sm" style={{ color: 'var(--ink)' }}>
-                    {line.quantity}x {product.name}
+                    {product.name}
                   </div>
                   <div className="text-xs" style={{ color: 'var(--ink-muted)' }}>
                     {product.manufacturer} · {product.scale}
                     {line.withMotor && ' · com motor funcional'}
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(product.id, line.quantity - 1)}
+                      className="flex h-6 w-6 items-center justify-center rounded-full border text-xs"
+                      style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+                    >
+                      −
+                    </button>
+                    <span className="tabular text-sm" style={{ color: 'var(--ink)' }}>
+                      {line.quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(product.id, line.quantity + 1)}
+                      className="flex h-6 w-6 items-center justify-center rounded-full border text-xs"
+                      style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
+                    >
+                      +
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(product.id)}
+                      className="ml-1 text-xs"
+                      style={{ color: 'var(--ink-muted)' }}
+                    >
+                      remover
+                    </button>
                   </div>
                 </div>
                 <div className="tabular shrink-0 text-sm font-medium" style={{ color: 'var(--gold-bright)' }}>
