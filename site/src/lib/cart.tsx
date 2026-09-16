@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { getCatalog } from '@/lib/api'
 
 export interface CartLine {
   productId: string
@@ -45,6 +46,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(lines))
   }, [lines])
+
+  // Remove do carrinho itens que sumiram do catálogo (ex: produto de teste
+  // desativado depois de ter sido adicionado ao carrinho) — sem isso o
+  // número no ícone do carrinho ficava contando itens "fantasma" que nunca
+  // apareciam na gaveta do carrinho, porque ela já filtra pelo catálogo
+  // atual.
+  useEffect(() => {
+    getCatalog().then((catalog) => {
+      const validIds = new Set(catalog.map((p) => p.id))
+      setLines((prev) => prev.filter((l) => validIds.has(l.productId)))
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const addItem = (productId: string, quantity = 1, productName?: string, withMotor = false) => {
     setLines((prev) => {
