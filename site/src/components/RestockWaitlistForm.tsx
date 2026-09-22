@@ -20,7 +20,7 @@ export function RestockWaitlistForm({
     setError(null)
     setSubmitting(true)
     try {
-      await joinRestockWaitlist({ productId, customerName: name || undefined, customerEmail: email })
+      await joinRestockWaitlist({ productId, customerName: name, customerEmail: email })
       trackEvent('Lead', { content_ids: [productId], content_category: 'restock_waitlist' })
       setDone(true)
     } catch {
@@ -49,9 +49,10 @@ export function RestockWaitlistForm({
         {!compact && (
           <input
             type="text"
+            required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Seu nome (opcional)"
+            placeholder="Seu nome"
             className="min-w-0 flex-1 rounded-lg border bg-transparent px-3 py-2 text-sm outline-none"
             style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
           />
