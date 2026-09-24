@@ -20,6 +20,7 @@ import { formatBRL } from '@/lib/format'
 import { INSTALLMENT_SURCHARGE_FROM, installmentTotal, installmentValue, pixPrice, unitPriceWithMotor } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
+import { consumePendingCoupon, markHasPurchased } from '@/lib/welcomeOffer'
 import { useTurnstile } from '@/lib/useTurnstile'
 import { trackEvent } from '@/lib/metaPixel'
 import type { CatalogProduct, PaymentMethod, ShippingOption } from '@/types/catalog'
@@ -226,6 +227,31 @@ export function Checkout() {
     setCouponInput('')
   }, [])
 
+  // Aplica sozinho o cupom de quem acabou de deixar o e-mail no pop-up de
+  // boas-vindas, sem precisar digitar o código de novo — a marca no
+  // localStorage já foi consumida (removida) por consumePendingCoupon, então
+  // isso só acontece uma vez, no primeiro checkout depois do pop-up.
+  useEffect(() => {
+    const pending = consumePendingCoupon()
+    if (!pending) return
+    setCouponInput(pending)
+    ;(async () => {
+      setCouponStatus('checking')
+      try {
+        const res = await validateCoupon(pending)
+        if (res.valid) {
+          setAppliedCoupon({ code: pending.toUpperCase(), discountPct: res.discountPct })
+          setCouponStatus('valid')
+        } else {
+          setCouponStatus('idle')
+        }
+      } catch {
+        setCouponStatus('idle')
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const checkoutItems = useMemo(
     () => items.map((i) => ({ productId: i.product.id, quantity: i.line.quantity, withMotor: Boolean(i.line.withMotor) })),
     [items],
@@ -380,6 +406,7 @@ export function Checkout() {
       setResult(res)
       setStep('done')
       clear()
+      markHasPurchased()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível processar seu pedido agora. Tente novamente.')
       setFillComplete(false)

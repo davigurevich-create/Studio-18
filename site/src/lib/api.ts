@@ -215,6 +215,20 @@ export async function joinRestockWaitlist(input: {
   if (error && error.code !== '23505') throw error
 }
 
+/**
+ * Registra o e-mail de um lead (pop-up de boas-vindas) — mesmo padrão do
+ * joinRestockWaitlist: grava direto na tabela, sem Edge Function.
+ */
+export async function submitLead(email: string, source = 'popup_boas_vindas'): Promise<void> {
+  if (!supabase) {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return
+  }
+  const { error } = await supabase.from('leads').insert({ email, source })
+  // Já estar na lista (e-mail duplicado) não é um erro para o usuário.
+  if (error && error.code !== '23505') throw error
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
