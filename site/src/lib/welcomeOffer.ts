@@ -5,7 +5,7 @@
 //   2. Já deixou o e-mail no próprio pop-up -> nunca mais aparece.
 //   3. Fechou no X / "Agora não" -> some por 48h, depois volta a valer
 //      (se nenhuma das outras regras já tiver marcado o navegador).
-export const WELCOME_COUPON_CODE = 'S18BEM10'
+export const WELCOME_COUPON_CODE = 'ENTREINOFLOW10'
 
 const STATE_KEY = 'studio18_welcome_popup'
 const PURCHASED_KEY = 'studio18_has_purchased'

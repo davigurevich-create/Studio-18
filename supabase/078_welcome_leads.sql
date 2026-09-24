@@ -29,5 +29,5 @@ create policy "authenticated can view leads" on leads
 -- (evergreen). Sempre igual ou abaixo dos cupons de influencer, pra não
 -- desvalorizar as parcerias.
 insert into coupons (code, discount_pct, influencer_name, active)
-values ('S18BEM10', 10, null, true)
+values ('ENTREINOFLOW10', 10, null, true)
 on conflict (code) do nothing;
