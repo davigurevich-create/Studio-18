@@ -188,13 +188,14 @@ export function Vendas() {
       </div>
 
       <Card className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[820px] text-sm">
+        <table className="w-full min-w-[960px] text-sm">
           <thead>
             <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
               <th className="pb-2 font-medium">Data</th>
               <th className="pb-2 font-medium">Cliente</th>
               <th className="pb-2 font-medium">Modelo</th>
               <th className="pb-2 font-medium">Entregar para</th>
+              <th className="pb-2 font-medium">Frete</th>
               <th className="pb-2 font-medium">Pagamento</th>
               <th className="pb-2 font-medium">Total</th>
               <th className="pb-2 font-medium">Status</th>
@@ -205,7 +206,7 @@ export function Vendas() {
           <tbody>
             {filteredSales.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                <td colSpan={9} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
                   Nenhuma venda encontrada com esses filtros.
                 </td>
               </tr>
@@ -271,9 +272,28 @@ export function Vendas() {
                     )}
                   </td>
                   <td className="py-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    {s.shipping_service ? (
+                      <div>{s.shipping_service}</div>
+                    ) : (
+                      <div style={{ color: 'var(--text-muted)' }}>—</div>
+                    )}
+                    <div style={{ color: 'var(--text-muted)' }}>
+                      {formatBRL(s.shipping_cost_brl)}
+                      {s.shipping_days ? ` · até ${s.shipping_days} dias úteis` : ''}
+                    </div>
+                  </td>
+                  <td className="py-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
                     <div className="capitalize">{s.payment_method ?? '—'}</div>
                     {s.payment_provider && (
                       <div style={{ color: 'var(--text-muted)' }}>via {s.payment_provider}</div>
+                    )}
+                    {s.payment_method === 'cartao' && (s.installments ?? 1) > 1 && (
+                      <div style={{ color: 'var(--text-muted)' }}>
+                        {s.installments}x
+                        {(s.installment_fee_brl ?? 0) > 0
+                          ? ` (+ ${formatBRL(s.installment_fee_brl ?? 0)} de juros)`
+                          : ' sem juros'}
+                      </div>
                     )}
                   </td>
                   <td className="tabular py-2.5 font-medium" style={{ color: 'var(--text-primary)' }}>
