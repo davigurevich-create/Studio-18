@@ -187,6 +187,13 @@ export interface RestockWaitlistEntry {
   notified_at: string | null
 }
 
+export interface Lead {
+  id: string
+  created_at: string
+  email: string
+  source: string
+}
+
 export type AuditAction = 'criar' | 'editar' | 'excluir'
 
 export interface AuditLogEntry {

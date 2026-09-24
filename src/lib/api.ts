@@ -22,6 +22,7 @@ import type {
   Coupon,
   Expense,
   InventoryMovement,
+  Lead,
   PartRequest,
   PartRequestStatus,
   Product,
@@ -43,6 +44,7 @@ const couponsTable = makeTable<Coupon>('coupons', seedCoupons)
 const blogPostsTable = makeTable<BlogPost>('blog_posts', seedBlogPosts)
 const partRequestsTable = makeTable<PartRequest>('part_requests', seedPartRequests)
 const restockWaitlistTable = makeTable<RestockWaitlistEntry>('restock_waitlist', seedRestockWaitlist)
+const leadsTable = makeTable<Lead>('leads', [])
 const socialContentIdeasTable = makeTable<SocialContentIdea>('social_content_ideas', seedSocialContentIdeas)
 const auditLogTable = makeTable<AuditLogEntry>('audit_log', seedAuditLog)
 
@@ -620,6 +622,20 @@ export async function markRestockWaitlistNotified(id: string, notified: boolean)
     restockWaitlistTable.update(id, patch)
   }
   await logAudit('editar', 'lista_espera', id, notified ? 'Marcou cliente como avisado da reposição' : 'Desmarcou aviso de reposição')
+}
+
+// ---------------------------------------------------------------------------
+// Leads — e-mails coletados pelo pop-up de boas-vindas do site (mesmo
+// esquema de leitura da lista de espera: o site grava direto, sem Edge
+// Function, o painel só lê).
+// ---------------------------------------------------------------------------
+export async function getLeads(): Promise<Lead[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false })
+    if (error) throw error
+    return data as Lead[]
+  }
+  return [...leadsTable.all()].sort((a, b) => b.created_at.localeCompare(a.created_at))
 }
 
 // ---------------------------------------------------------------------------

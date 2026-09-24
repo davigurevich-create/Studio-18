@@ -13,6 +13,7 @@ import { Containers } from '@/pages/Containers'
 import { Blog } from '@/pages/Blog'
 import { PecasFaltantes } from '@/pages/PecasFaltantes'
 import { ListaEspera } from '@/pages/ListaEspera'
+import { Leads } from '@/pages/Leads'
 import { SocialMedia } from '@/pages/SocialMedia'
 import { AuditLog } from '@/pages/AuditLog'
 
@@ -48,6 +49,7 @@ function App() {
             <Route path="/blog" element={<Blog />} />
             <Route path="/pecas-faltantes" element={<PecasFaltantes />} />
             <Route path="/lista-espera" element={<ListaEspera />} />
+            <Route path="/leads" element={<Leads />} />
             <Route path="/social-media" element={<SocialMedia />} />
             <Route path="/log-auditoria" element={<AuditLog />} />
           </Route>
