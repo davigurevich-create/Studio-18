@@ -35,6 +35,9 @@ const FOCUS_BASE_URL = FOCUS_NFE_ENV === 'producao' ? 'https://api.focusnfe.com.
 // Autorização para UF que exige a identificação"), senão a Focus NFe rejeita
 // a emissão. Confirmado com o suporte da Focus NFe pelo contador do cliente.
 const FOCUS_NFE_ACCOUNTANT_CNPJ = (Deno.env.get('FOCUS_NFE_ACCOUNTANT_CNPJ') ?? '').replace(/\D/g, '')
+// Mesma variável usada em generate-shipping-label pro estado de origem do
+// remetente — precisa ser a UF real do CNPJ emitente (Studio 18 fica em SP).
+const ORIGIN_STATE = Deno.env.get('SHIPPING_ORIGIN_STATE') ?? 'SP'
 
 const PAYMENT_CODE: Record<string, string> = {
   pix: '17',
@@ -187,6 +190,14 @@ Deno.serve(async (req) => {
     const discountRounding = Math.round((discountTotal - itemDiscounts.reduce((t, v) => t + v, 0)) * 100) / 100
     if (itemDiscounts.length > 0) itemDiscounts[itemDiscounts.length - 1] += discountRounding
 
+    // CFOP precisa bater com o indicador de destino (idDest) que a SEFAZ
+    // calcula sozinha a partir da UF do destinatário: 5102 é só pra venda
+    // "interna" (mesma UF do emitente, idDest=1); pra qualquer outro estado
+    // é operação "interestadual" (idDest=2) e exige CFOP 6102 — declarar
+    // 5102 pra fora de SP rejeita com "CFOP de operação interna e idDest <> 1".
+    const isInterstate = (sale.shipping_federal_unit ?? '').toUpperCase() !== ORIGIN_STATE.toUpperCase()
+    const cfop = isInterstate ? '6102' : '5102'
+
     const payload = {
       natureza_operacao: 'Venda de mercadoria',
       data_emissao: new Date().toISOString(),
@@ -222,7 +233,7 @@ Deno.serve(async (req) => {
         // a fazia descartar o campo silenciosamente — confirmado com o
         // suporte deles).
         codigo_ncm: String(it.product.ncm).replace(/\D/g, ''),
-        cfop: '5102',
+        cfop,
         unidade_comercial: 'UN',
         quantidade_comercial: it.quantity,
         valor_unitario_comercial: Number(it.unit_price_brl),
