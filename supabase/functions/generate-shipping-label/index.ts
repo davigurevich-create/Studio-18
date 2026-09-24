@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
 
     const { data: items, error: itemsError } = await supabase
       .from('sale_items')
-      .select('quantity, unit_price_brl, product:products(name, weight_kg, length_cm, height_cm, width_cm)')
+      .select('quantity, unit_price_brl, product:products(name, category, weight_kg, length_cm, height_cm, width_cm)')
       .eq('sale_id', saleId)
     if (itemsError || !items || items.length === 0) {
       return json({ error: 'Itens do pedido não encontrados.' }, 404)
@@ -236,15 +236,23 @@ Deno.serve(async (req) => {
       unitary_value: Number(it.unit_price_brl),
     }))
 
-    // Um volume por unidade — cada set técnico vai na própria caixa.
-    const volumes = items.flatMap((it: any) =>
-      Array.from({ length: it.quantity }, () => ({
-        height: it.product?.height_cm ?? DEFAULT_BOX_CM.height,
-        width: it.product?.width_cm ?? DEFAULT_BOX_CM.width,
-        length: it.product?.length_cm ?? DEFAULT_BOX_CM.length,
-        weight: Number(it.product?.weight_kg ?? 5),
-      })),
-    )
+    // Um volume por unidade — cada set técnico vai na própria caixa. O motor
+    // funcional (categoria 'motor') não é uma caixa à parte: ele vai
+    // embalado junto do carro que o cliente comprou com ele, então não pode
+    // virar um volume extra na etiqueta (isso gerava "volume 2/2" e a
+    // transportadora recusava o envio por achar que faltava um pacote).
+    // Ele continua entrando em "products" acima, pra declarar o valor certo
+    // no seguro.
+    const volumes = items
+      .filter((it: any) => it.product?.category !== 'motor')
+      .flatMap((it: any) =>
+        Array.from({ length: it.quantity }, () => ({
+          height: it.product?.height_cm ?? DEFAULT_BOX_CM.height,
+          width: it.product?.width_cm ?? DEFAULT_BOX_CM.width,
+          length: it.product?.length_cm ?? DEFAULT_BOX_CM.length,
+          weight: Number(it.product?.weight_kg ?? 5),
+        })),
+      )
 
     const insuranceValue = items.reduce((t: number, it: any) => t + Number(it.unit_price_brl) * it.quantity, 0)
 
