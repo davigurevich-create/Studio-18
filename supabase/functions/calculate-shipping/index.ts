@@ -116,8 +116,14 @@ Deno.serve(async (req) => {
       return json({ options: [], message: 'Não foi possível calcular o frete agora. Tente novamente em instantes.' })
     }
 
+    // Buslog exige retirada/postagem em agência própria, e não há nenhuma
+    // perto do nosso ponto de despacho — inviabiliza a logística, então essa
+    // transportadora nunca deve aparecer como opção pro cliente.
+    const EXCLUDED_COMPANIES = ['buslog']
+
     const options = (raw as MelhorEnvioOption[])
       .filter((opt) => !opt.error && opt.price != null)
+      .filter((opt) => !EXCLUDED_COMPANIES.includes((opt.company?.name ?? '').trim().toLowerCase()))
       .map((opt) => ({
         id: opt.id ?? 0,
         service: opt.name ?? 'Frete',
