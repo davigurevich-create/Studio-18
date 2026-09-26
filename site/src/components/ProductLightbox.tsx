@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion, type PanInfo } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 
 const SWIPE_MIN_OFFSET = 60
-const SWIPE_VELOCITY_WEIGHT = 0.35
+const SWIPE_MIN_VELOCITY = 0.35 // px/ms
 
 const imageVariants = {
   enter: (direction: number) => ({
-    x: direction > 0 ? '30%' : '-30%',
+    x: direction > 0 ? '30%' : direction < 0 ? '-30%' : 0,
     opacity: 0,
   }),
   center: { x: 0, opacity: 1 },
@@ -33,6 +33,10 @@ export function ProductLightbox({
 }) {
   const total = gallery.length
   const [direction, setDirection] = useState(0)
+  // Rastreado à parte do framer-motion: manter fora do drag do motion.img
+  // evita o conflito conhecido entre `drag` e `animate`/`exit` no mesmo
+  // eixo, que travava a foto antiga sobreposta na nova.
+  const pointer = useRef<{ x: number; t: number } | null>(null)
 
   const goPrev = () => {
     setDirection(-1)
@@ -43,14 +47,24 @@ export function ProductLightbox({
     onIndexChange((index + 1) % total)
   }
 
-  const onDragEnd = (_e: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) => {
+  const onPointerDown = (e: React.PointerEvent) => {
     if (total <= 1) return
-    // distância OU velocidade do gesto decide a navegação — um flick curto e rápido
-    // navega tanto quanto um arrasto longo e lento (momentum, não só posição final).
-    const passedDistance = Math.abs(info.offset.x) > SWIPE_MIN_OFFSET
-    const passedVelocity = Math.abs(info.velocity.x) > SWIPE_MIN_OFFSET / SWIPE_VELOCITY_WEIGHT
+    pointer.current = { x: e.clientX, t: e.timeStamp }
+  }
+
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (!pointer.current) return
+    const dx = e.clientX - pointer.current.x
+    const dt = Math.max(1, e.timeStamp - pointer.current.t)
+    pointer.current = null
+    const velocity = dx / dt
+    // distância OU velocidade do gesto decide a navegação — um flick curto
+    // e rápido navega tanto quanto um arrasto longo e lento (momentum, não
+    // só posição final do dedo).
+    const passedDistance = Math.abs(dx) > SWIPE_MIN_OFFSET
+    const passedVelocity = Math.abs(velocity) > SWIPE_MIN_VELOCITY
     if (!passedDistance && !passedVelocity) return
-    if (info.offset.x < 0 || info.velocity.x < -100) goNext()
+    if (dx < 0) goNext()
     else goPrev()
   }
 
@@ -84,7 +98,7 @@ export function ProductLightbox({
         type="button"
         aria-label="Fechar"
         onClick={onClose}
-        className="absolute right-4 top-4 rounded-full p-2 transition-colors hover:bg-white/5 sm:right-6 sm:top-6"
+        className="absolute right-4 top-4 z-10 rounded-full p-2 transition-colors hover:bg-white/5 sm:right-6 sm:top-6"
         style={{ color: 'var(--ink-secondary)' }}
       >
         <X size={26} />
@@ -99,7 +113,7 @@ export function ProductLightbox({
               e.stopPropagation()
               goPrev()
             }}
-            className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full p-2 transition-colors hover:bg-white/5 sm:left-6"
+            className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full p-2 transition-colors hover:bg-white/5 sm:left-6"
             style={{ color: 'var(--ink-secondary)' }}
           >
             <ChevronLeft size={32} />
@@ -111,7 +125,7 @@ export function ProductLightbox({
               e.stopPropagation()
               goNext()
             }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-2 transition-colors hover:bg-white/5 sm:right-6"
+            className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full p-2 transition-colors hover:bg-white/5 sm:right-6"
             style={{ color: 'var(--ink-secondary)' }}
           >
             <ChevronRight size={32} />
@@ -120,8 +134,13 @@ export function ProductLightbox({
       )}
 
       <div
-        className="relative h-[78vh] w-[92vw]"
+        className="relative h-[78vh] w-[92vw] touch-pan-y"
         onClick={(e) => e.stopPropagation()}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+        onPointerCancel={() => {
+          pointer.current = null
+        }}
       >
         <AnimatePresence initial={false} custom={direction}>
           <motion.img
@@ -133,17 +152,12 @@ export function ProductLightbox({
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ type: 'spring', damping: 1, stiffness: 380 }}
-            drag={total > 1 ? 'x' : false}
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.65}
-            dragTransition={{ power: 0.15, timeConstant: 200 }}
-            onDragEnd={onDragEnd}
+            transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
             // absolute + inset-0 + m-auto: as duas fotos (a que sai e a que
             // entra) ficam empilhadas exatamente na mesma caixa durante a
             // troca — sem isso elas ficavam lado a lado, parcialmente
-            // sobrepostas, criando aquele efeito de "dupla exposição".
-            className="absolute inset-0 m-auto max-h-full max-w-full touch-pan-y rounded-lg object-contain"
+            // sobrepostas, criando um efeito de "dupla exposição".
+            className="absolute inset-0 m-auto max-h-full max-w-full rounded-lg object-contain"
           />
         </AnimatePresence>
       </div>

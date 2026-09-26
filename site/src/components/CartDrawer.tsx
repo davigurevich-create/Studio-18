@@ -42,7 +42,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 1, stiffness: 380 }}
+            transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
             className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col border-l"
             style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)' }}
           >
