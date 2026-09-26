@@ -120,10 +120,10 @@ export function ProductLightbox({
       )}
 
       <div
-        className="relative flex max-h-[78vh] max-w-[92vw] items-center justify-center overflow-hidden"
+        className="relative h-[78vh] w-[92vw]"
         onClick={(e) => e.stopPropagation()}
       >
-        <AnimatePresence initial={false} custom={direction} mode="popLayout">
+        <AnimatePresence initial={false} custom={direction}>
           <motion.img
             key={gallery[index]}
             src={gallery[index]}
@@ -139,7 +139,11 @@ export function ProductLightbox({
             dragElastic={0.65}
             dragTransition={{ power: 0.15, timeConstant: 200 }}
             onDragEnd={onDragEnd}
-            className="max-h-[78vh] max-w-[92vw] touch-pan-y rounded-lg object-contain"
+            // absolute + inset-0 + m-auto: as duas fotos (a que sai e a que
+            // entra) ficam empilhadas exatamente na mesma caixa durante a
+            // troca — sem isso elas ficavam lado a lado, parcialmente
+            // sobrepostas, criando aquele efeito de "dupla exposição".
+            className="absolute inset-0 m-auto max-h-full max-w-full touch-pan-y rounded-lg object-contain"
           />
         </AnimatePresence>
       </div>
