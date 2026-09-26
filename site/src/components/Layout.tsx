@@ -164,11 +164,11 @@ export function Layout() {
         maxWidth: 1220,
         borderRadius: 9999,
         transform: 'translateX(-50%)',
-        background: '#000',
+        background: 'rgba(6,6,6,0.72)',
         border: 'none',
         borderBottom: 'none',
         boxShadow: '0 16px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 0 1px rgba(255,255,255,0.04)',
-        backdropFilter: 'none',
+        backdropFilter: 'blur(20px) saturate(180%)',
         overflow: 'hidden' as const,
       }
     : {

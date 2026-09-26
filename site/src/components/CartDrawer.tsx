@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, type PanInfo } from 'framer-motion'
 import { Cog } from 'lucide-react'
 import { useCart } from '@/lib/cart'
 import { getCatalog } from '@/lib/api'
@@ -26,6 +26,12 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
     0,
   )
 
+  // Arrastar o drawer para a direita fecha — decide por distância OU
+  // velocidade do gesto, como o resto do site (mesma lógica do lightbox).
+  const onDragEnd = (_e: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) => {
+    if (info.offset.x > 120 || info.velocity.x > 500) onClose()
+  }
+
   return (
     <AnimatePresence>
       {open && (
@@ -35,15 +41,19 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-40"
-            style={{ background: 'rgba(6,6,6,0.6)' }}
+            style={{ background: 'rgba(6,6,6,0.55)', backdropFilter: 'blur(6px)' }}
             onClick={onClose}
           />
           <motion.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
-            transition={{ type: 'tween', duration: 0.25 }}
-            className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col border-l"
+            transition={{ type: 'spring', damping: 1, stiffness: 380 }}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={{ left: 0, right: 1 }}
+            onDragEnd={onDragEnd}
+            className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col border-l touch-pan-y"
             style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-1)' }}
           >
             <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderColor: 'var(--hairline)' }}>

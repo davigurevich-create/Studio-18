@@ -50,9 +50,31 @@ body {
   h1, h2, h3, h4 {
     font-family: var(--sans);
     font-weight: 600;
-    letter-spacing: -0.01em;
     color: var(--ink);
     margin: 0;
+  }
+
+  /* Tracking e leading escalonados por tamanho: texto grande "respira"
+     menos (letras naturalmente mais espaçadas conforme crescem, então
+     comprime) e fica mais compacto verticalmente; texto pequeno fica
+     neutro pra não prejudicar a legibilidade. Qualquer `leading-*` ou
+     `tracking-*` do Tailwind aplicado direto no elemento continua
+     valendo por cima disso (utilities > base). */
+  h1 {
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+  }
+  h2 {
+    letter-spacing: -0.018em;
+    line-height: 1.1;
+  }
+  h3 {
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+  h4 {
+    letter-spacing: -0.005em;
+    line-height: 1.3;
   }
 }
 
@@ -118,4 +140,17 @@ body {
   box-shadow:
     inset 5px 5px 10px rgba(0, 0, 0, 0.85),
     inset -4px -4px 8px rgba(255, 255, 255, 0.03);
+}
+
+/* Cobre as transições CSS (Tailwind `transition-*`) que não passam pelo
+   framer-motion — o MotionConfig em App.tsx já trata as animações via JS. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
