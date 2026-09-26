@@ -119,3 +119,16 @@ body {
     inset 5px 5px 10px rgba(0, 0, 0, 0.85),
     inset -4px -4px 8px rgba(255, 255, 255, 0.03);
 }
+
+/* Cobre as transições CSS (Tailwind `transition-*`) que não passam pelo
+   framer-motion — o MotionConfig em App.tsx já trata as animações via JS. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
