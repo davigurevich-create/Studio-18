@@ -1,8 +1,22 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, type PanInfo } from 'framer-motion'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
-import { useSwipeNav } from '@/lib/useSwipeNav'
+
+const SWIPE_MIN_OFFSET = 60
+const SWIPE_VELOCITY_WEIGHT = 0.35
+
+const imageVariants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? '30%' : '-30%',
+    opacity: 0,
+  }),
+  center: { x: 0, opacity: 1 },
+  exit: (direction: number) => ({
+    x: direction > 0 ? '-30%' : '30%',
+    opacity: 0,
+  }),
+}
 
 export function ProductLightbox({
   gallery,
@@ -18,9 +32,27 @@ export function ProductLightbox({
   productName: string
 }) {
   const total = gallery.length
-  const goPrev = () => onIndexChange((index - 1 + total) % total)
-  const goNext = () => onIndexChange((index + 1) % total)
-  const swipe = useSwipeNav(goNext, goPrev)
+  const [direction, setDirection] = useState(0)
+
+  const goPrev = () => {
+    setDirection(-1)
+    onIndexChange((index - 1 + total) % total)
+  }
+  const goNext = () => {
+    setDirection(1)
+    onIndexChange((index + 1) % total)
+  }
+
+  const onDragEnd = (_e: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) => {
+    if (total <= 1) return
+    // distância OU velocidade do gesto decide a navegação — um flick curto e rápido
+    // navega tanto quanto um arrasto longo e lento (momentum, não só posição final).
+    const passedDistance = Math.abs(info.offset.x) > SWIPE_MIN_OFFSET
+    const passedVelocity = Math.abs(info.velocity.x) > SWIPE_MIN_OFFSET / SWIPE_VELOCITY_WEIGHT
+    if (!passedDistance && !passedVelocity) return
+    if (info.offset.x < 0 || info.velocity.x < -100) goNext()
+    else goPrev()
+  }
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -88,21 +120,26 @@ export function ProductLightbox({
       )}
 
       <div
-        className="flex max-h-[78vh] max-w-[92vw] items-center justify-center"
+        className="relative flex max-h-[78vh] max-w-[92vw] items-center justify-center overflow-hidden"
         onClick={(e) => e.stopPropagation()}
-        onTouchStart={swipe.onTouchStart}
-        onTouchEnd={swipe.onTouchEnd}
       >
-        <AnimatePresence mode="wait">
+        <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <motion.img
             key={gallery[index]}
             src={gallery[index]}
             alt={productName}
-            initial={{ opacity: 0, scale: 1.04 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="max-h-[78vh] max-w-[92vw] rounded-lg object-contain"
+            custom={direction}
+            variants={imageVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ type: 'spring', damping: 1, stiffness: 380 }}
+            drag={total > 1 ? 'x' : false}
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.65}
+            dragTransition={{ power: 0.15, timeConstant: 200 }}
+            onDragEnd={onDragEnd}
+            className="max-h-[78vh] max-w-[92vw] touch-pan-y rounded-lg object-contain"
           />
         </AnimatePresence>
       </div>
