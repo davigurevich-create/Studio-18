@@ -50,9 +50,31 @@ body {
   h1, h2, h3, h4 {
     font-family: var(--sans);
     font-weight: 600;
-    letter-spacing: -0.01em;
     color: var(--ink);
     margin: 0;
+  }
+
+  /* Tracking e leading escalonados por tamanho: texto grande "respira"
+     menos (letras naturalmente mais espaçadas conforme crescem, então
+     comprime) e fica mais compacto verticalmente; texto pequeno fica
+     neutro pra não prejudicar a legibilidade. Qualquer `leading-*` ou
+     `tracking-*` do Tailwind aplicado direto no elemento continua
+     valendo por cima disso (utilities > base). */
+  h1 {
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+  }
+  h2 {
+    letter-spacing: -0.018em;
+    line-height: 1.1;
+  }
+  h3 {
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+  h4 {
+    letter-spacing: -0.005em;
+    line-height: 1.3;
   }
 }
 
