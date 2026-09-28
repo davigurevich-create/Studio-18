@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Bell, Gift, Heart, IdCard, LogOut, Package, PackageX, Wrench } from 'lucide-react'
+import { Bell, Gift, Heart, IdCard, LogOut, MessageSquareQuote, Package, PackageX, Wrench } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { useFavorites } from '@/lib/favorites'
 import {
@@ -46,6 +46,12 @@ const statusColor: Record<string, string> = {
   enviado: 'var(--gold-bright)',
   entregue: '#8fce8f',
   cancelado: '#e88b8b',
+}
+
+const testimonialStatusLabel: Record<'pendente' | 'aprovado' | 'rejeitado', string> = {
+  pendente: 'Depoimento enviado — aguardando aprovação',
+  aprovado: 'Depoimento publicado no site',
+  rejeitado: 'Depoimento não aprovado',
 }
 
 const partStatusLabel: Record<string, string> = {
@@ -391,6 +397,19 @@ function OrdersTab({ orders }: { orders: MyOrder[] }) {
                     <OrderTrackingSteps status={o.status} />
                     {o.shipping_tracking_code && <TrackingCode code={o.shipping_tracking_code} service={o.shipping_service} />}
                   </div>
+                )}
+              </div>
+            )}
+
+            {o.status === 'entregue' && (
+              <div className="mt-3 flex items-center gap-2 border-t pt-3 text-xs" style={{ borderColor: 'var(--hairline)' }}>
+                <MessageSquareQuote size={14} style={{ color: 'var(--gold-bright)' }} />
+                {o.testimonial_status ? (
+                  <span style={{ color: 'var(--ink-muted)' }}>{testimonialStatusLabel[o.testimonial_status]}</span>
+                ) : (
+                  <Link to={`/avaliacao/${o.id}`} className="font-medium" style={{ color: 'var(--gold-bright)' }}>
+                    Deixar depoimento e ganhar 1000 pontos
+                  </Link>
                 )}
               </div>
             )}

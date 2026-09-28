@@ -369,6 +369,7 @@ export interface MyOrder {
   shipping_service: string | null
   customer_name: string | null
   items: MyOrderItem[]
+  testimonial_status: 'pendente' | 'aprovado' | 'rejeitado' | null
 }
 
 const demoOrders: MyOrder[] = [
@@ -388,6 +389,7 @@ const demoOrders: MyOrder[] = [
     shipping_service: 'Correios SEDEX',
     customer_name: 'Cliente Demonstração',
     items: [{ product_name: 'Bugatti Tourbillon', quantity: 1, unit_price_brl: 1366.43 }],
+    testimonial_status: null,
   },
   {
     id: 'demo-a1b2c3d4-0000-0000-0000-000000000002',
@@ -405,6 +407,7 @@ const demoOrders: MyOrder[] = [
     shipping_service: 'Correios PAC',
     customer_name: 'Cliente Demonstração',
     items: [{ product_name: 'Ferrari Enzo', quantity: 1, unit_price_brl: 1491.03 }],
+    testimonial_status: null,
   },
 ]
 
