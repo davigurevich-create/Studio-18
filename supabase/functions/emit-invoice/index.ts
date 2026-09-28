@@ -247,7 +247,7 @@ Deno.serve(async (req) => {
       complemento_destinatario: sale.shipping_complement || undefined,
       bairro_destinatario: sale.shipping_neighborhood,
       municipio_destinatario: sale.shipping_city,
-      uf_destinatario: sale.shipping_federal_unit,
+      uf_destinatario: (sale.shipping_federal_unit ?? '').toUpperCase(),
       cep_destinatario: sale.shipping_zip_code.replace(/\D/g, ''),
       valor_frete: shippingCost || undefined,
       valor_desconto: Number(sale.discount_brl ?? 0) || undefined,

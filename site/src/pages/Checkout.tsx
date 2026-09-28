@@ -685,7 +685,7 @@ export function Checkout() {
               <Field
                 label="Estado (UF)"
                 value={federalUnit}
-                onChange={setFederalUnit}
+                onChange={(v) => setFederalUnit(v.toUpperCase().slice(0, 2))}
                 required
                 placeholder="SP"
                 autoComplete="address-level1"
