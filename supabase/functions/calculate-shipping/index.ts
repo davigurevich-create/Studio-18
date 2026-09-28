@@ -119,7 +119,10 @@ Deno.serve(async (req) => {
     // Buslog exige retirada/postagem em agência própria, e não há nenhuma
     // perto do nosso ponto de despacho — inviabiliza a logística, então essa
     // transportadora nunca deve aparecer como opção pro cliente.
-    const EXCLUDED_COMPANIES = ['buslog']
+    // Total Express também exige agência (temos uma perto, mas falta
+    // configurar o ID dela na geração de etiqueta — removido temporariamente
+    // até isso ser resolvido, ver generate-shipping-label).
+    const EXCLUDED_COMPANIES = ['buslog', 'total express']
 
     const options = (raw as MelhorEnvioOption[])
       .filter((opt) => !opt.error && opt.price != null)
