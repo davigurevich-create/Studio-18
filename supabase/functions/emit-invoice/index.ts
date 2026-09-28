@@ -83,6 +83,37 @@ function statusFromFocus(data: Record<string, unknown> | null): 'processando' | 
   return 'erro'
 }
 
+// A Focus NFe às vezes devolve só uma mensagem genérica em "mensagem_sefaz"
+// (ex: "Erro na validação do Schema XML, verifique o detalhamento dos
+// erros"), com o motivo real numa lista separada ("erros") que não estava
+// sendo lida — a mensagem genérica não dizia qual campo do payload estava
+// errado, só mandava "conferir o detalhamento" sem mostrar ele.
+function buildFocusErrorMessage(data: Record<string, unknown> | null): string {
+  const base =
+    typeof data?.mensagem_sefaz === 'string'
+      ? data.mensagem_sefaz
+      : typeof data?.mensagem === 'string'
+        ? data.mensagem
+        : 'Falha ao emitir nota fiscal na Focus NFe.'
+
+  const erros = Array.isArray(data?.erros) ? (data!.erros as unknown[]) : []
+  if (erros.length === 0) return base
+
+  const details = erros
+    .map((e) => {
+      if (typeof e === 'string') return e
+      if (e && typeof e === 'object') {
+        const obj = e as Record<string, unknown>
+        return [obj.campo, obj.mensagem ?? obj.codigo].filter(Boolean).join(': ')
+      }
+      return null
+    })
+    .filter(Boolean)
+    .join(' | ')
+
+  return details ? `${base} — ${details}` : base
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -271,7 +302,8 @@ Deno.serve(async (req) => {
 
     const emit = await focusFetch(`/v2/nfe?ref=${ref}`, { method: 'POST', body: JSON.stringify(payload) })
     if (!emit.ok && emit.status !== 202) {
-      const message = typeof emit.data?.mensagem === 'string' ? emit.data.mensagem : 'Falha ao emitir nota fiscal na Focus NFe.'
+      const message = buildFocusErrorMessage(emit.data)
+      console.error('Falha ao emitir nota fiscal na Focus NFe:', JSON.stringify(emit.data))
       await supabase.from('sales').update({ invoice_status: 'erro', invoice_error: message, invoice_ref: ref }).eq('id', saleId)
       return json({ error: message, raw: emit.data }, 502)
     }
@@ -295,7 +327,7 @@ async function saveAndReturn(supabase: ReturnType<typeof createClient>, saleId: 
     patch.invoice_xml_url = absoluteUrl(data?.caminho_xml_nota_fiscal)
     patch.invoice_error = null
   } else if (status === 'erro') {
-    patch.invoice_error = typeof data?.mensagem_sefaz === 'string' ? data.mensagem_sefaz : (typeof data?.mensagem === 'string' ? data.mensagem : 'Erro desconhecido na SEFAZ.')
+    patch.invoice_error = buildFocusErrorMessage(data)
   }
   await supabase.from('sales').update(patch).eq('id', saleId)
   return json({
