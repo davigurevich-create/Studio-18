@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Bell, Gift, Heart, IdCard, LogOut, MessageSquareQuote, Package, PackageX, Wrench } from 'lucide-react'
+import { Award, Bell, ExternalLink, Gift, Heart, IdCard, LogOut, MessageSquareQuote, Package, PackageX, Wrench } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { useFavorites } from '@/lib/favorites'
 import {
@@ -56,6 +56,8 @@ const partStatusLabel: Record<string, string> = {
 }
 
 type Tab = 'pedidos' | 'pecas' | 'espera' | 'favoritos' | 'indicacao' | 'dados' | 'notificacoes'
+
+const BADGES_PORTAL_URL = 'https://brasilopenbadge.com.br/partner/studio-18'
 
 export function Conta() {
   const { session, loading, demo, requestCode, verifyCode, signOut } = useAuth()
@@ -239,6 +241,33 @@ function AccountDashboard({ onSignOut }: { onSignOut: () => void }) {
           Sair
         </button>
       </div>
+
+      <a
+        href={BADGES_PORTAL_URL}
+        target="_blank"
+        rel="noreferrer"
+        className="mb-8 flex items-center justify-between gap-4 rounded-xl border p-5 transition hover:opacity-90"
+        style={{ borderColor: 'var(--gold-dim)', background: 'var(--gold-wash)' }}
+      >
+        <div className="flex items-center gap-3">
+          <Award size={22} style={{ color: 'var(--gold-bright)' }} />
+          <div>
+            <div className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+              Meus selos e pontos Studio 18
+            </div>
+            <div className="text-xs" style={{ color: 'var(--ink-secondary)' }}>
+              Acesse o portal de selos digitais pra ativar e acompanhar seus pontos
+            </div>
+          </div>
+        </div>
+        <span
+          className="flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium"
+          style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+        >
+          Acessar portal
+          <ExternalLink size={13} />
+        </span>
+      </a>
 
       <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:gap-10">
         {/* Mobile: grade de 2 colunas — compacta, sem barra de rolagem
