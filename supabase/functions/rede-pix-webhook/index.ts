@@ -87,6 +87,41 @@ function mapStatus(pixStatus: string | undefined): string {
   return 'pendente'
 }
 
+// Baixa automática de estoque no momento em que a venda vira "pago" — antes
+// disso, nenhum ponto do sistema descontava o estoque de uma venda feita
+// pelo site (só a venda manual cadastrada no painel dava baixa). Confere se
+// já existe uma saída pra essa venda antes de inserir, pra nunca dar baixa
+// duas vezes (ex: webhook e o polling do check-pix-status confirmando quase
+// ao mesmo tempo).
+async function deductStockForSale(supabase: ReturnType<typeof createClient>, saleId: string): Promise<void> {
+  const { data: existing } = await supabase
+    .from('inventory_movements')
+    .select('id')
+    .eq('sale_id', saleId)
+    .eq('type', 'saida')
+    .limit(1)
+  if (existing && existing.length > 0) return
+
+  const { data: items } = await supabase.from('sale_items').select('product_id, quantity').eq('sale_id', saleId)
+  if (!items || items.length === 0) return
+
+  const productIds = [...new Set(items.map((i: any) => i.product_id))]
+  const { data: products } = await supabase.from('products').select('id, cost_price_brl').in('id', productIds)
+
+  const movements = items.map((i: any) => ({
+    product_id: i.product_id,
+    type: 'saida',
+    quantity: i.quantity,
+    unit_cost_brl: products?.find((p: any) => p.id === i.product_id)?.cost_price_brl ?? null,
+    container_id: null,
+    sale_id: saleId,
+    notes: 'Baixa automática por venda confirmada',
+    moved_at: new Date().toISOString(),
+  }))
+  const { error } = await supabase.from('inventory_movements').insert(movements)
+  if (error) console.error(`Falha ao dar baixa de estoque da venda ${saleId}:`, error)
+}
+
 Deno.serve(async (req) => {
   try {
     const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {}
@@ -128,8 +163,12 @@ Deno.serve(async (req) => {
       })
       .eq('id', existingSale.id)
 
-    // Só avisa por e-mail na transição pra "pago" (evita reenviar em toda
-    // notificação repetida que a Rede manda pro mesmo pagamento).
+    // Só avisa por e-mail e dá baixa de estoque na transição pra "pago"
+    // (evita reenviar em toda notificação repetida que a Rede manda pro
+    // mesmo pagamento).
+    if (existingSale.status !== 'pago' && newStatus === 'pago') {
+      await deductStockForSale(supabase, existingSale.id)
+    }
     if (existingSale.status !== 'pago' && newStatus === 'pago' && existingSale.customer_contact) {
       await sendEmail(
         existingSale.customer_contact,
