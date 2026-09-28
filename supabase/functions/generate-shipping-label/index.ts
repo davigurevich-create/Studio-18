@@ -266,7 +266,7 @@ Deno.serve(async (req) => {
       complement: sale.shipping_complement || undefined,
       district: sale.shipping_neighborhood,
       city: sale.shipping_city,
-      state_abbr: sale.shipping_federal_unit,
+      state_abbr: (sale.shipping_federal_unit ?? '').toUpperCase(),
       postal_code: sale.shipping_zip_code,
       country_id: 'BR',
     }
