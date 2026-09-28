@@ -1,7 +1,8 @@
--- Studio 18 — expõe o status do depoimento (se já foi enviado e se foi
--- aprovado) na função get_my_orders, pra área "Minha Conta" do site poder
--- mostrar um link "Deixar depoimento" nos pedidos entregues que ainda não
--- têm um, e o status de moderação nos que já têm.
+-- Studio 18 — expõe se o pedido já tem um depoimento enviado (sem revelar
+-- o status de moderação interna, que é só pro painel de gestão) na função
+-- get_my_orders, pra área "Minha Conta" do site poder mostrar um link
+-- "Deixar depoimento" nos pedidos entregues que ainda não têm um, e um
+-- agradecimento nos que já têm.
 -- Rode no SQL Editor do Supabase.
 
 drop function if exists get_my_orders();
@@ -23,7 +24,7 @@ returns table (
   shipping_service text,
   customer_name text,
   items jsonb,
-  testimonial_status text
+  has_testimonial boolean
 )
 language sql
 security definer
@@ -58,7 +59,7 @@ as $$
       ),
       '[]'::jsonb
     ) as items,
-    t.status as testimonial_status
+    (t.id is not null) as has_testimonial
   from sales s
   left join testimonials t on t.sale_id = s.id
   where lower(s.customer_contact) = lower(auth.jwt() ->> 'email')

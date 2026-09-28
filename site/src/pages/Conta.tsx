@@ -48,12 +48,6 @@ const statusColor: Record<string, string> = {
   cancelado: '#e88b8b',
 }
 
-const testimonialStatusLabel: Record<'pendente' | 'aprovado' | 'rejeitado', string> = {
-  pendente: 'Depoimento enviado — aguardando aprovação',
-  aprovado: 'Depoimento publicado no site',
-  rejeitado: 'Depoimento não aprovado',
-}
-
 const partStatusLabel: Record<string, string> = {
   pendente: 'Recebida',
   em_producao: 'Em produção',
@@ -404,8 +398,10 @@ function OrdersTab({ orders }: { orders: MyOrder[] }) {
             {o.status === 'entregue' && (
               <div className="mt-3 flex items-center gap-2 border-t pt-3 text-xs" style={{ borderColor: 'var(--hairline)' }}>
                 <MessageSquareQuote size={14} style={{ color: 'var(--gold-bright)' }} />
-                {o.testimonial_status ? (
-                  <span style={{ color: 'var(--ink-muted)' }}>{testimonialStatusLabel[o.testimonial_status]}</span>
+                {o.has_testimonial ? (
+                  <span style={{ color: 'var(--ink-muted)' }}>
+                    Obrigado pelo seu depoimento — ele ajuda outros colecionadores do Studio 18!
+                  </span>
                 ) : (
                   <Link to={`/avaliacao/${o.id}`} className="font-medium" style={{ color: 'var(--gold-bright)' }}>
                     Deixar depoimento e ganhar 1000 pontos
