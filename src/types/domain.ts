@@ -194,6 +194,21 @@ export interface Lead {
   source: string
 }
 
+export type TestimonialStatus = 'pendente' | 'aprovado' | 'rejeitado'
+
+export interface Testimonial {
+  id: string
+  created_at: string
+  sale_id: string
+  product_id: string | null
+  customer_name: string
+  customer_email: string
+  rating: number
+  message: string
+  photo_url: string | null
+  status: TestimonialStatus
+}
+
 export type AuditAction = 'criar' | 'editar' | 'excluir'
 
 export interface AuditLogEntry {

@@ -7,6 +7,7 @@ import { CategoryBanner } from '@/components/CategoryBanner'
 import { ProductCard } from '@/components/ProductCard'
 import { ProductRail } from '@/components/ProductRail'
 import { SpotifySection } from '@/components/SpotifySection'
+import { TestimonialsSection } from '@/components/TestimonialsSection'
 import { categories } from '@/lib/categories'
 import { getCatalog } from '@/lib/api'
 import type { CatalogProduct } from '@/types/catalog'
@@ -315,6 +316,8 @@ export function Home() {
           </motion.div>
         </div>
       </section>
+
+      <TestimonialsSection />
 
       <SpotifySection />
     </div>

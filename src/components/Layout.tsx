@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Package, ShoppingCart, Wallet, Ship, Newspaper, Wrench, ScrollText, LogOut, Bell, Megaphone, Menu, X, Ticket, KeyRound, Mail } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Wallet, Ship, Newspaper, Wrench, ScrollText, LogOut, Bell, Megaphone, Menu, X, Ticket, KeyRound, Mail, MessageSquareQuote } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
-import { getBlogPosts, getPartRequests, getRestockWaitlist } from '@/lib/api'
+import { getBlogPosts, getPartRequests, getRestockWaitlist, getTestimonials } from '@/lib/api'
 
 const navItems = [
   { to: '/', label: 'Visão geral', icon: LayoutDashboard, end: true },
@@ -11,6 +11,7 @@ const navItems = [
   { to: '/pecas-faltantes', label: 'Peças faltantes', icon: Wrench },
   { to: '/lista-espera', label: 'Lista de espera', icon: Bell },
   { to: '/leads', label: 'Leads', icon: Mail },
+  { to: '/depoimentos', label: 'Depoimentos', icon: MessageSquareQuote },
   { to: '/financeiro', label: 'Financeiro', icon: Wallet },
   { to: '/cupons', label: 'Cupons', icon: Ticket },
   { to: '/containers', label: 'Containers', icon: Ship },
@@ -26,6 +27,7 @@ export function Layout() {
   const [pendingBlogDrafts, setPendingBlogDrafts] = useState(0)
   const [pendingPartRequests, setPendingPartRequests] = useState(0)
   const [pendingWaitlist, setPendingWaitlist] = useState(0)
+  const [pendingTestimonials, setPendingTestimonials] = useState(0)
 
   useEffect(() => {
     getBlogPosts()
@@ -36,6 +38,9 @@ export function Layout() {
       .catch(() => {})
     getRestockWaitlist()
       .then((entries) => setPendingWaitlist(entries.filter((e) => !e.notified).length))
+      .catch(() => {})
+    getTestimonials()
+      .then((testimonials) => setPendingTestimonials(testimonials.filter((t) => t.status === 'pendente').length))
       .catch(() => {})
   }, [])
 
@@ -131,6 +136,14 @@ export function Layout() {
                   style={{ background: 'var(--status-warning)', color: '#3a2500' }}
                 >
                   {pendingWaitlist}
+                </span>
+              )}
+              {to === '/depoimentos' && pendingTestimonials > 0 && (
+                <span
+                  className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
+                  style={{ background: 'var(--status-warning)', color: '#3a2500' }}
+                >
+                  {pendingTestimonials}
                 </span>
               )}
             </NavLink>

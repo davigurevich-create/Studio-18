@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
       for (const sale of batch) {
         const info = tracking.data?.[sale.melhor_envio_order_id as string]
         if (!info?.delivered_at) continue
-        await supabase.from('sales').update({ status: 'entregue' }).eq('id', sale.id)
+        await supabase.from('sales').update({ status: 'entregue', delivered_at: info.delivered_at }).eq('id', sale.id)
         deliveredCount++
         if (sale.customer_contact) await sendDeliveredEmail(sale.id, sale.customer_name, sale.customer_contact)
       }

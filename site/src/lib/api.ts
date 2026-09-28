@@ -191,6 +191,71 @@ export async function submitPartRequest(input: PartRequestInput): Promise<{ requ
 }
 
 /**
+ * Envia a foto do set montado, anexada ao depoimento (opcional) — mesmo
+ * esquema do uploadPartRequestPhoto, bucket público próprio.
+ */
+export async function uploadTestimonialPhoto(file: File): Promise<string> {
+  if (!supabase) {
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    return URL.createObjectURL(file)
+  }
+  const ext = file.name.split('.').pop() ?? 'jpg'
+  const path = `${crypto.randomUUID()}.${ext}`
+  const { error } = await supabase.storage.from('testimonial-photos').upload(path, file)
+  if (error) throw error
+  const { data } = supabase.storage.from('testimonial-photos').getPublicUrl(path)
+  return data.publicUrl
+}
+
+export interface TestimonialInput {
+  saleId: string
+  email: string
+  customerName: string
+  rating: number
+  message: string
+  photoUrl?: string
+}
+
+/**
+ * Envia o depoimento do cliente (link mandado 5 dias após a entrega) — a
+ * Edge Function confere se o e-mail bate com o pedido, grava como
+ * "pendente" (só aparece no site depois de aprovado no painel) e credita o
+ * bônus de 1000 pontos.
+ */
+export async function submitTestimonial(input: TestimonialInput): Promise<{ testimonialId: string }> {
+  if (!supabase) {
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    return { testimonialId: `demo-${Date.now()}` }
+  }
+  return invokeEdgeFunction<{ testimonialId: string }>('submit-testimonial', input)
+}
+
+export interface Testimonial {
+  id: string
+  customer_name: string
+  rating: number
+  message: string
+  photo_url: string | null
+  created_at: string
+}
+
+/**
+ * Depoimentos já aprovados pela equipe, pra seção "o que dizem" da home —
+ * lê direto da tabela (a policy de select só libera status='aprovado' pra
+ * quem não está logado no painel).
+ */
+export async function getApprovedTestimonials(): Promise<Testimonial[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('testimonials')
+    .select('id, customer_name, rating, message, photo_url, created_at')
+    .eq('status', 'aprovado')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data as Testimonial[]
+}
+
+/**
  * Cadastra o cliente na lista de espera de reposição de um SKU esgotado.
  * Grava direto na tabela (sem Edge Function) — a policy de insert é aberta
  * para qualquer visitante, e o painel de gestão é quem consulta e avisa o

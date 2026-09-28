@@ -32,6 +32,8 @@ import type {
   SaleItem,
   SocialContentIdea,
   SocialContentStatus,
+  Testimonial,
+  TestimonialStatus,
 } from '@/types/domain'
 
 const productsTable = makeTable<Product>('products', seedProducts)
@@ -45,6 +47,7 @@ const blogPostsTable = makeTable<BlogPost>('blog_posts', seedBlogPosts)
 const partRequestsTable = makeTable<PartRequest>('part_requests', seedPartRequests)
 const restockWaitlistTable = makeTable<RestockWaitlistEntry>('restock_waitlist', seedRestockWaitlist)
 const leadsTable = makeTable<Lead>('leads', [])
+const testimonialsTable = makeTable<Testimonial>('testimonials', [])
 const socialContentIdeasTable = makeTable<SocialContentIdea>('social_content_ideas', seedSocialContentIdeas)
 const auditLogTable = makeTable<AuditLogEntry>('audit_log', seedAuditLog)
 
@@ -636,6 +639,30 @@ export async function getLeads(): Promise<Lead[]> {
     return data as Lead[]
   }
   return [...leadsTable.all()].sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+// ---------------------------------------------------------------------------
+// Depoimentos — coletados pelo site 5 dias após a entrega (ver
+// request-testimonials e submit-testimonial). Moderação aqui: só depois de
+// "aprovado" o depoimento aparece na seção "o que dizem" do site.
+// ---------------------------------------------------------------------------
+export async function getTestimonials(): Promise<Testimonial[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('testimonials').select('*').order('created_at', { ascending: false })
+    if (error) throw error
+    return data as Testimonial[]
+  }
+  return [...testimonialsTable.all()].sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+export async function updateTestimonialStatus(id: string, status: TestimonialStatus, previousStatus: TestimonialStatus): Promise<void> {
+  if (supabase) {
+    const { error } = await supabase.from('testimonials').update({ status }).eq('id', id)
+    if (error) throw error
+  } else {
+    testimonialsTable.update(id, { status })
+  }
+  await logAudit('editar', 'depoimento', id, `Alterou status do depoimento de "${previousStatus}" para "${status}"`)
 }
 
 // ---------------------------------------------------------------------------
