@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getTestimonials, updateTestimonialStatus } from '@/lib/api'
+import { getTestimonials, updateTestimonialMessage, updateTestimonialStatus } from '@/lib/api'
 import { Badge, Card, PageHeader } from '@/components/ui'
 import type { Testimonial, TestimonialStatus } from '@/types/domain'
 
@@ -15,6 +15,71 @@ function Stars({ rating }: { rating: number }) {
       {'★'.repeat(rating)}
       <span style={{ color: 'var(--gridline)' }}>{'★'.repeat(5 - rating)}</span>
     </span>
+  )
+}
+
+function MessageCell({ testimonial, onSaved }: { testimonial: Testimonial; onSaved: () => void }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(testimonial.message)
+  const [saving, setSaving] = useState(false)
+
+  if (!editing) {
+    return (
+      <div className="flex flex-col gap-1">
+        <p>{testimonial.message}</p>
+        <button
+          type="button"
+          onClick={() => {
+            setDraft(testimonial.message)
+            setEditing(true)
+          }}
+          className="self-start text-xs font-medium"
+          style={{ color: 'var(--series-1)' }}
+        >
+          Corrigir texto
+        </button>
+      </div>
+    )
+  }
+
+  const save = async () => {
+    setSaving(true)
+    await updateTestimonialMessage(testimonial.id, draft.trim())
+    setSaving(false)
+    setEditing(false)
+    onSaved()
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <textarea
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        rows={4}
+        className="w-full rounded-md border px-2 py-1.5 text-sm"
+        style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
+      />
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving || !draft.trim()}
+          className="rounded-md px-2.5 py-1 text-xs font-medium disabled:opacity-50"
+          style={{ background: 'var(--series-1)', color: '#fff' }}
+        >
+          {saving ? 'Salvando...' : 'Salvar'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setEditing(false)}
+          disabled={saving}
+          className="text-xs"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -128,7 +193,7 @@ export function Depoimentos() {
                     <Stars rating={t.rating} />
                   </td>
                   <td className="py-2.5 max-w-[320px]" style={{ color: 'var(--text-secondary)' }}>
-                    {t.message}
+                    <MessageCell testimonial={t} onSaved={reload} />
                   </td>
                   <td className="py-2.5">
                     {t.photo_url ? (

@@ -665,6 +665,16 @@ export async function updateTestimonialStatus(id: string, status: TestimonialSta
   await logAudit('editar', 'depoimento', id, `Alterou status do depoimento de "${previousStatus}" para "${status}"`)
 }
 
+export async function updateTestimonialMessage(id: string, message: string): Promise<void> {
+  if (supabase) {
+    const { error } = await supabase.from('testimonials').update({ message }).eq('id', id)
+    if (error) throw error
+  } else {
+    testimonialsTable.update(id, { message })
+  }
+  await logAudit('editar', 'depoimento', id, 'Corrigiu o texto do depoimento antes de publicar')
+}
+
 // ---------------------------------------------------------------------------
 // Social Media — motor de conteúdo (sugestões de posts/vídeos para
 // Instagram e TikTok), uso interno da equipe apenas.
