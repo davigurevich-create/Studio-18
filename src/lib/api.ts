@@ -337,6 +337,14 @@ export async function updateSaleStatus(id: string, status: Sale['status'], previ
     salesTable.update(id, { status })
   }
   await logAudit('editar', 'venda', id, `Alterou status da venda de "${previousStatus}" para "${status}"`)
+
+  // Avisa o cliente por e-mail só quando a equipe confirma manualmente que o
+  // pedido saiu de verdade (depois de levar o pacote até a agência) — não
+  // dá pra confiar em nenhum sinal automático da transportadora pra isso,
+  // ver comentário em generate-shipping-label/index.ts.
+  if (supabase && status === 'enviado' && previousStatus !== 'enviado') {
+    supabase.functions.invoke('notify-shipped', { body: { saleId: id } }).catch(() => {})
+  }
 }
 
 /**
