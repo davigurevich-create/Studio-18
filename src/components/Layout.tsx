@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Package, ShoppingCart, Wallet, Ship, Newspaper, Wrench, ScrollText, LogOut, Bell, Megaphone, Menu, X, Ticket, KeyRound, Mail, MessageSquareQuote, Award } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Wallet, Ship, Newspaper, Wrench, ScrollText, LogOut, Bell, Megaphone, Menu, X, Ticket, KeyRound, Mail, MessageSquareQuote } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
-import { getBlogPosts, getLeads, getPartRequests, getPointsLedger, getRestockWaitlist, getSales, getTestimonials } from '@/lib/api'
+import { getBlogPosts, getLeads, getPartRequests, getRestockWaitlist, getSales, getTestimonials } from '@/lib/api'
 
 // Vendas e leads não têm um estado "pendente" natural (toda venda e todo
 // lead ficam registrados pra sempre) — então o contador de novidades usa a
@@ -30,7 +30,6 @@ const navItems = [
   { to: '/lista-espera', label: 'Lista de espera', icon: Bell },
   { to: '/leads', label: 'Leads', icon: Mail },
   { to: '/depoimentos', label: 'Depoimentos', icon: MessageSquareQuote },
-  { to: '/pontos', label: 'Pontos', icon: Award },
   { to: '/financeiro', label: 'Financeiro', icon: Wallet },
   { to: '/cupons', label: 'Cupons', icon: Ticket },
   { to: '/containers', label: 'Containers', icon: Ship },
@@ -47,7 +46,6 @@ export function Layout() {
   const [pendingPartRequests, setPendingPartRequests] = useState(0)
   const [pendingWaitlist, setPendingWaitlist] = useState(0)
   const [pendingTestimonials, setPendingTestimonials] = useState(0)
-  const [pendingPoints, setPendingPoints] = useState(0)
   const [pendingNewSales, setPendingNewSales] = useState(0)
   const [pendingNewLeads, setPendingNewLeads] = useState(0)
 
@@ -63,9 +61,6 @@ export function Layout() {
       .catch(() => {})
     getTestimonials()
       .then((testimonials) => setPendingTestimonials(testimonials.filter((t) => t.status === 'pendente').length))
-      .catch(() => {})
-    getPointsLedger()
-      .then((entries) => setPendingPoints(entries.filter((e) => !e.issued_at).length))
       .catch(() => {})
     const seenSalesAt = getLastSeen(SEEN_SALES_KEY)
     getSales()
@@ -201,14 +196,6 @@ export function Layout() {
                   style={{ background: 'var(--status-warning)', color: '#3a2500' }}
                 >
                   {pendingTestimonials}
-                </span>
-              )}
-              {to === '/pontos' && pendingPoints > 0 && (
-                <span
-                  className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
-                  style={{ background: 'var(--status-warning)', color: '#3a2500' }}
-                >
-                  {pendingPoints}
                 </span>
               )}
             </NavLink>
