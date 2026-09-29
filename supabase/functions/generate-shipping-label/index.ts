@@ -71,13 +71,6 @@ function emailShell(title: string, bodyHtml: string): string {
   </div>`
 }
 
-// Assim que a transportadora confirma o rastreio, esse é o sinal real de
-// que o pedido saiu de verdade — o status vira "enviado" sozinho, exceto se
-// já estiver num passo mais adiante (entregue/cancelado), pra não regredir.
-function statusPatchOnTracking(currentStatus: string): Record<string, unknown> {
-  return currentStatus === 'entregue' || currentStatus === 'cancelado' ? {} : { status: 'enviado' }
-}
-
 async function sendShippedEmail(saleId: string, customerName: string | null, customerContact: string, trackingCode: string): Promise<void> {
   await sendEmail(
     customerContact,
@@ -195,19 +188,19 @@ Deno.serve(async (req) => {
 
     // Trava de segurança: se já tem etiqueta gerada, devolve a existente em
     // vez de comprar (e cobrar) outra de novo — mas se ainda não tem código
-    // de rastreio (a Melhor Envio só atribui depois que o objeto é
-    // efetivamente postado na transportadora, não na hora de gerar a
-    // etiqueta), tenta buscar de novo, sem gastar saldo nenhum.
+    // de rastreio salvo, tenta buscar de novo, sem gastar saldo nenhum.
+    // Não mexe no status do pedido aqui: ter código de rastreio não quer
+    // dizer que o pacote já foi postado de verdade (algumas transportadoras,
+    // como a JeT, atribuem o código já na geração da etiqueta) — quem marca
+    // "enviado" é a equipe, manualmente no painel, depois de levar o pacote
+    // até a agência.
     if (sale.shipping_label_url) {
       let trackingCode: string | null = sale.shipping_tracking_code
       if (!trackingCode && sale.melhor_envio_order_id) {
         const tracking = await meFetch('shipment/tracking', { orders: [sale.melhor_envio_order_id] })
         trackingCode = tracking.data?.[sale.melhor_envio_order_id]?.tracking ?? null
         if (trackingCode) {
-          await supabase
-            .from('sales')
-            .update({ shipping_tracking_code: trackingCode, ...statusPatchOnTracking(sale.status) })
-            .eq('id', saleId)
+          await supabase.from('sales').update({ shipping_tracking_code: trackingCode }).eq('id', saleId)
           if (sale.customer_contact) await sendShippedEmail(saleId, sale.customer_name, sale.customer_contact, trackingCode)
         }
       }
@@ -372,7 +365,6 @@ Deno.serve(async (req) => {
         melhor_envio_order_id: cartItemId,
         shipping_label_url: labelUrl,
         shipping_tracking_code: trackingCode,
-        ...(trackingCode ? statusPatchOnTracking(sale.status) : {}),
       })
       .eq('id', saleId)
 
