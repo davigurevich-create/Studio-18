@@ -90,11 +90,12 @@ export function Depoimentos() {
       </div>
 
       <Card className="overflow-x-auto">
-        <table className="w-full min-w-[820px] text-sm">
+        <table className="w-full min-w-[900px] text-sm">
           <thead>
             <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
               <th className="pb-2 font-medium">Data</th>
               <th className="pb-2 font-medium">Cliente</th>
+              <th className="pb-2 font-medium">Set</th>
               <th className="pb-2 font-medium">Nota</th>
               <th className="pb-2 font-medium">Depoimento</th>
               <th className="pb-2 font-medium">Foto</th>
@@ -104,7 +105,7 @@ export function Depoimentos() {
           <tbody>
             {filteredTestimonials.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                <td colSpan={7} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
                   Nenhum depoimento encontrado.
                 </td>
               </tr>
@@ -119,6 +120,9 @@ export function Depoimentos() {
                     <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                       {t.customer_email}
                     </div>
+                  </td>
+                  <td className="py-2.5 max-w-[160px]" style={{ color: 'var(--text-secondary)' }}>
+                    {t.product_names?.join(', ') ?? '—'}
                   </td>
                   <td className="py-2.5">
                     <Stars rating={t.rating} />

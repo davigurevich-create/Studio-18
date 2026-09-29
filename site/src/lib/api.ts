@@ -236,6 +236,7 @@ export interface Testimonial {
   rating: number
   message: string
   photo_url: string | null
+  product_names: string[] | null
   created_at: string
 }
 
@@ -248,7 +249,7 @@ export async function getApprovedTestimonials(): Promise<Testimonial[]> {
   if (!supabase) return []
   const { data, error } = await supabase
     .from('testimonials')
-    .select('id, customer_name, rating, message, photo_url, created_at')
+    .select('id, customer_name, rating, message, photo_url, product_names, created_at')
     .eq('status', 'aprovado')
     .order('created_at', { ascending: false })
   if (error) throw error

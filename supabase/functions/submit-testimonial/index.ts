@@ -96,18 +96,21 @@ Deno.serve(async (req) => {
       return json({ error: 'Pedido não encontrado para esse e-mail.' }, 404)
     }
 
-    const { data: firstItem } = await supabase
+    const { data: items } = await supabase
       .from('sale_items')
-      .select('product_id')
+      .select('product_id, product:products(name)')
       .eq('sale_id', saleId)
-      .limit(1)
-      .maybeSingle()
+
+    const productNames = (items ?? [])
+      .map((it: any) => it.product?.name as string | undefined)
+      .filter((name): name is string => Boolean(name))
 
     const { data: created, error } = await supabase
       .from('testimonials')
       .insert({
         sale_id: saleId,
-        product_id: firstItem?.product_id ?? null,
+        product_id: items?.[0]?.product_id ?? null,
+        product_names: productNames.length > 0 ? productNames : null,
         customer_name: customerName,
         customer_email: email,
         rating,

@@ -8,7 +8,14 @@ const fadeUp = {
   show: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 }
 
+function collectorLabel(names: string[] | null): string | null {
+  if (!names || names.length === 0) return null
+  const joined = names.length > 1 ? `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}` : names[0]
+  return `Colecionador de ${joined}`
+}
+
 function TestimonialCard({ t }: { t: Testimonial }) {
+  const label = collectorLabel(t.product_names)
   return (
     <div
       className="flex h-full w-[82vw] shrink-0 snap-center flex-col rounded-2xl border p-6 sm:w-[360px]"
@@ -28,6 +35,11 @@ function TestimonialCard({ t }: { t: Testimonial }) {
       <p className="text-xs font-medium tracking-wide" style={{ color: 'var(--ink)' }}>
         — {t.customer_name}
       </p>
+      {label && (
+        <p className="mt-0.5 text-[11px] tracking-wide" style={{ color: 'var(--gold-bright)' }}>
+          {label}
+        </p>
+      )}
     </div>
   )
 }

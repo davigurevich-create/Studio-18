@@ -201,6 +201,7 @@ export interface Testimonial {
   created_at: string
   sale_id: string
   product_id: string | null
+  product_names: string[] | null
   customer_name: string
   customer_email: string
   rating: number
