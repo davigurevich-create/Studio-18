@@ -2,7 +2,25 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Package, ShoppingCart, Wallet, Ship, Newspaper, Wrench, ScrollText, LogOut, Bell, Megaphone, Menu, X, Ticket, KeyRound, Mail, MessageSquareQuote } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
-import { getBlogPosts, getPartRequests, getRestockWaitlist, getTestimonials } from '@/lib/api'
+import { getBlogPosts, getLeads, getPartRequests, getRestockWaitlist, getSales, getTestimonials } from '@/lib/api'
+
+// Vendas e leads não têm um estado "pendente" natural (toda venda e todo
+// lead ficam registrados pra sempre) — então o contador de novidades usa a
+// data da última vez que a aba foi aberta neste navegador, guardada aqui.
+function getLastSeen(key: string): string {
+  const stored = localStorage.getItem(key)
+  if (stored) return stored
+  const now = new Date().toISOString()
+  localStorage.setItem(key, now)
+  return now
+}
+
+function markSeenNow(key: string) {
+  localStorage.setItem(key, new Date().toISOString())
+}
+
+const SEEN_SALES_KEY = 'studio18_seen_vendas_at'
+const SEEN_LEADS_KEY = 'studio18_seen_leads_at'
 
 const navItems = [
   { to: '/', label: 'Visão geral', icon: LayoutDashboard, end: true },
@@ -28,6 +46,8 @@ export function Layout() {
   const [pendingPartRequests, setPendingPartRequests] = useState(0)
   const [pendingWaitlist, setPendingWaitlist] = useState(0)
   const [pendingTestimonials, setPendingTestimonials] = useState(0)
+  const [pendingNewSales, setPendingNewSales] = useState(0)
+  const [pendingNewLeads, setPendingNewLeads] = useState(0)
 
   useEffect(() => {
     getBlogPosts()
@@ -42,10 +62,26 @@ export function Layout() {
     getTestimonials()
       .then((testimonials) => setPendingTestimonials(testimonials.filter((t) => t.status === 'pendente').length))
       .catch(() => {})
+    const seenSalesAt = getLastSeen(SEEN_SALES_KEY)
+    getSales()
+      .then((sales) => setPendingNewSales(sales.filter((s) => s.created_at > seenSalesAt).length))
+      .catch(() => {})
+    const seenLeadsAt = getLastSeen(SEEN_LEADS_KEY)
+    getLeads()
+      .then((leads) => setPendingNewLeads(leads.filter((l) => l.created_at > seenLeadsAt).length))
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
     setMenuOpen(false)
+    if (location.pathname === '/vendas') {
+      markSeenNow(SEEN_SALES_KEY)
+      setPendingNewSales(0)
+    }
+    if (location.pathname === '/leads') {
+      markSeenNow(SEEN_LEADS_KEY)
+      setPendingNewLeads(0)
+    }
   }, [location.pathname])
 
   return (
@@ -114,6 +150,22 @@ export function Layout() {
             >
               <Icon size={16} />
               {label}
+              {to === '/vendas' && pendingNewSales > 0 && (
+                <span
+                  className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
+                  style={{ background: 'var(--status-warning)', color: '#3a2500' }}
+                >
+                  {pendingNewSales}
+                </span>
+              )}
+              {to === '/leads' && pendingNewLeads > 0 && (
+                <span
+                  className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
+                  style={{ background: 'var(--status-warning)', color: '#3a2500' }}
+                >
+                  {pendingNewLeads}
+                </span>
+              )}
               {to === '/blog' && pendingBlogDrafts > 0 && (
                 <span
                   className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
