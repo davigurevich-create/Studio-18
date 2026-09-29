@@ -31,6 +31,71 @@ const MELHOR_ENVIO_TOKEN = (MELHOR_ENVIO_ENV === 'sandbox' ? Deno.env.get('MELHO
 // anexa a chave da nota quando FOCUS_NFE_ENV = 'producao'.
 const FOCUS_NFE_ENV = Deno.env.get('FOCUS_NFE_ENV') ?? 'homologacao'
 
+// --- E-mail transacional (Resend) — mesmo padrão do rede-create-payment ---
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+const EMAIL_FROM = Deno.env.get('EMAIL_FROM') ?? 'Studio 18 <onboarding@resend.dev>'
+const SITE_URL = Deno.env.get('SITE_URL') ?? 'https://studio18.vercel.app'
+
+async function sendEmail(to: string, subject: string, html: string): Promise<void> {
+  if (!RESEND_API_KEY) {
+    console.error('RESEND_API_KEY não configurada — e-mail não enviado.')
+    return
+  }
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: EMAIL_FROM, to, subject, html }),
+    })
+    if (!res.ok) console.error('Falha ao enviar e-mail:', await res.text())
+  } catch (err) {
+    console.error('Erro ao enviar e-mail:', err)
+  }
+}
+
+function emailShell(title: string, bodyHtml: string): string {
+  return `
+  <div style="background:#060606;padding:32px 16px;font-family:Helvetica,Arial,sans-serif;">
+    <div style="max-width:520px;margin:0 auto;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;">
+      <div style="padding:20px 28px;border-bottom:1px solid rgba(255,255,255,0.08);">
+        <img src="${SITE_URL}/logo-studio18.png" alt="Studio 18" height="28" style="height:28px;width:auto;display:block;" />
+      </div>
+      <div style="padding:28px;">
+        <h1 style="margin:0 0 16px;font-size:20px;color:#f3f1ec;">${title}</h1>
+        <div style="font-size:14px;line-height:1.6;color:#b7b3a9;">${bodyHtml}</div>
+      </div>
+      <div style="padding:20px 28px;border-top:1px solid rgba(255,255,255,0.08);font-size:12px;color:#7a766d;">
+        Studio 18 — Do nosso Studio ao seu.
+      </div>
+    </div>
+  </div>`
+}
+
+// Assim que a transportadora confirma o rastreio, esse é o sinal real de
+// que o pedido saiu de verdade — o status vira "enviado" sozinho, exceto se
+// já estiver num passo mais adiante (entregue/cancelado), pra não regredir.
+function statusPatchOnTracking(currentStatus: string): Record<string, unknown> {
+  return currentStatus === 'entregue' || currentStatus === 'cancelado' ? {} : { status: 'enviado' }
+}
+
+async function sendShippedEmail(saleId: string, customerName: string | null, customerContact: string, trackingCode: string): Promise<void> {
+  await sendEmail(
+    customerContact,
+    `Seu pedido saiu para entrega — Studio 18 #${saleId.slice(0, 8)}`,
+    emailShell(
+      'Seu pedido está a caminho!',
+      `<p>Olá, ${String(customerName ?? '').split(' ')[0] || 'tudo bem'}! O pedido <strong>#${saleId.slice(0, 8)}</strong> já foi postado e está a caminho.</p>
+       <div style="margin:20px 0;padding:16px;border:1px solid rgba(255,255,255,0.08);border-radius:8px;">
+         <div style="font-size:12px;color:#7a766d;letter-spacing:0.05em;">CÓDIGO DE RASTREIO</div>
+         <div style="margin-top:4px;font-size:16px;color:#e6c778;font-family:monospace;">${trackingCode}</div>
+       </div>
+       <p style="margin-top:20px;">
+         <a href="${SITE_URL}/conta" style="color:#e6c778;">Acompanhe a entrega em Minha Conta</a>
+       </p>`,
+    ),
+  )
+}
+
 const DEFAULT_BOX_CM = { length: 50, width: 35, height: 12 }
 
 // Dados do remetente (Studio 18) que vão em toda etiqueta gerada. Sem o
@@ -130,20 +195,20 @@ Deno.serve(async (req) => {
 
     // Trava de segurança: se já tem etiqueta gerada, devolve a existente em
     // vez de comprar (e cobrar) outra de novo — mas se ainda não tem código
-    // de rastreio salvo, tenta buscar de novo, sem gastar saldo nenhum.
-    // Não mexe no status do pedido nem manda e-mail aqui: ter código de
-    // rastreio não quer dizer que o pacote já foi postado de verdade
-    // (algumas transportadoras, como a JeT, atribuem o código já na geração
-    // da etiqueta) — quem marca "enviado" é a equipe, manualmente no painel,
-    // depois de levar o pacote até a agência, e é essa mudança de status
-    // que dispara o aviso pro cliente (ver função notify-shipped).
+    // de rastreio (a Melhor Envio só atribui depois que o objeto é
+    // efetivamente postado na transportadora, não na hora de gerar a
+    // etiqueta), tenta buscar de novo, sem gastar saldo nenhum.
     if (sale.shipping_label_url) {
       let trackingCode: string | null = sale.shipping_tracking_code
       if (!trackingCode && sale.melhor_envio_order_id) {
         const tracking = await meFetch('shipment/tracking', { orders: [sale.melhor_envio_order_id] })
         trackingCode = tracking.data?.[sale.melhor_envio_order_id]?.tracking ?? null
         if (trackingCode) {
-          await supabase.from('sales').update({ shipping_tracking_code: trackingCode }).eq('id', saleId)
+          await supabase
+            .from('sales')
+            .update({ shipping_tracking_code: trackingCode, ...statusPatchOnTracking(sale.status) })
+            .eq('id', saleId)
+          if (sale.customer_contact) await sendShippedEmail(saleId, sale.customer_name, sale.customer_contact, trackingCode)
         }
       }
       return json({ labelUrl: sale.shipping_label_url, trackingCode, alreadyGenerated: true })
@@ -307,8 +372,13 @@ Deno.serve(async (req) => {
         melhor_envio_order_id: cartItemId,
         shipping_label_url: labelUrl,
         shipping_tracking_code: trackingCode,
+        ...(trackingCode ? statusPatchOnTracking(sale.status) : {}),
       })
       .eq('id', saleId)
+
+    if (trackingCode && sale.customer_contact) {
+      await sendShippedEmail(saleId, sale.customer_name, sale.customer_contact, trackingCode)
+    }
 
     return json({ labelUrl, trackingCode })
   } catch (err) {
