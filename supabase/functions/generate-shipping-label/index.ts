@@ -106,6 +106,11 @@ const ORIGIN = {
   // CNPJ (pessoa jurídica) — a API do Melhor Envio usa um campo separado
   // de CPF (`document`) para isso, ver `company_document` no payload abaixo.
   companyDocument: (Deno.env.get('SHIPPING_ORIGIN_DOCUMENT') ?? '').replace(/\D/g, ''),
+  // Inscrição Estadual do CNPJ — algumas transportadoras de carga (JeT,
+  // Buslog, Total Express) exigem isso no remetente quando o envio vai com
+  // nota fiscal anexada, porque elas emitem CT-e (conhecimento de
+  // transporte), que depende do registro fiscal estadual de quem envia.
+  stateRegister: (Deno.env.get('SHIPPING_ORIGIN_STATE_REGISTER') ?? '').replace(/\D/g, ''),
   phone: (Deno.env.get('SHIPPING_ORIGIN_PHONE') ?? '11981008013').replace(/\D/g, ''),
   email: Deno.env.get('SHIPPING_ORIGIN_EMAIL') ?? 'contato@studio18bricks.com.br',
   address: Deno.env.get('SHIPPING_ORIGIN_STREET') ?? 'Rua Francisco Pais',
@@ -276,6 +281,7 @@ Deno.serve(async (req) => {
       phone: ORIGIN.phone,
       email: ORIGIN.email,
       company_document: ORIGIN.companyDocument,
+      ...(ORIGIN.stateRegister ? { state_register: ORIGIN.stateRegister } : {}),
       address: ORIGIN.address,
       number: ORIGIN.number,
       complement: ORIGIN.complement || undefined,
