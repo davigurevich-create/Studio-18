@@ -15,6 +15,7 @@ import { PecasFaltantes } from '@/pages/PecasFaltantes'
 import { ListaEspera } from '@/pages/ListaEspera'
 import { Leads } from '@/pages/Leads'
 import { Depoimentos } from '@/pages/Depoimentos'
+import { Pontos } from '@/pages/Pontos'
 import { SocialMedia } from '@/pages/SocialMedia'
 import { AuditLog } from '@/pages/AuditLog'
 
@@ -52,6 +53,7 @@ function App() {
             <Route path="/lista-espera" element={<ListaEspera />} />
             <Route path="/leads" element={<Leads />} />
             <Route path="/depoimentos" element={<Depoimentos />} />
+            <Route path="/pontos" element={<Pontos />} />
             <Route path="/social-media" element={<SocialMedia />} />
             <Route path="/log-auditoria" element={<AuditLog />} />
           </Route>

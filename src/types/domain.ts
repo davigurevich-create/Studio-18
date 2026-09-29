@@ -194,6 +194,16 @@ export interface Lead {
   source: string
 }
 
+export interface PointsLedgerEntry {
+  id: string
+  created_at: string
+  customer_email: string
+  points: number
+  reason: string
+  sale_id: string | null
+  issued_at: string | null
+}
+
 export type TestimonialStatus = 'pendente' | 'aprovado' | 'rejeitado'
 
 export interface Testimonial {

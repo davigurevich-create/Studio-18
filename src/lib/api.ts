@@ -25,6 +25,7 @@ import type {
   Lead,
   PartRequest,
   PartRequestStatus,
+  PointsLedgerEntry,
   Product,
   ProductStock,
   RestockWaitlistEntry,
@@ -48,6 +49,7 @@ const partRequestsTable = makeTable<PartRequest>('part_requests', seedPartReques
 const restockWaitlistTable = makeTable<RestockWaitlistEntry>('restock_waitlist', seedRestockWaitlist)
 const leadsTable = makeTable<Lead>('leads', [])
 const testimonialsTable = makeTable<Testimonial>('testimonials', [])
+const pointsLedgerTable = makeTable<PointsLedgerEntry>('customer_points_ledger', [])
 const socialContentIdeasTable = makeTable<SocialContentIdea>('social_content_ideas', seedSocialContentIdeas)
 const auditLogTable = makeTable<AuditLogEntry>('audit_log', seedAuditLog)
 
@@ -673,6 +675,35 @@ export async function updateTestimonialMessage(id: string, message: string): Pro
     testimonialsTable.update(id, { message })
   }
   await logAudit('editar', 'depoimento', id, 'Corrigiu o texto do depoimento antes de publicar')
+}
+
+// ---------------------------------------------------------------------------
+// Pontos — o portal BOB (selos digitais) não tem API, então a emissão do
+// selo com os pontos é sempre manual, lá no painel do BOB. Isso aqui é só a
+// lista de créditos de pontos pendentes de emissão, pra equipe não
+// esquecer nem duplicar.
+// ---------------------------------------------------------------------------
+export async function getPointsLedger(): Promise<PointsLedgerEntry[]> {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('customer_points_ledger')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data as PointsLedgerEntry[]
+  }
+  return [...pointsLedgerTable.all()].sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+export async function markPointsIssued(id: string): Promise<void> {
+  const issued_at = new Date().toISOString()
+  if (supabase) {
+    const { error } = await supabase.from('customer_points_ledger').update({ issued_at }).eq('id', id)
+    if (error) throw error
+  } else {
+    pointsLedgerTable.update(id, { issued_at })
+  }
+  await logAudit('editar', 'pontos', id, 'Marcou selo de pontos como emitido no BOB')
 }
 
 // ---------------------------------------------------------------------------
