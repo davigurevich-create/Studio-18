@@ -14,6 +14,30 @@ import { getExpenses, getProducts, getSaleItems, getSales, getStock } from '@/li
 import { Card, PageHeader, StatTile, formatBRL } from '@/components/ui'
 import type { Expense, Product, ProductStock, Sale, SaleItem } from '@/types/domain'
 
+type PeriodPreset = 'mes' | 'ano' | 'total' | 'personalizado'
+
+const periodLabels: Record<PeriodPreset, string> = {
+  mes: 'Este mês',
+  ano: 'Este ano',
+  total: 'Total',
+  personalizado: 'Personalizado',
+}
+
+function getPeriodRange(
+  preset: PeriodPreset,
+  customStart: string,
+  customEnd: string,
+): { start: Date | null; end: Date } {
+  const now = new Date()
+  if (preset === 'mes') return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: now }
+  if (preset === 'ano') return { start: new Date(now.getFullYear(), 0, 1), end: now }
+  if (preset === 'total') return { start: null, end: now }
+  return {
+    start: customStart ? new Date(`${customStart}T00:00:00`) : null,
+    end: customEnd ? new Date(`${customEnd}T23:59:59`) : now,
+  }
+}
+
 export function Overview() {
   const [stock, setStock] = useState<ProductStock[]>([])
   const [sales, setSales] = useState<Sale[]>([])
@@ -21,6 +45,9 @@ export function Overview() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [periodPreset, setPeriodPreset] = useState<PeriodPreset>('mes')
+  const [customStart, setCustomStart] = useState('')
+  const [customEnd, setCustomEnd] = useState('')
 
   useEffect(() => {
     Promise.all([getStock(), getSales(), getSaleItems(), getExpenses(), getProducts()]).then(
@@ -35,7 +62,9 @@ export function Overview() {
     )
   }, [])
 
-  const kpis = useMemo(() => {
+  // KPIs que nunca mudam com o filtro de período — estoque é uma foto do
+  // agora, e o faturamento total é sempre "desde o início".
+  const globalKpis = useMemo(() => {
     const stockValue = stock.reduce((sum, p) => sum + p.quantity_in_stock * p.cost_price_brl, 0)
     const totalUnits = stock.reduce((sum, p) => sum + p.quantity_in_stock, 0)
     // "motor" é uma categoria de produto à parte (o motor funcional vendido
@@ -45,26 +74,46 @@ export function Overview() {
     const motorUnits = stock.filter((p) => p.category === 'motor').reduce((sum, p) => sum + p.quantity_in_stock, 0)
     const lowStock = stock.filter((p) => p.quantity_in_stock <= p.min_stock_alert)
 
-    const thisMonth = new Date()
-    thisMonth.setDate(1)
-    thisMonth.setHours(0, 0, 0, 0)
-    const monthSales = sales.filter((s) => new Date(s.sale_date) >= thisMonth && s.status !== 'cancelado')
-    const revenue = monthSales.reduce((sum, s) => {
+    const totalRevenue = sales
+      .filter((s) => s.status !== 'cancelado')
+      .reduce((sum, s) => {
+        const items = saleItems.filter((i) => i.sale_id === s.id)
+        const itemsTotal = items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0)
+        return sum + itemsTotal - s.discount_brl + s.shipping_cost_brl + (s.installment_fee_brl ?? 0)
+      }, 0)
+
+    return { stockValue, totalUnits, setUnits, motorUnits, lowStock, totalRevenue }
+  }, [stock, sales, saleItems])
+
+  // KPIs que respeitam o filtro de período selecionado.
+  const kpis = useMemo(() => {
+    const { start, end } = getPeriodRange(periodPreset, customStart, customEnd)
+    const periodSales = sales.filter((s) => {
+      if (s.status === 'cancelado') return false
+      const d = new Date(s.sale_date)
+      if (start && d < start) return false
+      return d <= end
+    })
+    const revenue = periodSales.reduce((sum, s) => {
       const items = saleItems.filter((i) => i.sale_id === s.id)
       const itemsTotal = items.reduce((t, i) => t + i.quantity * i.unit_price_brl, 0)
       return sum + itemsTotal - s.discount_brl + s.shipping_cost_brl + (s.installment_fee_brl ?? 0)
     }, 0)
-    const cost = monthSales.reduce((sum, s) => {
+    const cost = periodSales.reduce((sum, s) => {
       const items = saleItems.filter((i) => i.sale_id === s.id)
       return sum + items.reduce((t, i) => t + i.quantity * i.unit_cost_brl, 0)
     }, 0)
-    const monthExpenses = expenses
-      .filter((e) => new Date(e.expense_date) >= thisMonth)
+    const periodExpenses = expenses
+      .filter((e) => {
+        const d = new Date(e.expense_date)
+        if (start && d < start) return false
+        return d <= end
+      })
       .reduce((sum, e) => sum + e.amount_brl, 0)
-    const margin = revenue - cost - monthExpenses
+    const margin = revenue - cost - periodExpenses
 
-    return { stockValue, totalUnits, setUnits, motorUnits, lowStock, revenue, margin, salesCount: monthSales.length }
-  }, [stock, sales, saleItems, expenses])
+    return { revenue, margin, salesCount: periodSales.length, periodSales }
+  }, [sales, saleItems, expenses, periodPreset, customStart, customEnd])
 
   const salesByDay = useMemo(() => {
     const days: { date: string; label: string; revenue: number }[] = []
@@ -87,8 +136,7 @@ export function Overview() {
 
   const topModels = useMemo(() => {
     const revenueByProduct = new Map<string, number>()
-    for (const s of sales) {
-      if (s.status === 'cancelado') continue
+    for (const s of kpis.periodSales) {
       const items = saleItems.filter((i) => i.sale_id === s.id)
       for (const i of items) {
         revenueByProduct.set(i.product_id, (revenueByProduct.get(i.product_id) ?? 0) + i.quantity * i.unit_price_brl)
@@ -101,34 +149,75 @@ export function Overview() {
       }))
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5)
-  }, [sales, saleItems, products])
+  }, [kpis.periodSales, saleItems, products])
 
   if (loading) return <div style={{ color: 'var(--text-secondary)' }}>Carregando...</div>
 
   return (
     <div>
-      <PageHeader title="Visão geral" description="Resumo de estoque, vendas e resultado do mês" />
+      <PageHeader title="Visão geral" description="Resumo de estoque, vendas e resultado — filtre o período pra vendas e faturamento" />
 
-      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="Faturamento do mês" value={formatBRL(kpis.revenue)} />
-        <StatTile label="Vendas do mês" value={String(kpis.salesCount)} sub="pedidos, exceto cancelados" />
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {(['mes', 'ano', 'total', 'personalizado'] as PeriodPreset[]).map((p) => (
+          <button
+            key={p}
+            type="button"
+            onClick={() => setPeriodPreset(p)}
+            className="rounded-full border px-3 py-1.5 text-xs font-medium transition"
+            style={{
+              borderColor: periodPreset === p ? 'var(--series-1)' : 'var(--border-hairline)',
+              background: periodPreset === p ? 'var(--series-1)' : 'transparent',
+              color: periodPreset === p ? '#fff' : 'var(--text-secondary)',
+            }}
+          >
+            {periodLabels[p]}
+          </button>
+        ))}
+        {periodPreset === 'personalizado' && (
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={customStart}
+              onChange={(e) => setCustomStart(e.target.value)}
+              className="rounded-lg border px-2 py-1.5 text-xs"
+              style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
+            />
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>até</span>
+            <input
+              type="date"
+              value={customEnd}
+              onChange={(e) => setCustomEnd(e.target.value)}
+              className="rounded-lg border px-2 py-1.5 text-xs"
+              style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatTile label={`Faturamento — ${periodLabels[periodPreset]}`} value={formatBRL(kpis.revenue)} />
+        <StatTile label={`Vendas — ${periodLabels[periodPreset]}`} value={String(kpis.salesCount)} sub="pedidos, exceto cancelados" />
         <StatTile
-          label="Margem do mês"
+          label={`Margem — ${periodLabels[periodPreset]}`}
           value={formatBRL(kpis.margin)}
           status={kpis.margin >= 0 ? 'good' : 'critical'}
           sub={kpis.margin >= 0 ? 'Positiva' : 'Negativa'}
         />
-        <StatTile label="Valor em estoque (custo)" value={formatBRL(kpis.stockValue)} sub={`${kpis.totalUnits} unidades no total`} />
       </div>
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatTile label="Sets em estoque" value={String(kpis.setUnits)} sub="unidades — carros e motos" />
-        <StatTile label="Motores em estoque" value={String(kpis.motorUnits)} sub="unidades — motores funcionais" />
+      <p className="mb-2 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+        Sempre atualizados (sem filtro de período)
+      </p>
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <StatTile label="Faturamento total" value={formatBRL(globalKpis.totalRevenue)} sub="desde o início" />
+        <StatTile label="Valor em estoque (custo)" value={formatBRL(globalKpis.stockValue)} sub={`${globalKpis.totalUnits} unidades no total`} />
+        <StatTile label="Sets em estoque" value={String(globalKpis.setUnits)} sub="unidades — carros e motos" />
+        <StatTile label="Motores em estoque" value={String(globalKpis.motorUnits)} sub="unidades — motores funcionais" />
         <StatTile
           label="Alertas de estoque baixo"
-          value={String(kpis.lowStock.length)}
-          status={kpis.lowStock.length > 0 ? 'warning' : 'good'}
-          sub={kpis.lowStock.length > 0 ? kpis.lowStock.map((p) => p.sku).join(', ') : 'Tudo certo'}
+          value={String(globalKpis.lowStock.length)}
+          status={globalKpis.lowStock.length > 0 ? 'warning' : 'good'}
+          sub={globalKpis.lowStock.length > 0 ? globalKpis.lowStock.map((p) => p.sku).join(', ') : 'Tudo certo'}
         />
       </div>
 
@@ -176,7 +265,7 @@ export function Overview() {
 
         <Card>
           <h2 className="mb-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-            Top 5 modelos mais vendidos (receita)
+            Top 5 modelos mais vendidos (receita) — {periodLabels[periodPreset]}
           </h2>
           <p className="mb-4 text-xs" style={{ color: 'var(--text-muted)' }}>
             Use isto para decidir o que priorizar no próximo container
