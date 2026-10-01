@@ -35,7 +35,8 @@ Seu trabalho tem duas etapas:
 - Separe parágrafos e blocos com uma linha em branco.
 
 3. IMAGEM DE CAPA — Depois de escrever o artigo, escreva também uma sugestão de prompt (em inglês, já que geradores de imagem por IA respondem melhor em inglês) para gerar a imagem de capa em uma ferramenta externa (Midjourney, DALL-E, etc). O prompt deve:
-- Descrever uma cena ou still-life fotográfico ligado ao tema do artigo, sempre coerente com a identidade visual da Studio 18: sets técnicos de blocos de montar (não carros reais) em escala 1:8, fotografia de estúdio, iluminação dramática e quente, paleta preta/carbono com dourado, estética premium e "automotiva".
+- Descrever uma cena ou still-life fotográfico ESPECÍFICO do assunto central DESSE artigo (nunca uma cena genérica de "set técnico em cima de mesa" que serviria pra qualquer outro artigo do blog) — pense no que torna esse tema visualmente diferente dos outros: se o artigo compara duas coisas, a cena deve mostrar as duas lado a lado; se é sobre um aspecto técnico específico (motor, suspensão, pintura), a cena deve dar close nesse detalhe; se é sobre manutenção, mostrar ferramentas/mãos trabalhando na peça; etc.
+- Mesmo sendo específico pro tema, manter a identidade visual da Studio 18: sets técnicos de blocos de montar (não carros reais) em escala 1:8, fotografia de estúdio, iluminação dramática e quente, paleta preta/carbono com dourado, estética premium e "automotiva".
 - Ser objetivo e visual, no formato de prompt (frases curtas separadas por vírgula, sem floreios), pronto para colar direto na ferramenta de geração.
 - Incluir sugestão de proporção 16:9, adequada a uma imagem de capa de blog.
 `.trim()
