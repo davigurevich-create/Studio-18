@@ -45,6 +45,15 @@ export function shouldShowWelcomePopup(): boolean {
   return true
 }
 
+// Depois que a pessoa fecha o pop-up (ou já revelou o cupom), uma abinha
+// fica disponível na tela pra ela reabrir quando quiser — sem o limite de
+// 48h do auto-disparo, já que aí é uma ação explícita dela. Some de vez só
+// pra quem já comprou (a oferta deixa de fazer sentido).
+export function shouldShowWelcomeTab(): boolean {
+  if (hasPurchasedBefore()) return false
+  return readState() !== null
+}
+
 export function markWelcomeDismissed(): void {
   try {
     localStorage.setItem(STATE_KEY, JSON.stringify({ status: 'dismissed', dismissedAt: Date.now() }))

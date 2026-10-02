@@ -1,7 +1,20 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Tag } from 'lucide-react'
 import { submitLead } from '@/lib/api'
-import { markWelcomeConverted, markWelcomeDismissed, shouldShowWelcomePopup, WELCOME_COUPON_CODE } from '@/lib/welcomeOffer'
+import {
+  markWelcomeConverted,
+  markWelcomeDismissed,
+  shouldShowWelcomePopup,
+  shouldShowWelcomeTab,
+  WELCOME_COUPON_CODE,
+} from '@/lib/welcomeOffer'
+
+// Contorno de "língua" triangular arredondada apontando pra direita, em
+// percentuais (acompanha o tamanho do elemento nos breakpoints do
+// Tailwind) — vários segmentos curtos simulam a curva arredondada na ponta.
+const TAB_CLIP_PATH =
+  'polygon(0 0%, 0% 100%, 62% 100%, 78% 97%, 90% 88%, 97% 75%, 100% 50%, 97% 25%, 90% 12%, 78% 3%, 62% 0%)'
 
 const TRIGGER_DELAY_MS = 18000
 // Enquanto o arquivo não existir em site/public/, a tag <img> some sozinha
@@ -16,9 +29,11 @@ export function WelcomePopup() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [bannerFailed, setBannerFailed] = useState(false)
+  const [tabVisible, setTabVisible] = useState(false)
   const timerRef = useRef<number | undefined>(undefined)
 
   useEffect(() => {
+    setTabVisible(shouldShowWelcomeTab())
     if (!shouldShowWelcomePopup()) return
     timerRef.current = window.setTimeout(() => setOpen(true), TRIGGER_DELAY_MS)
     return () => window.clearTimeout(timerRef.current)
@@ -27,6 +42,7 @@ export function WelcomePopup() {
   const close = () => {
     setOpen(false)
     if (state !== 'revealed') markWelcomeDismissed()
+    setTabVisible(true)
   }
 
   const submit = async (e: FormEvent) => {
@@ -53,9 +69,40 @@ export function WelcomePopup() {
   }
 
   return (
-    <AnimatePresence>
-      {open && (
-        <>
+    <>
+      {tabVisible && !open && (
+        <motion.button
+          type="button"
+          onClick={() => {
+            setOpen(true)
+            setTabVisible(false)
+          }}
+          aria-label="Ver cupom de boas-vindas"
+          initial={{ x: -16, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          whileHover={{ x: 5 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+          className="fixed left-0 z-50 flex h-14 w-9 flex-col items-center justify-center gap-1 sm:h-[68px] sm:w-11"
+          style={{
+            bottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
+            background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))',
+            clipPath: TAB_CLIP_PATH,
+            boxShadow: '4px 4px 16px -6px rgba(0,0,0,0.5)',
+          }}
+        >
+          <Tag size={13} strokeWidth={2.5} style={{ color: 'var(--carbon-0)' }} />
+          <span
+            className="text-[9px] font-extrabold tracking-wide"
+            style={{ color: 'var(--carbon-0)', writingMode: 'vertical-rl' }}
+          >
+            10% OFF
+          </span>
+        </motion.button>
+      )}
+
+      <AnimatePresence>
+        {open && (
+          <>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -197,8 +244,9 @@ export function WelcomePopup() {
               </div>
             </div>
           </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
