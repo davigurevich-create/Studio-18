@@ -3,14 +3,14 @@
 // (localStorage), sem precisar de login:
 //   1. Já comprou nesse navegador -> nunca mais aparece.
 //   2. Já deixou o e-mail no próprio pop-up -> nunca mais aparece.
-//   3. Fechou no X / "Agora não" -> some por 48h, depois volta a valer
+//   3. Fechou no X / "Agora não" -> some por 2h, depois volta a valer
 //      (se nenhuma das outras regras já tiver marcado o navegador).
 export const WELCOME_COUPON_CODE = 'ENTREINOFLOW10'
 
 const STATE_KEY = 'studio18_welcome_popup'
 const PURCHASED_KEY = 'studio18_has_purchased'
 const PENDING_COUPON_KEY = 'studio18_pending_coupon'
-const DISMISS_COOLDOWN_MS = 48 * 60 * 60 * 1000
+const DISMISS_COOLDOWN_MS = 2 * 60 * 60 * 1000
 
 interface WelcomePopupState {
   status: 'converted' | 'dismissed'
