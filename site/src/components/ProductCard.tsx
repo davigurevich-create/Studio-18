@@ -160,7 +160,8 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
                     {formatBRL(pixPrice(effectivePrice))}
                   </div>
                   <div className="tabular text-[11px]" style={{ color: 'var(--ink-muted)' }}>
-                    ou {INTEREST_FREE_INSTALLMENTS}x de {formatBRL(installmentValue(effectivePrice, INTEREST_FREE_INSTALLMENTS))} sem juros
+                    ou {formatBRL(effectivePrice)} em {INTEREST_FREE_INSTALLMENTS}x de{' '}
+                    {formatBRL(installmentValue(effectivePrice, INTEREST_FREE_INSTALLMENTS))} sem juros
                   </div>
                 </>
               )}
