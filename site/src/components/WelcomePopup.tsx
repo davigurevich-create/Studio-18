@@ -16,7 +16,7 @@ import {
 const TAB_CLIP_PATH =
   'polygon(0 0%, 0% 100%, 62% 100%, 78% 97%, 90% 88%, 97% 75%, 100% 50%, 97% 25%, 90% 12%, 78% 3%, 62% 0%)'
 
-const TRIGGER_DELAY_MS = 18000
+const TRIGGER_DELAY_MS = 5000
 // Enquanto o arquivo não existir em site/public/, a tag <img> some sozinha
 // (onError) e o pop-up segue normalmente sem o banner — mesmo esquema já
 // usado nos banners da página de Selos Digitais.
