@@ -90,12 +90,12 @@ export function WelcomePopup() {
             boxShadow: '4px 4px 16px -6px rgba(0,0,0,0.5)',
           }}
         >
-          <Tag size={13} strokeWidth={2.5} style={{ color: 'var(--carbon-0)' }} />
+          <Tag size={12} strokeWidth={2.5} style={{ color: 'var(--carbon-0)' }} />
           <span
-            className="text-[9px] font-extrabold tracking-wide"
+            className="whitespace-nowrap text-[9px] font-extrabold leading-none"
             style={{ color: 'var(--carbon-0)', writingMode: 'vertical-rl' }}
           >
-            10% OFF
+            10%
           </span>
         </motion.button>
       )}
