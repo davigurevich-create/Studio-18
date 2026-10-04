@@ -188,7 +188,7 @@ export function Vendas() {
       </div>
 
       <Card className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[960px] text-sm">
+        <table className="w-full min-w-[1040px] text-sm">
           <thead>
             <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
               <th className="pb-2 font-medium">Data</th>
@@ -197,6 +197,7 @@ export function Vendas() {
               <th className="pb-2 font-medium">Entregar para</th>
               <th className="pb-2 font-medium">Frete</th>
               <th className="pb-2 font-medium">Pagamento</th>
+              <th className="pb-2 font-medium">Cupom</th>
               <th className="pb-2 font-medium">Total</th>
               <th className="pb-2 font-medium">Status</th>
               <th className="pb-2 font-medium">Nota fiscal</th>
@@ -206,7 +207,7 @@ export function Vendas() {
           <tbody>
             {filteredSales.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                <td colSpan={10} className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
                   Nenhuma venda encontrada com esses filtros.
                 </td>
               </tr>
@@ -294,6 +295,18 @@ export function Vendas() {
                           ? ` (+ ${formatBRL(s.installment_fee_brl ?? 0)} de juros)`
                           : ' sem juros'}
                       </div>
+                    )}
+                  </td>
+                  <td className="py-2.5 text-xs" style={{ color: s.coupon_code ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                    {s.coupon_code ? (
+                      <>
+                        <div className="font-mono font-medium">{s.coupon_code}</div>
+                        {s.discount_brl > 0 && (
+                          <div style={{ color: 'var(--text-muted)' }}>−{formatBRL(s.discount_brl)}</div>
+                        )}
+                      </>
+                    ) : (
+                      '—'
                     )}
                   </td>
                   <td className="tabular py-2.5 font-medium" style={{ color: 'var(--text-primary)' }}>
