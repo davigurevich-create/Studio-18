@@ -38,22 +38,51 @@ async function sendEmail(to: string, subject: string, html: string): Promise<voi
   }
 }
 
+// E-mail em tabela (não div) com bgcolor explícito em cada célula — Outlook
+// desktop (engine do Word) ignora/falha em aplicar background de CSS em
+// <div> de forma consistente, o que fazia o fundo escuro "sumir" em
+// pedaços e a mensagem chegar com listras pretas/brancas quebradas pra
+// quem usa o Outlook no tema claro do Windows. Tabela com bgcolor (atributo
+// HTML, não CSS) é o jeito confiável de garantir a mesma aparência em
+// qualquer cliente de e-mail, independente do tema do sistema da pessoa —
+// as meta tags de color-scheme reforçam isso nos clientes mais modernos.
 function emailShell(title: string, bodyHtml: string): string {
-  return `
-  <div style="background:#060606;padding:32px 16px;font-family:Helvetica,Arial,sans-serif;">
-    <div style="max-width:520px;margin:0 auto;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;">
-      <div style="padding:20px 28px;border-bottom:1px solid rgba(255,255,255,0.08);">
-        <img src="${SITE_URL}/logo-studio18.png" alt="Studio 18" height="28" style="height:28px;width:auto;display:block;" />
-      </div>
-      <div style="padding:28px;">
-        <h1 style="margin:0 0 16px;font-size:20px;color:#f3f1ec;">${title}</h1>
-        <div style="font-size:14px;line-height:1.6;color:#b7b3a9;">${bodyHtml}</div>
-      </div>
-      <div style="padding:20px 28px;border-top:1px solid rgba(255,255,255,0.08);font-size:12px;color:#7a766d;">
-        Studio 18 — Do nosso Studio ao seu.
-      </div>
-    </div>
-  </div>`
+  return `<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="supported-color-schemes" content="dark light" />
+    <title>${title}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#060606;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#060606" style="background:#060606;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0c0c0c" style="max-width:520px;background:#0c0c0c;border:1px solid #262626;border-radius:12px;">
+            <tr>
+              <td bgcolor="#0c0c0c" style="padding:20px 28px;border-bottom:1px solid #262626;background:#0c0c0c;">
+                <img src="${SITE_URL}/logo-studio18.png" alt="Studio 18" height="28" style="height:28px;width:auto;display:block;" />
+              </td>
+            </tr>
+            <tr>
+              <td bgcolor="#0c0c0c" style="padding:28px;background:#0c0c0c;font-family:Helvetica,Arial,sans-serif;">
+                <h1 style="margin:0 0 16px;font-size:20px;color:#f3f1ec;">${title}</h1>
+                <div style="font-size:14px;line-height:1.6;color:#b7b3a9;">${bodyHtml}</div>
+              </td>
+            </tr>
+            <tr>
+              <td bgcolor="#0c0c0c" style="padding:20px 28px;border-top:1px solid #262626;background:#0c0c0c;font-size:12px;color:#7a766d;font-family:Helvetica,Arial,sans-serif;">
+                Studio 18 — Do nosso Studio ao seu.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`
 }
 
 function json(body: unknown, status = 200) {
