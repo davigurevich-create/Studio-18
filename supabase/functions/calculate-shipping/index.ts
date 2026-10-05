@@ -122,7 +122,9 @@ Deno.serve(async (req) => {
     // Total Express também exige agência (temos uma perto, mas falta
     // configurar o ID dela na geração de etiqueta — removido temporariamente
     // até isso ser resolvido, ver generate-shipping-label).
-    const EXCLUDED_COMPANIES = ['buslog', 'total express']
+    // Loggi: inviável logisticamente pro Studio 18 (sem agência/coleta
+    // próxima que funcione no fluxo atual).
+    const EXCLUDED_COMPANIES = ['buslog', 'total express', 'loggi']
 
     const options = (raw as MelhorEnvioOption[])
       .filter((opt) => !opt.error && opt.price != null)
