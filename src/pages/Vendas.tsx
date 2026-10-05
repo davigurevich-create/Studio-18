@@ -188,20 +188,20 @@ export function Vendas() {
       </div>
 
       <Card className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[1040px] text-sm">
+        <table className="w-full min-w-[1140px] text-sm">
           <thead>
             <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
-              <th className="pb-2 font-medium">Data</th>
-              <th className="pb-2 font-medium">Cliente</th>
-              <th className="pb-2 font-medium">Modelo</th>
-              <th className="pb-2 font-medium">Entregar para</th>
-              <th className="pb-2 font-medium">Frete</th>
-              <th className="pb-2 font-medium">Pagamento</th>
-              <th className="pb-2 font-medium">Cupom</th>
-              <th className="pb-2 font-medium">Total</th>
-              <th className="pb-2 font-medium">Status</th>
-              <th className="pb-2 font-medium">Nota fiscal</th>
-              <th className="pb-2 font-medium">Etiqueta</th>
+              <th className="pb-2 pr-4 font-medium">Data</th>
+              <th className="pb-2 pr-4 font-medium">Cliente</th>
+              <th className="pb-2 pr-4 font-medium">Modelo</th>
+              <th className="pb-2 pr-4 font-medium">Entregar para</th>
+              <th className="pb-2 pr-4 font-medium">Frete</th>
+              <th className="pb-2 pr-4 font-medium">Pagamento</th>
+              <th className="pb-2 pr-4 font-medium">Cupom</th>
+              <th className="pb-2 pr-4 font-medium">Total</th>
+              <th className="pb-2 pr-4 font-medium">Status</th>
+              <th className="pb-2 pr-4 font-medium">Nota fiscal</th>
+              <th className="pb-2 pr-4 font-medium">Etiqueta</th>
             </tr>
           </thead>
           <tbody>
@@ -222,7 +222,7 @@ export function Vendas() {
               const hasAddress = Boolean(s.shipping_street_name)
               return (
                 <tr key={s.id} className="border-t align-top" style={{ borderColor: 'var(--gridline)' }}>
-                  <td className="py-2.5" style={{ color: 'var(--text-secondary)' }}>
+                  <td className="py-2.5 pr-4" style={{ color: 'var(--text-secondary)' }}>
                     <div>{new Date(s.sale_date).toLocaleDateString('pt-BR')}</div>
                     <button
                       type="button"
@@ -234,7 +234,7 @@ export function Vendas() {
                       {copiedId === s.id ? '✓ ID copiado!' : `ID ${s.id.slice(0, 8)}… (copiar)`}
                     </button>
                   </td>
-                  <td className="py-2.5" style={{ color: 'var(--text-primary)' }}>
+                  <td className="py-2.5 pr-4" style={{ color: 'var(--text-primary)' }}>
                     <div className="font-medium">{s.customer_name ?? '—'}</div>
                     <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                       {s.customer_contact ?? '—'}
@@ -246,7 +246,7 @@ export function Vendas() {
                       {s.channel}
                     </div>
                   </td>
-                  <td className="py-2.5" style={{ color: 'var(--text-secondary)' }}>
+                  <td className="py-2.5 pr-4" style={{ color: 'var(--text-secondary)' }}>
                     {items.map((i) => {
                       const p = products.find((pr) => pr.id === i.product_id)
                       return (
@@ -256,7 +256,7 @@ export function Vendas() {
                       )
                     })}
                   </td>
-                  <td className="py-2.5 text-xs" style={{ color: hasAddress ? 'var(--text-secondary)' : 'var(--text-muted)' }}>
+                  <td className="py-2.5 pr-4 text-xs" style={{ color: hasAddress ? 'var(--text-secondary)' : 'var(--text-muted)' }}>
                     {hasAddress ? (
                       <>
                         <div>
@@ -272,7 +272,7 @@ export function Vendas() {
                       'Sem endereço registrado'
                     )}
                   </td>
-                  <td className="py-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  <td className="py-2.5 pr-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
                     {s.shipping_service ? (
                       <div>{s.shipping_service}</div>
                     ) : (
@@ -283,7 +283,7 @@ export function Vendas() {
                       {s.shipping_days ? ` · até ${s.shipping_days} dias úteis` : ''}
                     </div>
                   </td>
-                  <td className="py-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  <td className="py-2.5 pr-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
                     <div className="capitalize">{s.payment_method ?? '—'}</div>
                     {s.payment_provider && (
                       <div style={{ color: 'var(--text-muted)' }}>via {s.payment_provider}</div>
@@ -297,7 +297,7 @@ export function Vendas() {
                       </div>
                     )}
                   </td>
-                  <td className="py-2.5 text-xs" style={{ color: s.coupon_code ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                  <td className="py-2.5 pr-4 text-xs" style={{ color: s.coupon_code ? 'var(--text-primary)' : 'var(--text-muted)' }}>
                     {s.coupon_code ? (
                       <>
                         <div className="font-mono font-medium">{s.coupon_code}</div>
@@ -309,10 +309,10 @@ export function Vendas() {
                       '—'
                     )}
                   </td>
-                  <td className="tabular py-2.5 font-medium" style={{ color: 'var(--text-primary)' }}>
+                  <td className="tabular py-2.5 pr-4 font-medium" style={{ color: 'var(--text-primary)' }}>
                     {formatBRL(total)}
                   </td>
-                  <td className="py-2.5">
+                  <td className="py-2.5 pr-4">
                     <select
                       value={s.status}
                       onChange={(e) => changeStatus(s.id, e.target.value as SaleStatus, s.status)}
@@ -329,7 +329,7 @@ export function Vendas() {
                       <Badge tone={statusTone[s.status]}>{s.status}</Badge>
                     </div>
                   </td>
-                  <td className="py-2.5">
+                  <td className="py-2.5 pr-4">
                     <InvoiceCell sale={s} onUpdated={reload} />
                   </td>
                   <td className="py-2.5">
