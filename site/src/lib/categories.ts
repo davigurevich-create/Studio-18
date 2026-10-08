@@ -43,6 +43,7 @@ export const categories: CategoryDef[] = [
       'S18-003', // Porsche 963 LEMANS
       'S18-007', // Mazda 787B
       'S18-004', // BMW M4 GT4
+      'S18-022', // AMG GT3
     ],
   },
   {
