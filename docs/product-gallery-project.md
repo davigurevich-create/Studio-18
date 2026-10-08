@@ -1,3 +1,13 @@
+## ✅ Mais 2 SKUs "placeholder" (08/10/2026)
+
+- `S18-022` — AMG GT3 (CADA, 5.466 peças) — capa gerada em outra sessão a
+  partir da foto bruta em `site/public/covers-raw/S18-022-amg-gt3/`,
+  aprovada pelo usuário, subida via GitHub como `.png` e convertida aqui
+  pra `.jpg` 2250x1680 — migration `096`.
+- `S18-023` — AMG ONE (CADA, 3.295 peças) — mesmo fluxo, sem pasta
+  `covers-raw` dedicada (raw ainda não organizado em subpasta própria) —
+  migration `097`.
+
 ## ✅ 4 novos SKUs "placeholder" para teste de interesse (02/09/2026)
 
 Concluído. Capas ambientadas geradas (pipeline padrão, cenário

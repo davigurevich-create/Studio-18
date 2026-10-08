@@ -31,6 +31,7 @@ export const categories: CategoryDef[] = [
       'S18-017', // Lamborghini Aventador SVJ
       'S18-018', // Audi RS6 Avant
       'S18-021', // Aston Martin Valour
+      'S18-023', // AMG ONE
     ],
   },
   {
