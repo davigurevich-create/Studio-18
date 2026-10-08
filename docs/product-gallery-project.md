@@ -11,7 +11,9 @@ pra medir demanda antes de importar.
 
 - `S18-018` — Audi RS6 Avant (CADA) — migration `061`
 - `S18-019` — Zero Pulse, moto (GULY) — migration `061`
-- `S18-020` — McLaren Senna GTR (GULY) — migration `061`
+- ~~`S18-020` — McLaren Senna GTR (GULY) — migration `061`~~ — **removido
+  em 08/10/2026** (migration `095`): sem demanda no teste, não entra no
+  próximo container.
 - `S18-021` — Aston Martin Valour (NIFELIZ) — migration `061`
 
 Só capa por enquanto (sem galeria de fotos extras) — objetivo aqui é medir

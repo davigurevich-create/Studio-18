@@ -30,7 +30,6 @@ export const categories: CategoryDef[] = [
       'S18-015', // Ferrari SF90 XX Stradale
       'S18-017', // Lamborghini Aventador SVJ
       'S18-018', // Audi RS6 Avant
-      'S18-020', // McLaren Senna GTR
       'S18-021', // Aston Martin Valour
     ],
   },
