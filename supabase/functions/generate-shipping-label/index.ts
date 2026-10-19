@@ -333,6 +333,26 @@ Deno.serve(async (req) => {
     const cleanInvoiceKey = rawInvoiceKey?.replace(/\D/g, '') ?? null
     const usableInvoiceKey = cleanInvoiceKey?.length === 44 ? cleanInvoiceKey : null
 
+    // Algumas transportadoras de carga (confirmado com a Azul Cargo Express
+    // em envios comerciais) exigem o conteúdo do XML da NF-e, não só a
+    // chave — rejeitam com "Anexar arquivo XML da nota fiscal é
+    // obrigatória" mesmo com a chave preenchida. Documentado em
+    // options.invoice.xml_content na doc oficial ("Inserir fretes no
+    // carrinho"). Busca o XML da própria Focus NFe (URL salva pela
+    // emit-invoice) e manda o conteúdo — se a busca falhar, segue sem isso;
+    // só as transportadoras que exigem vão acusar erro, as outras aceitam
+    // só a chave normalmente.
+    let invoiceXmlContent: string | null = null
+    if (usableInvoiceKey && sale.invoice_xml_url) {
+      try {
+        const xmlRes = await fetch(sale.invoice_xml_url)
+        if (xmlRes.ok) invoiceXmlContent = await xmlRes.text()
+        else console.error('Falha ao buscar XML da NF-e (status):', xmlRes.status)
+      } catch (err) {
+        console.error('Falha ao buscar XML da NF-e:', err)
+      }
+    }
+
     // 1. Adiciona ao carrinho do Melhor Envio.
     const cart = await meFetch('cart', {
       service: Number(sale.shipping_service_id),
@@ -351,7 +371,9 @@ Deno.serve(async (req) => {
         receipt: false,
         own_hand: false,
         non_commercial: !usableInvoiceKey,
-        ...(usableInvoiceKey ? { invoice: { key: usableInvoiceKey } } : {}),
+        ...(usableInvoiceKey
+          ? { invoice: { key: usableInvoiceKey, ...(invoiceXmlContent ? { xml_content: invoiceXmlContent } : {}) } }
+          : {}),
         platform: 'Studio 18',
       },
     })
