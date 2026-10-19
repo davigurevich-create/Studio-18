@@ -118,11 +118,13 @@ Deno.serve(async (req) => {
 
     // Lista branca (decisão do usuário, 19/10/2026): só essas transportadoras
     // funcionam bem na nossa logística — as demais (Buslog, Azul Cargo
-    // Express, etc.) exigem agência própria, XML de nota ou outra
-    // burocracia que trava o envio. Comparação por "contém" (não igualdade
-    // exata) pra tolerar variações de sufixo no nome que a Melhor Envio
-    // devolve (ex: "J&T Express" vs "JeT").
-    const ALLOWED_COMPANY_KEYWORDS = ['total express', 'jadlog', 'correios', 'loggi', 'pegaki', 'j&t', 'jet']
+    // Express, Total Express, etc.) exigem agência própria, XML de nota ou
+    // outra burocracia que trava o envio. Total Express removida de novo
+    // (20/10/2026): exige um ID de agência de retirada que ainda não foi
+    // configurado (pendente resposta do suporte da Melhor Envio). Comparação
+    // por "contém" (não igualdade exata) pra tolerar variações de sufixo no
+    // nome que a Melhor Envio devolve (ex: "J&T Express" vs "JeT").
+    const ALLOWED_COMPANY_KEYWORDS = ['jadlog', 'correios', 'loggi', 'pegaki', 'j&t', 'jet']
 
     const options = (raw as MelhorEnvioOption[])
       .filter((opt) => !opt.error && opt.price != null)
