@@ -116,19 +116,20 @@ Deno.serve(async (req) => {
       return json({ options: [], message: 'Não foi possível calcular o frete agora. Tente novamente em instantes.' })
     }
 
-    // Buslog exige retirada/postagem em agência própria, e não há nenhuma
-    // perto do nosso ponto de despacho — inviabiliza a logística, então essa
-    // transportadora nunca deve aparecer como opção pro cliente.
-    // Total Express também exige agência (temos uma perto, mas falta
-    // configurar o ID dela na geração de etiqueta — removido temporariamente
-    // até isso ser resolvido, ver generate-shipping-label).
-    // Loggi: inviável logisticamente pro Studio 18 (sem agência/coleta
-    // próxima que funcione no fluxo atual).
-    const EXCLUDED_COMPANIES = ['buslog', 'total express', 'loggi']
+    // Lista branca (decisão do usuário, 19/10/2026): só essas transportadoras
+    // funcionam bem na nossa logística — as demais (Buslog, Azul Cargo
+    // Express, etc.) exigem agência própria, XML de nota ou outra
+    // burocracia que trava o envio. Comparação por "contém" (não igualdade
+    // exata) pra tolerar variações de sufixo no nome que a Melhor Envio
+    // devolve (ex: "J&T Express" vs "JeT").
+    const ALLOWED_COMPANY_KEYWORDS = ['total express', 'jadlog', 'correios', 'loggi', 'pegaki', 'j&t', 'jet']
 
     const options = (raw as MelhorEnvioOption[])
       .filter((opt) => !opt.error && opt.price != null)
-      .filter((opt) => !EXCLUDED_COMPANIES.includes((opt.company?.name ?? '').trim().toLowerCase()))
+      .filter((opt) => {
+        const name = (opt.company?.name ?? '').trim().toLowerCase()
+        return ALLOWED_COMPANY_KEYWORDS.some((keyword) => name.includes(keyword))
+      })
       .map((opt) => ({
         id: opt.id ?? 0,
         service: opt.name ?? 'Frete',
