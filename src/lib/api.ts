@@ -618,6 +618,12 @@ export async function getRestockWaitlist(): Promise<RestockWaitlistEntry[]> {
   return [...restockWaitlistTable.all()].sort((a, b) => b.created_at.localeCompare(a.created_at))
 }
 
+export async function sendRestockNotification(waitlistEntryId: string): Promise<void> {
+  if (!supabase) return
+  const { error } = await supabase.functions.invoke('notify-restock', { body: { waitlistEntryId } })
+  if (error) throw error
+}
+
 export async function markRestockWaitlistNotified(id: string, notified: boolean): Promise<void> {
   const patch = { notified, notified_at: notified ? new Date().toISOString() : null }
   if (supabase) {

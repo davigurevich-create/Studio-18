@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getProducts, getRestockWaitlist, markRestockWaitlistNotified } from '@/lib/api'
+import { getProducts, getRestockWaitlist, markRestockWaitlistNotified, sendRestockNotification } from '@/lib/api'
 import { Badge, Card, PageHeader } from '@/components/ui'
 import type { Product, RestockWaitlistEntry } from '@/types/domain'
 
@@ -8,6 +8,9 @@ export function ListaEspera() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [sendingId, setSendingId] = useState<string | null>(null)
+  const [erroredId, setErroredId] = useState<string | null>(null)
+  const [sendError, setSendError] = useState<string | null>(null)
 
   const reload = () => {
     Promise.all([getRestockWaitlist(), getProducts()]).then(([w, p]) => {
@@ -22,7 +25,22 @@ export function ListaEspera() {
   const productName = (id: string) => products.find((p) => p.id === id)?.name ?? '—'
 
   const toggleNotified = async (entry: RestockWaitlistEntry) => {
-    await markRestockWaitlistNotified(entry.id, !entry.notified)
+    const willNotify = !entry.notified
+    setErroredId(null)
+    setSendError(null)
+    if (willNotify) {
+      setSendingId(entry.id)
+      try {
+        await sendRestockNotification(entry.id)
+      } catch (err) {
+        setSendingId(null)
+        setErroredId(entry.id)
+        setSendError(err instanceof Error ? err.message : 'Falha ao enviar o e-mail de aviso.')
+        return
+      }
+      setSendingId(null)
+    }
+    await markRestockWaitlistNotified(entry.id, willNotify)
     reload()
   }
 
@@ -129,11 +147,21 @@ export function ListaEspera() {
                   <td className="py-2.5">
                     <button
                       onClick={() => toggleNotified(e)}
-                      className="rounded-md border px-2.5 py-1 text-xs font-medium"
+                      disabled={sendingId === e.id}
+                      className="rounded-md border px-2.5 py-1 text-xs font-medium disabled:opacity-50"
                       style={{ borderColor: 'var(--border-hairline)', color: 'var(--text-secondary)' }}
                     >
-                      {e.notified ? 'Marcar como pendente' : 'Marcar como avisado'}
+                      {sendingId === e.id
+                        ? 'Enviando e-mail...'
+                        : e.notified
+                          ? 'Marcar como pendente'
+                          : 'Avisar por e-mail'}
                     </button>
+                    {sendError && erroredId === e.id && (
+                      <div className="mt-1 max-w-[180px] text-[11px]" style={{ color: 'var(--status-critical)' }}>
+                        {sendError}
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))
