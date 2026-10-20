@@ -129,8 +129,9 @@ Deno.serve(async (req) => {
       entry.customer_email,
       `Voltou! ${product.name} já está disponível — Studio 18`,
       emailShell(
-        'O set que você esperava chegou',
-        `<p>Olá, ${firstName}! Você entrou na nossa lista de espera pelo <strong>${product.name}</strong> — e ele acabou de voltar ao estoque.</p>
+        'Obrigado por esperar — ele chegou!',
+        `<p>Olá, ${firstName}! Antes de mais nada, obrigado por ter demonstrado interesse no <strong>${product.name}</strong> — pessoas como você são o motivo de trazermos modelos cada vez mais especiais pro Studio 18.</p>
+         <p>E temos uma boa notícia: ele acabou de voltar ao estoque!</p>
          ${scarcityLine}
          <p style="margin:16px 0;">Preço: <strong style="color:#e6c778;">${priceFormatted}</strong></p>
          <p style="text-align:center;margin-top:20px;">
