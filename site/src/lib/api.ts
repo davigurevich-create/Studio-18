@@ -86,6 +86,7 @@ export async function getShippingOptions(
 export interface CouponValidation {
   valid: boolean
   discountPct: number
+  message?: string | null
 }
 
 /**
@@ -105,8 +106,8 @@ export async function validateCoupon(code: string): Promise<CouponValidation> {
   }
   const { data, error } = await supabase.rpc('validate_coupon', { coupon_code: code })
   if (error || !data || data.length === 0) return { valid: false, discountPct: 0 }
-  const row = data[0] as { valid: boolean; discount_pct: number | null }
-  return { valid: row.valid, discountPct: row.valid ? Number(row.discount_pct) : 0 }
+  const row = data[0] as { valid: boolean; discount_pct: number | null; message?: string | null }
+  return { valid: row.valid, discountPct: row.valid ? Number(row.discount_pct) : 0, message: row.message }
 }
 
 export interface OrderStatus {

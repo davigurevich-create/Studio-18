@@ -59,6 +59,7 @@ export function Checkout() {
   const [copiedField, setCopiedField] = useState<'order' | 'pix' | null>(null)
   const [couponInput, setCouponInput] = useState('')
   const [couponStatus, setCouponStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle')
+  const [couponMessage, setCouponMessage] = useState<string | null>(null)
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPct: number } | null>(null)
   const [shippingOptions, setShippingOptions] = useState<ShippingOption[] | null>(null)
   const [shippingLoading, setShippingLoading] = useState(false)
@@ -206,6 +207,7 @@ export function Checkout() {
     const code = couponInput.trim()
     if (!code) return
     setCouponStatus('checking')
+    setCouponMessage(null)
     try {
       const res = await validateCoupon(code)
       if (res.valid) {
@@ -214,16 +216,19 @@ export function Checkout() {
       } else {
         setAppliedCoupon(null)
         setCouponStatus('invalid')
+        setCouponMessage(res.message ?? null)
       }
     } catch {
       setAppliedCoupon(null)
       setCouponStatus('invalid')
+      setCouponMessage(null)
     }
   }, [couponInput])
 
   const removeCoupon = useCallback(() => {
     setAppliedCoupon(null)
     setCouponStatus('idle')
+    setCouponMessage(null)
     setCouponInput('')
   }, [])
 
@@ -988,7 +993,7 @@ export function Checkout() {
             )}
             {couponStatus === 'invalid' && (
               <p className="mt-2 text-xs" style={{ color: '#e88b8b' }}>
-                Cupom inválido, expirado ou esgotado.
+                {couponMessage || 'Cupom inválido, expirado ou esgotado.'}
               </p>
             )}
           </div>
