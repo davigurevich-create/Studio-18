@@ -8,9 +8,12 @@ export function ListaEspera() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [productFilter, setProductFilter] = useState<'todos' | string>('todos')
   const [sendingId, setSendingId] = useState<string | null>(null)
   const [erroredId, setErroredId] = useState<string | null>(null)
   const [sendError, setSendError] = useState<string | null>(null)
+  const [bulkSending, setBulkSending] = useState(false)
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null)
 
   const reload = () => {
     Promise.all([getRestockWaitlist(), getProducts()]).then(([w, p]) => {
@@ -46,12 +49,20 @@ export function ListaEspera() {
 
   const filteredEntries = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return entries
     return entries.filter((e) => {
+      if (productFilter !== 'todos' && e.product_id !== productFilter) return false
+      if (!q) return true
       const haystack = `${productName(e.product_id)} ${e.customer_name ?? ''} ${e.customer_email}`.toLowerCase()
       return haystack.includes(q)
     })
-  }, [entries, search, products])
+  }, [entries, search, productFilter, products])
+
+  const productOptions = useMemo(() => {
+    const ids = new Set(entries.map((e) => e.product_id))
+    return Array.from(ids)
+      .map((id) => ({ id, name: productName(id) }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [entries, products])
 
   const byProduct = useMemo(() => {
     const counts = new Map<string, number>()
@@ -63,6 +74,29 @@ export function ListaEspera() {
       .map(([productId, count]) => ({ productId, count }))
       .sort((a, b) => b.count - a.count)
   }, [entries])
+
+  const pendingForProduct = useMemo(() => {
+    if (productFilter === 'todos') return []
+    return entries.filter((e) => e.product_id === productFilter && !e.notified)
+  }, [entries, productFilter])
+
+  const notifyAllForProduct = async () => {
+    if (pendingForProduct.length === 0) return
+    setBulkSending(true)
+    setBulkProgress({ done: 0, total: pendingForProduct.length })
+    for (const entry of pendingForProduct) {
+      try {
+        await sendRestockNotification(entry.id)
+        await markRestockWaitlistNotified(entry.id, true)
+      } catch (err) {
+        console.error(`Falha ao avisar ${entry.customer_email}:`, err)
+      }
+      setBulkProgress((prev) => (prev ? { done: prev.done + 1, total: prev.total } : prev))
+    }
+    setBulkSending(false)
+    setBulkProgress(null)
+    reload()
+  }
 
   if (loading) return <div style={{ color: 'var(--text-secondary)' }}>Carregando...</div>
 
@@ -101,6 +135,32 @@ export function ListaEspera() {
           className="w-full rounded-lg border px-3 py-2 text-sm sm:w-80"
           style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
         />
+        <select
+          value={productFilter}
+          onChange={(e) => setProductFilter(e.target.value)}
+          className="rounded-lg border px-3 py-2 text-sm"
+          style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
+        >
+          <option value="todos">Todos os produtos</option>
+          {productOptions.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        {productFilter !== 'todos' && pendingForProduct.length > 0 && (
+          <button
+            type="button"
+            onClick={notifyAllForProduct}
+            disabled={bulkSending}
+            className="rounded-lg px-3 py-2 text-xs font-medium disabled:opacity-50"
+            style={{ background: 'var(--series-1)', color: '#fff' }}
+          >
+            {bulkSending && bulkProgress
+              ? `Enviando... (${bulkProgress.done}/${bulkProgress.total})`
+              : `Avisar todos (${pendingForProduct.length})`}
+          </button>
+        )}
         {pendingCount > 0 && (
           <span className="text-xs" style={{ color: 'var(--status-warning)' }}>
             {pendingCount} aguardando aviso
@@ -147,7 +207,7 @@ export function ListaEspera() {
                   <td className="py-2.5">
                     <button
                       onClick={() => toggleNotified(e)}
-                      disabled={sendingId === e.id}
+                      disabled={sendingId === e.id || bulkSending}
                       className="rounded-md border px-2.5 py-1 text-xs font-medium disabled:opacity-50"
                       style={{ borderColor: 'var(--border-hairline)', color: 'var(--text-secondary)' }}
                     >
