@@ -642,3 +642,16 @@ export async function saveMyNotificationPrefs(input: NotificationPrefs): Promise
     )
   if (error) throw error
 }
+
+/**
+ * Estados (UF) onde já houve pelo menos uma entrega de verdade — usado na
+ * seção "Contribuindo com coleções em X estados do Brasil" da home. Lê
+ * direto de uma function pública (get_delivered_states) que só expõe a
+ * lista de UFs, nunca dado de cliente/endereço.
+ */
+export async function getDeliveredStates(): Promise<string[]> {
+  if (!supabase) return ['SP', 'RJ', 'MG', 'PR', 'RS', 'SC', 'BA', 'DF']
+  const { data, error } = await supabase.rpc('get_delivered_states')
+  if (error) throw error
+  return (data as { federal_unit: string }[]).map((r) => r.federal_unit)
+}

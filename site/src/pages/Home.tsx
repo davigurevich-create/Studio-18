@@ -6,6 +6,7 @@ import { HeroCar } from '@/components/HeroCar'
 import { CategoryBanner } from '@/components/CategoryBanner'
 import { ProductCard } from '@/components/ProductCard'
 import { ProductRail } from '@/components/ProductRail'
+import { BrazilDeliveryMap } from '@/components/BrazilDeliveryMap'
 import { SpotifySection } from '@/components/SpotifySection'
 import { TestimonialsSection } from '@/components/TestimonialsSection'
 import { categories } from '@/lib/categories'
@@ -318,6 +319,8 @@ export function Home() {
       </section>
 
       <TestimonialsSection />
+
+      <BrazilDeliveryMap />
 
       <SpotifySection />
     </div>
