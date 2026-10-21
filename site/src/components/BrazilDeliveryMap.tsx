@@ -29,6 +29,13 @@ export function BrazilDeliveryMap() {
     setCardPos({ x: e.clientX - rect.left, y: e.clientY - rect.top })
   }
 
+  // No touch (mobile) não existe hover — o toque vira "clique", que mostra
+  // o mesmo card; tocar fora de um estado (no wrapper) fecha de novo.
+  const handleTap = (uf: string) => (e: React.MouseEvent) => {
+    e.stopPropagation()
+    handleMove(uf)(e)
+  }
+
   return (
     <section className="px-6 py-20 sm:py-24" style={{ background: '#000' }}>
       <motion.div
@@ -45,7 +52,12 @@ export function BrazilDeliveryMap() {
           do Brasil
         </h2>
 
-        <div ref={wrapperRef} className="relative mx-auto" style={{ maxWidth: 360 }}>
+        <div
+          ref={wrapperRef}
+          className="relative mx-auto"
+          style={{ maxWidth: 360 }}
+          onClick={() => setHovered(null)}
+        >
           {/* Halo dourado ambiente atrás do mapa */}
           <div
             className="pointer-events-none absolute inset-0"
@@ -75,6 +87,7 @@ export function BrazilDeliveryMap() {
                   d={d}
                   onMouseMove={isDelivered ? handleMove(uf) : undefined}
                   onMouseLeave={() => isDelivered && setHovered((h) => (h === uf ? null : h))}
+                  onClick={isDelivered ? handleTap(uf) : undefined}
                   style={{
                     transformOrigin: 'center',
                     transformBox: 'fill-box',
@@ -125,6 +138,17 @@ export function BrazilDeliveryMap() {
             )}
           </AnimatePresence>
         </div>
+
+        <p className="mt-4 flex items-center justify-center gap-2 text-xs sm:hidden" style={{ color: 'var(--ink-muted)' }}>
+          <span className="relative flex h-2 w-2">
+            <span
+              className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"
+              style={{ background: 'var(--gold-bright)' }}
+            />
+            <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: 'var(--gold-bright)' }} />
+          </span>
+          Toque nos estados em destaque pra ver as cidades
+        </p>
       </motion.div>
     </section>
   )

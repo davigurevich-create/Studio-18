@@ -73,13 +73,13 @@ export function TestimonialsSection() {
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: '-80px' }}
-        className="mx-auto mb-10 flex max-w-6xl items-end justify-between"
+        className="mx-auto mb-10 flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
       >
         <div>
           <p className="eyebrow mb-2">Quem já montou</p>
           <h2 className="text-3xl font-medium sm:text-4xl">O que os nossos colecionadores dizem</h2>
         </div>
-        <div className="hidden gap-2 sm:flex">
+        <div className="flex gap-2 self-end sm:self-auto">
           <button
             type="button"
             aria-label="Anterior"
