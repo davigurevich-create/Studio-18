@@ -1,16 +1,19 @@
-import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
-import { getDeliveredStates } from '@/lib/api'
+import { useEffect, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { getDeliveredStates, type DeliveredState } from '@/lib/api'
 import { BRAZIL_MAP_HEIGHT, BRAZIL_MAP_WIDTH, STATE_PATHS } from '@/lib/brazilStatePaths'
 
 export function BrazilDeliveryMap() {
-  const [delivered, setDelivered] = useState<Set<string>>(new Set())
+  const [delivered, setDelivered] = useState<Map<string, string[]>>(new Map())
   const [loaded, setLoaded] = useState(false)
+  const [hovered, setHovered] = useState<string | null>(null)
+  const [cardPos, setCardPos] = useState<{ x: number; y: number } | null>(null)
+  const wrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     getDeliveredStates()
-      .then((states) => {
-        setDelivered(new Set(states.map((s) => s.toUpperCase())))
+      .then((states: DeliveredState[]) => {
+        setDelivered(new Map(states.map((s) => [s.federalUnit.toUpperCase(), s.cities])))
         setLoaded(true)
       })
       .catch(() => setLoaded(true))
@@ -18,8 +21,16 @@ export function BrazilDeliveryMap() {
 
   if (loaded && delivered.size === 0) return null
 
+  const handleMove = (uf: string) => (e: React.MouseEvent) => {
+    const wrapper = wrapperRef.current
+    if (!wrapper) return
+    const rect = wrapper.getBoundingClientRect()
+    setHovered(uf)
+    setCardPos({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+  }
+
   return (
-    <section className="px-6 py-20 sm:py-24" style={{ background: 'var(--carbon-0)' }}>
+    <section className="px-6 py-20 sm:py-24" style={{ background: '#000' }}>
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -34,27 +45,81 @@ export function BrazilDeliveryMap() {
           do Brasil
         </h2>
 
-        <svg
-          viewBox={`0 0 ${BRAZIL_MAP_WIDTH} ${BRAZIL_MAP_HEIGHT}`}
-          className="mx-auto w-full"
-          style={{ maxWidth: 360 }}
-          role="img"
-          aria-label="Mapa do Brasil com os estados já atendidos em destaque"
-        >
-          {Object.entries(STATE_PATHS).map(([uf, { name, d }]) => (
-            <path
-              key={uf}
-              d={d}
-              style={{
-                fill: delivered.has(uf) ? 'var(--gold-bright)' : 'var(--carbon-3)',
-                stroke: delivered.has(uf) ? 'var(--carbon-0)' : 'var(--hairline-strong)',
-                strokeWidth: 1.2,
-              }}
-            >
-              <title>{name}</title>
-            </path>
-          ))}
-        </svg>
+        <div ref={wrapperRef} className="relative mx-auto" style={{ maxWidth: 360 }}>
+          {/* Halo dourado ambiente atrás do mapa */}
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: 'radial-gradient(ellipse 70% 60% at 50% 45%, rgba(230,199,120,0.16), transparent 72%)',
+              filter: 'blur(4px)',
+            }}
+          />
+
+          <svg
+            viewBox={`0 0 ${BRAZIL_MAP_WIDTH} ${BRAZIL_MAP_HEIGHT}`}
+            className="relative w-full"
+            role="img"
+            aria-label="Mapa do Brasil com os estados já atendidos em destaque"
+          >
+            <defs>
+              <filter id="stateGlow" x="-60%" y="-60%" width="220%" height="220%">
+                <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#e6c778" floodOpacity="0.85" />
+              </filter>
+            </defs>
+            {Object.entries(STATE_PATHS).map(([uf, { d }]) => {
+              const isDelivered = delivered.has(uf)
+              const isHovered = hovered === uf
+              return (
+                <path
+                  key={uf}
+                  d={d}
+                  onMouseMove={isDelivered ? handleMove(uf) : undefined}
+                  onMouseLeave={() => isDelivered && setHovered((h) => (h === uf ? null : h))}
+                  style={{
+                    transformOrigin: 'center',
+                    transformBox: 'fill-box',
+                    transform: isHovered ? 'scale(1.015)' : 'scale(1)',
+                    transition: 'transform 0.25s ease-out, filter 0.25s ease-out',
+                    fill: isDelivered ? 'var(--gold-bright)' : 'var(--carbon-3)',
+                    stroke: isDelivered ? 'var(--carbon-0)' : 'var(--hairline-strong)',
+                    strokeWidth: 1.2,
+                    filter: isDelivered && isHovered ? 'url(#stateGlow)' : 'none',
+                    cursor: isDelivered ? 'pointer' : 'default',
+                  }}
+                />
+              )
+            })}
+          </svg>
+
+          <AnimatePresence>
+            {hovered && cardPos && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.92, y: 6 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: 6 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+                className="pointer-events-none absolute z-10 w-max max-w-[220px] -translate-x-1/2 -translate-y-[calc(100%+14px)] rounded-xl px-4 py-3 text-left"
+                style={{
+                  left: cardPos.x,
+                  top: cardPos.y,
+                  background: 'rgba(12,12,12,0.92)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(205,164,77,0.4)',
+                  boxShadow: '0 0 28px -4px rgba(230,199,120,0.45), 0 12px 30px -10px rgba(0,0,0,0.6)',
+                }}
+              >
+                <div className="text-sm font-semibold" style={{ color: 'var(--gold-bright)' }}>
+                  {STATE_PATHS[hovered].name}
+                </div>
+                {delivered.get(hovered) && delivered.get(hovered)!.length > 0 && (
+                  <div className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
+                    {delivered.get(hovered)!.join(' · ')}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </motion.div>
     </section>
   )

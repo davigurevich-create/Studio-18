@@ -643,15 +643,35 @@ export async function saveMyNotificationPrefs(input: NotificationPrefs): Promise
   if (error) throw error
 }
 
+export interface DeliveredState {
+  federalUnit: string
+  cities: string[]
+}
+
+const DEMO_DELIVERED_STATES: DeliveredState[] = [
+  { federalUnit: 'SP', cities: ['São Paulo', 'Campinas', 'Santos'] },
+  { federalUnit: 'RJ', cities: ['Rio de Janeiro', 'Niterói'] },
+  { federalUnit: 'MG', cities: ['Belo Horizonte'] },
+  { federalUnit: 'PR', cities: ['Curitiba'] },
+  { federalUnit: 'RS', cities: ['Porto Alegre'] },
+  { federalUnit: 'SC', cities: ['Florianópolis'] },
+  { federalUnit: 'BA', cities: ['Salvador'] },
+  { federalUnit: 'DF', cities: ['Brasília'] },
+]
+
 /**
- * Estados (UF) onde já houve pelo menos uma entrega de verdade — usado na
- * seção "Contribuindo com coleções em X estados do Brasil" da home. Lê
- * direto de uma function pública (get_delivered_states) que só expõe a
- * lista de UFs, nunca dado de cliente/endereço.
+ * Estados (UF) e cidades onde já houve pelo menos uma entrega de verdade —
+ * usado na seção "Contribuindo com coleções em X estados do Brasil" da
+ * home (mapa + card de cidades no hover). Lê direto de uma function
+ * pública (get_delivered_states) que só expõe estado/cidade, nunca nome
+ * de cliente ou endereço completo.
  */
-export async function getDeliveredStates(): Promise<string[]> {
-  if (!supabase) return ['SP', 'RJ', 'MG', 'PR', 'RS', 'SC', 'BA', 'DF']
+export async function getDeliveredStates(): Promise<DeliveredState[]> {
+  if (!supabase) return DEMO_DELIVERED_STATES
   const { data, error } = await supabase.rpc('get_delivered_states')
   if (error) throw error
-  return (data as { federal_unit: string }[]).map((r) => r.federal_unit)
+  return (data as { federal_unit: string; cities: string[] | null }[]).map((r) => ({
+    federalUnit: r.federal_unit,
+    cities: r.cities ?? [],
+  }))
 }
