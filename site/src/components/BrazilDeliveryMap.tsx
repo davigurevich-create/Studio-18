@@ -102,10 +102,15 @@ export function BrazilDeliveryMap() {
                 style={{
                   left: cardPos.x,
                   top: cardPos.y,
-                  background: 'rgba(12,12,12,0.92)',
-                  backdropFilter: 'blur(8px)',
+                  // Mesmo glassmorphism do header flutuante (Layout.tsx) —
+                  // fundo translúcido + blur + saturate, com inset highlight
+                  // sutil simulando o reflexo de vidro — mais a borda e o
+                  // glow dourados próprios desse card.
+                  background: 'rgba(6,6,6,0.72)',
+                  backdropFilter: 'blur(20px) saturate(180%)',
                   border: '1px solid rgba(205,164,77,0.4)',
-                  boxShadow: '0 0 28px -4px rgba(230,199,120,0.45), 0 12px 30px -10px rgba(0,0,0,0.6)',
+                  boxShadow:
+                    '0 0 28px -4px rgba(230,199,120,0.45), 0 16px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)',
                 }}
               >
                 <div className="text-sm font-semibold" style={{ color: 'var(--gold-bright)' }}>
