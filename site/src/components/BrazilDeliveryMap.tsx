@@ -46,8 +46,8 @@ export function BrazilDeliveryMap() {
               key={uf}
               d={d}
               style={{
-                fill: delivered.has(uf) ? 'var(--gold-bright)' : 'var(--carbon-2)',
-                stroke: 'var(--carbon-0)',
+                fill: delivered.has(uf) ? 'var(--gold-bright)' : 'var(--carbon-3)',
+                stroke: delivered.has(uf) ? 'var(--carbon-0)' : 'var(--hairline-strong)',
                 strokeWidth: 1.2,
               }}
             >
