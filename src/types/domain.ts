@@ -277,3 +277,32 @@ export interface BlogPost {
   created_at: string
   updated_at: string
 }
+
+export interface PartnerNewsComment {
+  id: string
+  news_id: string
+  author_email: string
+  body: string
+  created_at: string
+}
+
+export interface PartnerNews {
+  id: string
+  title: string
+  url: string
+  source: string | null
+  summary: string | null
+  published_at: string | null
+  topics: string[]
+  is_critical: boolean
+  added_by: string | null
+  created_at: string
+  comments?: PartnerNewsComment[]
+}
+
+export interface MarketRates {
+  usd_brl: number | null
+  cny_brl: number | null
+  brent_usd: number | null
+  updated_at: string
+}

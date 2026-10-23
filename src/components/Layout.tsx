@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Package, ShoppingCart, Wallet, Ship, Newspaper, Wrench, ScrollText, LogOut, Bell, Megaphone, Menu, X, Ticket, KeyRound, Mail, MessageSquareQuote } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Wallet, Ship, Newspaper, Wrench, ScrollText, LogOut, Bell, Megaphone, Menu, X, Ticket, KeyRound, Mail, MessageSquareQuote, Globe } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { getBlogPosts, getLeads, getPartRequests, getRestockWaitlist, getSales, getTestimonials } from '@/lib/api'
 
@@ -35,6 +35,7 @@ const navItems = [
   { to: '/containers', label: 'Containers', icon: Ship },
   { to: '/blog', label: 'Blog', icon: Newspaper },
   { to: '/social-media', label: 'Social Media', icon: Megaphone },
+  { to: '/noticias', label: 'Notícias', icon: Globe },
   { to: '/log-auditoria', label: 'Log de auditoria', icon: ScrollText },
 ]
 

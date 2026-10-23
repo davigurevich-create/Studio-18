@@ -17,6 +17,7 @@ import { Leads } from '@/pages/Leads'
 import { Depoimentos } from '@/pages/Depoimentos'
 import { SocialMedia } from '@/pages/SocialMedia'
 import { AuditLog } from '@/pages/AuditLog'
+import { Noticias } from '@/pages/Noticias'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { session, loading, demo } = useAuth()
@@ -53,6 +54,7 @@ function App() {
             <Route path="/leads" element={<Leads />} />
             <Route path="/depoimentos" element={<Depoimentos />} />
             <Route path="/social-media" element={<SocialMedia />} />
+            <Route path="/noticias" element={<Noticias />} />
             <Route path="/log-auditoria" element={<AuditLog />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

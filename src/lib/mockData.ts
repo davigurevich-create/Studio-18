@@ -5,6 +5,9 @@ import type {
   Coupon,
   Expense,
   InventoryMovement,
+  MarketRates,
+  PartnerNews,
+  PartnerNewsComment,
   PartRequest,
   Product,
   RestockWaitlistEntry,
@@ -42,6 +45,64 @@ export const seedSaleItems: SaleItem[] = []
 export const seedBlogPosts: BlogPost[] = []
 
 export const seedPartRequests: PartRequest[] = []
+
+export const seedPartnerNews: PartnerNews[] = [
+  {
+    id: 'pn1',
+    title: 'Governo estuda mudanças nas regras de importação para 2027',
+    url: 'https://example.com/noticia-importacao-regras',
+    source: 'Valor Econômico (exemplo)',
+    summary: 'Proposta em discussão altera faixas de isenção e procedimentos de desembaraço aduaneiro para pessoa jurídica.',
+    published_at: daysAgo(1),
+    topics: ['Tarifas'],
+    is_critical: true,
+    added_by: null,
+    created_at: daysAgo(1),
+  },
+  {
+    id: 'pn2',
+    title: 'Dólar recua com expectativa de acordo comercial entre Brasil e China',
+    url: 'https://example.com/noticia-dolar-china',
+    source: 'InfoMoney (exemplo)',
+    summary: 'Analistas apontam possível avanço nas negociações bilaterais de comércio exterior.',
+    published_at: daysAgo(2),
+    topics: ['China', 'Câmbio'],
+    is_critical: false,
+    added_by: null,
+    created_at: daysAgo(2),
+  },
+  {
+    id: 'pn3',
+    title: 'Candidatos divergem sobre política de comércio exterior na reta final da eleição',
+    url: 'https://example.com/noticia-eleicao-comercio',
+    source: 'G1 Economia (exemplo)',
+    summary: 'Propostas vão de maior abertura comercial a reforço de medidas protecionistas, dependendo do candidato.',
+    published_at: daysAgo(4),
+    topics: ['Eleição'],
+    is_critical: true,
+    added_by: null,
+    created_at: daysAgo(4),
+  },
+]
+
+export const seedPartnerNewsComments: PartnerNewsComment[] = [
+  {
+    id: 'pnc1',
+    news_id: 'pn1',
+    author_email: 'davi@studio18bricks.com.br',
+    body: 'Vale a pena acompanhar de perto — se isso passar, pode mexer no nosso custo de importação direto.',
+    created_at: daysAgo(1),
+  },
+]
+
+// Em modo demonstração não há cron rodando, então as cotações ficam fixas
+// (valores de exemplo) em vez de buscar de verdade numa fonte externa.
+export const DEMO_MARKET_RATES: MarketRates = {
+  usd_brl: 5.38,
+  cny_brl: 0.74,
+  brent_usd: 78.2,
+  updated_at: now,
+}
 
 export const seedRestockWaitlist: RestockWaitlistEntry[] = []
 

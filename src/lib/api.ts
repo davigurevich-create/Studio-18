@@ -1,12 +1,15 @@
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import { makeTable, newId } from '@/lib/localStore'
 import {
+  DEMO_MARKET_RATES,
   seedAuditLog,
   seedBlogPosts,
   seedContainers,
   seedCoupons,
   seedExpenses,
   seedMovements,
+  seedPartnerNews,
+  seedPartnerNewsComments,
   seedPartRequests,
   seedProducts,
   seedRestockWaitlist,
@@ -23,6 +26,9 @@ import type {
   Expense,
   InventoryMovement,
   Lead,
+  MarketRates,
+  PartnerNews,
+  PartnerNewsComment,
   PartRequest,
   PartRequestStatus,
   PointsLedgerEntry,
@@ -52,6 +58,8 @@ const testimonialsTable = makeTable<Testimonial>('testimonials', [])
 const pointsLedgerTable = makeTable<PointsLedgerEntry>('customer_points_ledger', [])
 const socialContentIdeasTable = makeTable<SocialContentIdea>('social_content_ideas', seedSocialContentIdeas)
 const auditLogTable = makeTable<AuditLogEntry>('audit_log', seedAuditLog)
+const partnerNewsTable = makeTable<PartnerNews>('partner_news', seedPartnerNews)
+const partnerNewsCommentsTable = makeTable<PartnerNewsComment>('partner_news_comments', seedPartnerNewsComments)
 
 /** True when reading from the local demo store instead of Supabase. */
 export const isDemoMode = !isSupabaseConfigured
@@ -765,4 +773,110 @@ export async function deleteSocialContentIdea(id: string, title: string): Promis
     socialContentIdeasTable.remove(id)
   }
   await logAudit('excluir', 'conteudo_social', id, `Excluiu sugestão de conteúdo: "${title}"`)
+}
+
+// ---------------------------------------------------------------------------
+// Notícias para os sócios — feed de comércio exterior/importação/exportação
+// capturado automaticamente (ver function fetch-partner-news, 3x por dia),
+// mais o espaço de insights dos sócios em cada notícia. Só staff enxerga
+// (RLS via is_staff()) — nunca aparece pro site de clientes.
+// ---------------------------------------------------------------------------
+export async function getPartnerNews(): Promise<PartnerNews[]> {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('partner_news')
+      .select('*, comments:partner_news_comments(*)')
+      .order('published_at', { ascending: false, nullsFirst: false })
+    if (error) throw error
+    return (data as PartnerNews[]).map((n) => ({
+      ...n,
+      comments: [...(n.comments ?? [])].sort((a, b) => a.created_at.localeCompare(b.created_at)),
+    }))
+  }
+  const news = [...partnerNewsTable.all()].sort((a, b) =>
+    (b.published_at ?? b.created_at).localeCompare(a.published_at ?? a.created_at),
+  )
+  const comments = partnerNewsCommentsTable.all()
+  return news.map((n) => ({
+    ...n,
+    comments: comments.filter((c) => c.news_id === n.id).sort((a, b) => a.created_at.localeCompare(b.created_at)),
+  }))
+}
+
+export async function addPartnerNewsComment(newsId: string, body: string): Promise<void> {
+  if (supabase) {
+    const { data: userData } = await supabase.auth.getUser()
+    const authorEmail = userData.user?.email ?? 'desconhecido'
+    const { error } = await supabase.from('partner_news_comments').insert({ news_id: newsId, author_email: authorEmail, body })
+    if (error) throw error
+    return
+  }
+  partnerNewsCommentsTable.insert({
+    id: newId(),
+    news_id: newsId,
+    author_email: 'demo@studio18',
+    body,
+    created_at: new Date().toISOString(),
+  })
+}
+
+export async function togglePartnerNewsCritical(id: string, isCritical: boolean): Promise<void> {
+  if (supabase) {
+    const { error } = await supabase.from('partner_news').update({ is_critical: isCritical }).eq('id', id)
+    if (error) throw error
+  } else {
+    partnerNewsTable.update(id, { is_critical: isCritical })
+  }
+}
+
+export async function addManualPartnerNews(input: {
+  title: string
+  url: string
+  source?: string
+  summary?: string
+  publishedAt?: string
+  topics: string[]
+}): Promise<void> {
+  if (supabase) {
+    const { data: userData } = await supabase.auth.getUser()
+    const addedBy = userData.user?.email ?? null
+    const { error } = await supabase.from('partner_news').insert({
+      title: input.title,
+      url: input.url,
+      source: input.source || null,
+      summary: input.summary || null,
+      published_at: input.publishedAt || null,
+      topics: input.topics,
+      added_by: addedBy,
+    })
+    if (error) throw error
+    return
+  }
+  partnerNewsTable.insert({
+    id: newId(),
+    title: input.title,
+    url: input.url,
+    source: input.source || null,
+    summary: input.summary || null,
+    published_at: input.publishedAt || null,
+    topics: input.topics,
+    is_critical: false,
+    added_by: 'demo@studio18',
+    created_at: new Date().toISOString(),
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Cotações (dólar, yuan, petróleo Brent) — lidas de market_rates_snapshot,
+// atualizada a cada 15 min pela function refresh-market-rates (ver migration
+// 104_partner_news.sql). Em modo demonstração usa valores fixos de exemplo,
+// já que não há cron rodando.
+// ---------------------------------------------------------------------------
+export async function getMarketRates(): Promise<MarketRates> {
+  if (supabase) {
+    const { data, error } = await supabase.from('market_rates_snapshot').select('*').eq('id', 'latest').maybeSingle()
+    if (error) throw error
+    return (data as MarketRates) ?? DEMO_MARKET_RATES
+  }
+  return DEMO_MARKET_RATES
 }
