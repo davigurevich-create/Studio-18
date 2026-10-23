@@ -861,6 +861,7 @@ export async function addManualPartnerNews(input: {
     published_at: input.publishedAt || null,
     topics: input.topics,
     is_critical: false,
+    critical_reason: null,
     added_by: 'demo@studio18',
     created_at: new Date().toISOString(),
   })

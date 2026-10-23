@@ -26,20 +26,34 @@ function json(body: unknown, status = 200) {
 }
 
 // AwesomeAPI (economia.awesomeapi.com.br) — gratuita, sem chave, usada por
-// vários projetos brasileiros pra cotação de moedas em tempo real.
+// vários projetos brasileiros pra cotação de moedas. O par CNY-BRL direto
+// não é confiável na API (a chamada combinada "USD-BRL,CNY-BRL" voltava
+// vazia pros dois), então busca USD-BRL e USD-CNY separadamente — ambos
+// pares bem suportados — e calcula o cruzado CNY-BRL = USD-BRL / USD-CNY.
 async function fetchFx(): Promise<{ usdBrl: number | null; cnyBrl: number | null }> {
+  let usdBrl: number | null = null
+  let usdCny: number | null = null
+
   try {
-    const res = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL,CNY-BRL')
+    const res = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL')
     if (!res.ok) throw new Error(`status ${res.status}`)
     const data = await res.json()
-    return {
-      usdBrl: data?.USDBRL?.bid ? Number(data.USDBRL.bid) : null,
-      cnyBrl: data?.CNYBRL?.bid ? Number(data.CNYBRL.bid) : null,
-    }
+    usdBrl = data?.USDBRL?.bid ? Number(data.USDBRL.bid) : null
   } catch (err) {
-    console.error('Falha ao buscar câmbio (AwesomeAPI):', err)
-    return { usdBrl: null, cnyBrl: null }
+    console.error('Falha ao buscar USD-BRL (AwesomeAPI):', err)
   }
+
+  try {
+    const res = await fetch('https://economia.awesomeapi.com.br/json/last/USD-CNY')
+    if (!res.ok) throw new Error(`status ${res.status}`)
+    const data = await res.json()
+    usdCny = data?.USDCNY?.bid ? Number(data.USDCNY.bid) : null
+  } catch (err) {
+    console.error('Falha ao buscar USD-CNY (AwesomeAPI):', err)
+  }
+
+  const cnyBrl = usdBrl != null && usdCny != null && usdCny !== 0 ? usdBrl / usdCny : null
+  return { usdBrl, cnyBrl }
 }
 
 // Endpoint de cotação do Yahoo Finance — não é uma API oficial/documentada,

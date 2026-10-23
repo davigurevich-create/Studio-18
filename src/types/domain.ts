@@ -295,6 +295,7 @@ export interface PartnerNews {
   published_at: string | null
   topics: string[]
   is_critical: boolean
+  critical_reason: string | null
   added_by: string | null
   created_at: string
   comments?: PartnerNewsComment[]

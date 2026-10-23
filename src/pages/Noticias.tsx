@@ -77,6 +77,11 @@ function NewsCard({ news, onToggleCritical, onComment }: { news: PartnerNews; on
               {news.summary}
             </p>
           )}
+          {news.is_critical && news.critical_reason && (
+            <p className="mt-2 text-xs font-medium" style={{ color: 'var(--status-critical)' }}>
+              Por que é crítico: {news.critical_reason}
+            </p>
+          )}
           {news.topics.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {news.topics.map((t) => (

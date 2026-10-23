@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Package, ShoppingCart, Wallet, Ship, Newspaper, Wrench, ScrollText, LogOut, Bell, Megaphone, Menu, X, Ticket, KeyRound, Mail, MessageSquareQuote, Globe } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
-import { getBlogPosts, getLeads, getPartRequests, getRestockWaitlist, getSales, getTestimonials } from '@/lib/api'
+import { getBlogPosts, getLeads, getPartnerNews, getPartRequests, getRestockWaitlist, getSales, getTestimonials } from '@/lib/api'
 
 // Vendas e leads não têm um estado "pendente" natural (toda venda e todo
 // lead ficam registrados pra sempre) — então o contador de novidades usa a
@@ -21,6 +21,7 @@ function markSeenNow(key: string) {
 
 const SEEN_SALES_KEY = 'studio18_seen_vendas_at'
 const SEEN_LEADS_KEY = 'studio18_seen_leads_at'
+const SEEN_CRITICAL_NEWS_KEY = 'studio18_seen_noticias_criticas_at'
 
 const navItems = [
   { to: '/', label: 'Visão geral', icon: LayoutDashboard, end: true },
@@ -49,6 +50,7 @@ export function Layout() {
   const [pendingTestimonials, setPendingTestimonials] = useState(0)
   const [pendingNewSales, setPendingNewSales] = useState(0)
   const [pendingNewLeads, setPendingNewLeads] = useState(0)
+  const [pendingCriticalNews, setPendingCriticalNews] = useState(0)
 
   useEffect(() => {
     getBlogPosts()
@@ -71,6 +73,10 @@ export function Layout() {
     getLeads()
       .then((leads) => setPendingNewLeads(leads.filter((l) => l.created_at > seenLeadsAt).length))
       .catch(() => {})
+    const seenCriticalNewsAt = getLastSeen(SEEN_CRITICAL_NEWS_KEY)
+    getPartnerNews()
+      .then((news) => setPendingCriticalNews(news.filter((n) => n.is_critical && n.created_at > seenCriticalNewsAt).length))
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -82,6 +88,10 @@ export function Layout() {
     if (location.pathname === '/leads') {
       markSeenNow(SEEN_LEADS_KEY)
       setPendingNewLeads(0)
+    }
+    if (location.pathname === '/noticias') {
+      markSeenNow(SEEN_CRITICAL_NEWS_KEY)
+      setPendingCriticalNews(0)
     }
   }, [location.pathname])
 
@@ -197,6 +207,14 @@ export function Layout() {
                   style={{ background: 'var(--status-warning)', color: '#3a2500' }}
                 >
                   {pendingTestimonials}
+                </span>
+              )}
+              {to === '/noticias' && pendingCriticalNews > 0 && (
+                <span
+                  className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
+                  style={{ background: 'var(--status-critical)', color: '#fff' }}
+                >
+                  {pendingCriticalNews}
                 </span>
               )}
             </NavLink>
