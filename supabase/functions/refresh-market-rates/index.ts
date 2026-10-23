@@ -25,44 +25,15 @@ function json(body: unknown, status = 200) {
   })
 }
 
-// AwesomeAPI (economia.awesomeapi.com.br) — gratuita, sem chave, usada por
-// vários projetos brasileiros pra cotação de moedas. O par CNY-BRL direto
-// não é confiável na API (a chamada combinada "USD-BRL,CNY-BRL" voltava
-// vazia pros dois), então busca USD-BRL e USD-CNY separadamente — ambos
-// pares bem suportados — e calcula o cruzado CNY-BRL = USD-BRL / USD-CNY.
-async function fetchFx(): Promise<{ usdBrl: number | null; cnyBrl: number | null }> {
-  let usdBrl: number | null = null
-  let usdCny: number | null = null
-
-  try {
-    const res = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL')
-    if (!res.ok) throw new Error(`status ${res.status}`)
-    const data = await res.json()
-    usdBrl = data?.USDBRL?.bid ? Number(data.USDBRL.bid) : null
-  } catch (err) {
-    console.error('Falha ao buscar USD-BRL (AwesomeAPI):', err)
-  }
-
-  try {
-    const res = await fetch('https://economia.awesomeapi.com.br/json/last/USD-CNY')
-    if (!res.ok) throw new Error(`status ${res.status}`)
-    const data = await res.json()
-    usdCny = data?.USDCNY?.bid ? Number(data.USDCNY.bid) : null
-  } catch (err) {
-    console.error('Falha ao buscar USD-CNY (AwesomeAPI):', err)
-  }
-
-  const cnyBrl = usdBrl != null && usdCny != null && usdCny !== 0 ? usdBrl / usdCny : null
-  return { usdBrl, cnyBrl }
-}
-
 // Endpoint de cotação do Yahoo Finance — não é uma API oficial/documentada,
-// mas é de uso comum e gratuito pra esse tipo de dado (futuro do Brent,
-// ticker BZ=F). Se um dia parar de responder, trocar por outra fonte aqui
-// é só mexer nessa function, sem tocar no resto do pipeline.
-async function fetchBrentUsd(): Promise<number | null> {
+// mas é de uso comum e gratuito. Comprovadamente alcançável a partir da
+// rede do Supabase (é a mesma fonte usada pro Brent, que já funciona). A
+// AwesomeAPI foi tentada antes pro câmbio mas falhava silenciosamente a
+// partir daqui — trocado por essa fonte única pros 3 valores, pra não
+// depender de dois provedores diferentes.
+async function fetchYahooPrice(symbol: string): Promise<number | null> {
   try {
-    const res = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/BZ=F', {
+    const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`, {
       headers: { 'User-Agent': 'Mozilla/5.0 (Studio 18 market rates)' },
     })
     if (!res.ok) throw new Error(`status ${res.status}`)
@@ -70,7 +41,7 @@ async function fetchBrentUsd(): Promise<number | null> {
     const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice
     return typeof price === 'number' ? price : null
   } catch (err) {
-    console.error('Falha ao buscar preço do Brent (Yahoo Finance):', err)
+    console.error(`Falha ao buscar cotação (Yahoo Finance, ${symbol}):`, err)
     return null
   }
 }
@@ -81,14 +52,22 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const [fx, brentUsd] = await Promise.all([fetchFx(), fetchBrentUsd()])
+    // BRL=X = quantos reais vale 1 dólar. CNY=X = quantos yuans vale 1
+    // dólar — usado pra calcular o cruzado CNY→BRL (não existe um ticker
+    // direto CNY/BRL confiável no Yahoo).
+    const [usdBrl, usdCny, brentUsd] = await Promise.all([
+      fetchYahooPrice('BRL=X'),
+      fetchYahooPrice('CNY=X'),
+      fetchYahooPrice('BZ=F'),
+    ])
+    const cnyBrl = usdBrl != null && usdCny != null && usdCny !== 0 ? usdBrl / usdCny : null
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     // Só sobrescreve cada campo se a busca deu certo — uma fonte fora do ar
     // não precisa apagar o último valor bom que já tínhamos.
     const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
-    if (fx.usdBrl !== null) update.usd_brl = fx.usdBrl
-    if (fx.cnyBrl !== null) update.cny_brl = fx.cnyBrl
+    if (usdBrl !== null) update.usd_brl = usdBrl
+    if (cnyBrl !== null) update.cny_brl = cnyBrl
     if (brentUsd !== null) update.brent_usd = brentUsd
 
     const { error } = await supabase.from('market_rates_snapshot').update(update).eq('id', 'latest')
@@ -97,7 +76,7 @@ Deno.serve(async (req) => {
       return json({ error: error.message }, 500)
     }
 
-    return json({ ok: true, ...fx, brentUsd })
+    return json({ ok: true, usdBrl, cnyBrl, brentUsd })
   } catch (err) {
     console.error('Erro ao atualizar cotações:', err)
     return json({ error: err instanceof Error ? err.message : 'Erro inesperado.' }, 500)

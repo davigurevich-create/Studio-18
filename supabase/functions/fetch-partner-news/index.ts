@@ -217,23 +217,47 @@ interface Classification {
   motivo: string | null
 }
 
+// Classifica em lotes pequenos, em paralelo, em vez de mandar tudo numa
+// chamada só — uma rodada normal tem poucas notícias novas, mas a primeira
+// execução (ou uma falha de alguns dias sem rodar) pode acumular centenas
+// de uma vez, e uma chamada única com centenas de itens estourava o limite
+// de tokens de resposta e o tempo da function (erro genérico 500).
+const CLASSIFY_CHUNK_SIZE = 20
+
 async function classifyCriticality(items: ParsedItem[]): Promise<Map<string, Classification>> {
   const result = new Map<string, Classification>()
   if (!ANTHROPIC_API_KEY || items.length === 0) return result
 
+  const chunks: ParsedItem[][] = []
+  for (let i = 0; i < items.length; i += CLASSIFY_CHUNK_SIZE) {
+    chunks.push(items.slice(i, i + CLASSIFY_CHUNK_SIZE))
+  }
+
+  const chunkResults = await Promise.all(chunks.map(classifyChunk))
+  for (const chunkMap of chunkResults) {
+    for (const [url, c] of chunkMap) result.set(url, c)
+  }
+  return result
+}
+
+async function classifyChunk(items: ParsedItem[]): Promise<Map<string, Classification>> {
+  const result = new Map<string, Classification>()
   const list = items.map((it, i) => `${i + 1}. URL: ${it.url}\nTítulo: ${it.title}\nResumo: ${it.summary ?? '(sem resumo)'}`).join('\n\n')
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'x-api-key': ANTHROPIC_API_KEY,
+        'x-api-key': ANTHROPIC_API_KEY!,
         'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        // ~150 tokens por classificação + folga — suficiente pro lote de
+        // 20 itens sem desperdiçar tokens em lotes menores (último lote de
+        // uma leva grande).
         model: MODEL,
-        max_tokens: 4096,
+        max_tokens: Math.min(8192, items.length * 150 + 512),
         system: CRITICALITY_CONTEXT,
         messages: [{ role: 'user', content: `Classifique cada notícia abaixo:\n\n${list}` }],
         tools: classifierTools,
@@ -241,7 +265,7 @@ async function classifyCriticality(items: ParsedItem[]): Promise<Map<string, Cla
       }),
     })
     if (!response.ok) {
-      console.error('Falha ao classificar criticidade (Anthropic):', await response.text())
+      console.error('Falha ao classificar lote de criticidade (Anthropic):', await response.text())
       return result
     }
     const data = await response.json()
@@ -252,7 +276,7 @@ async function classifyCriticality(items: ParsedItem[]): Promise<Map<string, Cla
       result.set(c.url, { critica: !!c.critica, motivo: c.critica ? c.motivo ?? null : null })
     }
   } catch (err) {
-    console.error('Erro ao classificar criticidade:', err)
+    console.error('Erro ao classificar lote de criticidade:', err)
   }
   return result
 }
