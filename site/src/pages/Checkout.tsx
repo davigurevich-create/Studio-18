@@ -60,7 +60,7 @@ export function Checkout() {
   const [couponInput, setCouponInput] = useState('')
   const [couponStatus, setCouponStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle')
   const [couponMessage, setCouponMessage] = useState<string | null>(null)
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPct: number } | null>(null)
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPct: number; freeShipping: boolean } | null>(null)
   const [shippingOptions, setShippingOptions] = useState<ShippingOption[] | null>(null)
   const [shippingLoading, setShippingLoading] = useState(false)
   const [shippingMessage, setShippingMessage] = useState<string | null>(null)
@@ -176,7 +176,8 @@ export function Checkout() {
   const productsTotal = appliedCoupon
     ? Math.round(priceBeforeCoupon * (1 - appliedCoupon.discountPct / 100) * 100) / 100
     : priceBeforeCoupon
-  const total = Math.round((productsTotal + (selectedShipping?.price ?? 0)) * 100) / 100
+  const shippingCost = appliedCoupon?.freeShipping ? 0 : (selectedShipping?.price ?? 0)
+  const total = Math.round((productsTotal + shippingCost) * 100) / 100
   const cardTotal = method === 'cartao' ? installmentTotal(total, cardInstallments) : total
 
   useEffect(() => {
@@ -211,7 +212,7 @@ export function Checkout() {
     try {
       const res = await validateCoupon(code)
       if (res.valid) {
-        setAppliedCoupon({ code: code.toUpperCase(), discountPct: res.discountPct })
+        setAppliedCoupon({ code: code.toUpperCase(), discountPct: res.discountPct, freeShipping: res.freeShipping })
         setCouponStatus('valid')
       } else {
         setAppliedCoupon(null)
@@ -245,7 +246,7 @@ export function Checkout() {
       try {
         const res = await validateCoupon(pending)
         if (res.valid) {
-          setAppliedCoupon({ code: pending.toUpperCase(), discountPct: res.discountPct })
+          setAppliedCoupon({ code: pending.toUpperCase(), discountPct: res.discountPct, freeShipping: res.freeShipping })
           setCouponStatus('valid')
         } else {
           setCouponStatus('idle')
@@ -875,7 +876,7 @@ export function Checkout() {
                       </div>
                     </div>
                     <div className="tabular shrink-0 font-medium" style={{ color: 'var(--gold-bright)' }}>
-                      {formatBRL(opt.price)}
+                      {appliedCoupon?.freeShipping ? 'Grátis' : formatBRL(opt.price)}
                     </div>
                   </button>
                 ))}
@@ -1003,7 +1004,13 @@ export function Checkout() {
               <span>
                 Frete — {selectedShipping.company} {selectedShipping.service}
               </span>
-              <span className="tabular">{formatBRL(selectedShipping.price)}</span>
+              {appliedCoupon?.freeShipping ? (
+                <span className="tabular font-medium" style={{ color: 'var(--gold-bright)' }}>
+                  Grátis
+                </span>
+              ) : (
+                <span className="tabular">{formatBRL(selectedShipping.price)}</span>
+              )}
             </div>
           )}
 

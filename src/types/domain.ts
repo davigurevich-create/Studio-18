@@ -259,6 +259,7 @@ export interface Coupon {
   max_uses: number | null
   uses_count: number
   expires_at: string | null
+  free_shipping: boolean
   created_at: string
 }
 

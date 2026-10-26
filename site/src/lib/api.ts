@@ -86,6 +86,7 @@ export async function getShippingOptions(
 export interface CouponValidation {
   valid: boolean
   discountPct: number
+  freeShipping: boolean
   message?: string | null
 }
 
@@ -101,13 +102,18 @@ export async function validateCoupon(code: string): Promise<CouponValidation> {
     // Modo demonstração: qualquer código de 4+ caracteres é aceito como
     // exemplo, para dar para testar a experiência sem backend.
     await new Promise((resolve) => setTimeout(resolve, 400))
-    if (code.trim().length >= 4) return { valid: true, discountPct: 8 }
-    return { valid: false, discountPct: 0 }
+    if (code.trim().length >= 4) return { valid: true, discountPct: 8, freeShipping: false }
+    return { valid: false, discountPct: 0, freeShipping: false }
   }
   const { data, error } = await supabase.rpc('validate_coupon', { coupon_code: code })
-  if (error || !data || data.length === 0) return { valid: false, discountPct: 0 }
-  const row = data[0] as { valid: boolean; discount_pct: number | null; message?: string | null }
-  return { valid: row.valid, discountPct: row.valid ? Number(row.discount_pct) : 0, message: row.message }
+  if (error || !data || data.length === 0) return { valid: false, discountPct: 0, freeShipping: false }
+  const row = data[0] as { valid: boolean; discount_pct: number | null; free_shipping?: boolean | null; message?: string | null }
+  return {
+    valid: row.valid,
+    discountPct: row.valid ? Number(row.discount_pct) : 0,
+    freeShipping: row.valid ? Boolean(row.free_shipping) : false,
+    message: row.message,
+  }
 }
 
 export interface OrderStatus {

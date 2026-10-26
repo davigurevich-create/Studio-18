@@ -290,7 +290,8 @@ export const seedExpenses: Expense[] = [
 ]
 
 export const seedCoupons: Coupon[] = [
-  { id: 'cp1', code: 'GARAGEM8', discount_pct: 8, influencer_name: 'Garagem RC (Instagram)', active: true, max_uses: null, uses_count: 12, expires_at: null, created_at: daysAgo(20) },
-  { id: 'cp2', code: 'BLOCOS8', discount_pct: 8, influencer_name: 'Blocos & Motores (TikTok)', active: true, max_uses: 200, uses_count: 47, expires_at: null, created_at: daysAgo(10) },
-  { id: 'cp3', code: 'LANCADO18', discount_pct: 8, influencer_name: 'Campanha de lançamento (interno)', active: false, max_uses: 50, uses_count: 50, expires_at: daysAgo(1), created_at: daysAgo(40) },
+  { id: 'cp1', code: 'GARAGEM8', discount_pct: 8, influencer_name: 'Garagem RC (Instagram)', active: true, max_uses: null, uses_count: 12, expires_at: null, free_shipping: false, created_at: daysAgo(20) },
+  { id: 'cp2', code: 'BLOCOS8', discount_pct: 8, influencer_name: 'Blocos & Motores (TikTok)', active: true, max_uses: 200, uses_count: 47, expires_at: null, free_shipping: false, created_at: daysAgo(10) },
+  { id: 'cp3', code: 'LANCADO18', discount_pct: 8, influencer_name: 'Campanha de lançamento (interno)', active: false, max_uses: 50, uses_count: 50, expires_at: daysAgo(1), free_shipping: false, created_at: daysAgo(40) },
+  { id: 'cp4', code: 'FUNDADORES40', discount_pct: 40, influencer_name: 'Cupom exclusivo dos founders', active: true, max_uses: null, uses_count: 3, expires_at: null, free_shipping: true, created_at: daysAgo(60) },
 ]

@@ -351,10 +351,11 @@ Deno.serve(async (req) => {
 
     let appliedCoupon: { id: string; code: string; uses_count: number; kind: string; ownerUserId: string | null } | null = null
     let couponDiscountPct = 0
+    let couponFreeShipping = false
     if (couponCode) {
       const { data: coupon } = await supabase
         .from('coupons')
-        .select('id, code, discount_pct, active, max_uses, uses_count, expires_at, kind, owner_user_id')
+        .select('id, code, discount_pct, active, max_uses, uses_count, expires_at, kind, owner_user_id, free_shipping')
         .ilike('code', couponCode)
         .maybeSingle()
       const isValid =
@@ -371,6 +372,7 @@ Deno.serve(async (req) => {
           ownerUserId: coupon.owner_user_id,
         }
         couponDiscountPct = Number(coupon.discount_pct)
+        couponFreeShipping = Boolean(coupon.free_shipping)
       }
     }
 
@@ -380,7 +382,13 @@ Deno.serve(async (req) => {
       couponDiscountPct > 0
         ? Math.round(pixAdjustedTotal * (1 - couponDiscountPct / 100) * 100) / 100
         : pixAdjustedTotal
-    const shippingCost = Math.round(shipping.price * 100) / 100
+    // Recalcula o frete no servidor em vez de confiar no preço que o
+    // cliente mandou — o cupom de frete grátis (FUNDADORES40) zera o valor
+    // cobrado aqui, mas o serviço/transportadora escolhido continua o
+    // mesmo (precisa dele pra gerar a etiqueta de verdade depois); o custo
+    // real pago à transportadora na hora de gerar a etiqueta não muda, só
+    // o que o cliente paga.
+    const shippingCost = couponFreeShipping ? 0 : Math.round(shipping.price * 100) / 100
     const baseAmount = Math.round((productsTotal + shippingCost) * 100) / 100
     // parcelas só existem no cartão — no PIX/outros o valor fica sem acréscimo
     const clampedInstallments = paymentMethod === 'cartao' ? Math.min(12, Math.max(1, Math.round(installments ?? 1))) : null
@@ -669,7 +677,7 @@ Deno.serve(async (req) => {
           </div>`
         : ''
     const shippingRowHtml = `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
-            <span>Frete — ${shipping.company} ${shipping.service}</span><span>R$ ${shippingCost.toFixed(2).replace('.', ',')}</span>
+            <span>Frete — ${shipping.company} ${shipping.service}</span><span>${couponFreeShipping ? 'Grátis' : `R$ ${shippingCost.toFixed(2).replace('.', ',')}`}</span>
           </div>`
     const installmentFeeRowHtml =
       installmentFee > 0

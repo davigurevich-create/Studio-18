@@ -130,7 +130,10 @@ export function Cupons() {
                       {c.expires_at ? new Date(c.expires_at).toLocaleDateString('pt-BR') : 'Sem validade'}
                     </td>
                     <td className="py-2.5">
-                      <Badge tone={state.tone}>{state.label}</Badge>
+                      <div className="flex flex-wrap gap-1.5">
+                        <Badge tone={state.tone}>{state.label}</Badge>
+                        {c.free_shipping && <Badge tone="info">Frete grátis</Badge>}
+                      </div>
                     </td>
                     <td className="py-2.5 text-right">
                       <div className="flex justify-end gap-3">
@@ -211,6 +214,7 @@ function CouponForm({ onDone }: { onDone: () => void }) {
   const [influencerName, setInfluencerName] = useState('')
   const [maxUses, setMaxUses] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
+  const [freeShipping, setFreeShipping] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const submit = async (e: FormEvent) => {
@@ -224,6 +228,7 @@ function CouponForm({ onDone }: { onDone: () => void }) {
         active: true,
         max_uses: maxUses ? Number(maxUses) : null,
         expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+        free_shipping: freeShipping,
       })
       onDone()
     } catch (err) {
@@ -300,6 +305,12 @@ function CouponForm({ onDone }: { onDone: () => void }) {
             className="w-full rounded-lg border px-3 py-2 text-sm"
             style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
           />
+        </div>
+        <div className="flex items-end">
+          <label className="flex items-center gap-2 text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <input type="checkbox" checked={freeShipping} onChange={(e) => setFreeShipping(e.target.checked)} />
+            Frete grátis
+          </label>
         </div>
         {error && (
           <div className="col-span-full text-xs" style={{ color: 'var(--status-critical)' }}>
