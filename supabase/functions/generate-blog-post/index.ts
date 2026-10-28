@@ -10,6 +10,23 @@ const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')!
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const MODEL = 'claude-sonnet-5'
+const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN')
+const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID')
+const DASHBOARD_URL = Deno.env.get('DASHBOARD_URL') ?? 'https://painel.studio18bricks.com.br'
+
+async function sendTelegram(text: string): Promise<void> {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+    })
+    if (!res.ok) console.error('Falha ao enviar notificação Telegram:', await res.text())
+  } catch (err) {
+    console.error('Erro ao enviar notificação Telegram:', err)
+  }
+}
 
 // Quantos temas da fila (em ordem de prioridade) sao oferecidos como opcao —
 // da margem pra IA pular um tema ja coberto sem travar o pipeline inteiro.
@@ -169,6 +186,8 @@ Siga o processo de curadoria descrito nas suas instruções: escolha o primeiro 
     if (matchedTopic) {
       await supabase.from('blog_topics').update({ used: true }).eq('id', matchedTopic.id)
     }
+
+    await sendTelegram(`📝 <b>Novo rascunho de blog gerado</b>\n${article.title}\nAguardando revisão.\n\n${DASHBOARD_URL}/blog`)
 
     return json({ success: true, post: inserted, chosen_topic: article.chosen_candidate_topic || '(tema novo, inventado)' })
   } catch (err) {

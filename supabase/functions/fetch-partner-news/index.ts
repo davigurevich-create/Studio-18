@@ -29,6 +29,22 @@ const SITE_URL = Deno.env.get('SITE_URL') ?? 'https://studio18.vercel.app'
 // e-mail de alerta linka. Configure essa secret se o domínio do painel for
 // diferente do padrão abaixo.
 const DASHBOARD_URL = Deno.env.get('DASHBOARD_URL') ?? 'https://painel.studio18bricks.com.br'
+const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN')
+const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID')
+
+async function sendTelegram(text: string): Promise<void> {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+    })
+    if (!res.ok) console.error('Falha ao enviar notificação Telegram:', await res.text())
+  } catch (err) {
+    console.error('Erro ao enviar notificação Telegram:', err)
+  }
+}
 
 async function sendEmail(to: string, subject: string, html: string): Promise<void> {
   if (!RESEND_API_KEY) {
@@ -315,6 +331,9 @@ async function notifyStaffOfCritical(supabase: ReturnType<typeof createClient>, 
       ),
     )
   }
+
+  const telegramList = criticalItems.map((n) => `• ${n.title}${n.critical_reason ? `\n  ${n.critical_reason}` : ''}`).join('\n')
+  await sendTelegram(`🚨 <b>${subject}</b>\n\n${telegramList}\n\n${DASHBOARD_URL}/noticias`)
 }
 
 function json(body: unknown, status = 200) {

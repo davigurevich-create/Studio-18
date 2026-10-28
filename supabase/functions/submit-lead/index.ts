@@ -14,6 +14,22 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN')
+const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID')
+
+async function sendTelegram(text: string): Promise<void> {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+    })
+    if (!res.ok) console.error('Falha ao enviar notificação Telegram:', await res.text())
+  } catch (err) {
+    console.error('Erro ao enviar notificação Telegram:', err)
+  }
+}
 
 // --- E-mail transacional (Resend) — mesmo padrão do submit-part-request ---
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
@@ -115,6 +131,9 @@ Deno.serve(async (req) => {
     if (!existing) {
       const { error } = await supabase.from('leads').insert({ email: cleanEmail, source: source || 'popup_boas_vindas' })
       if (error) return json({ error: 'Não foi possível registrar seu e-mail agora.' }, 500)
+      // Só avisa em lead genuinamente novo — reenvio de cupom pra quem já
+      // estava na lista não é novidade pra ninguém acompanhar.
+      await sendTelegram(`📧 <b>Novo lead</b>\n${cleanEmail}\nOrigem: ${source || 'popup_boas_vindas'}`)
     }
 
     // Manda o e-mail sempre, mesmo se já estava na lista — a pessoa pode ter
