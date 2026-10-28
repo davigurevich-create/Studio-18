@@ -15,6 +15,23 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const TESTIMONIAL_BONUS_POINTS = 1000
+const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN')
+const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID')
+const DASHBOARD_URL = Deno.env.get('DASHBOARD_URL') ?? 'https://painel.studio18bricks.com.br'
+
+async function sendTelegram(text: string): Promise<void> {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+    })
+    if (!res.ok) console.error('Falha ao enviar notificação Telegram:', await res.text())
+  } catch (err) {
+    console.error('Erro ao enviar notificação Telegram:', err)
+  }
+}
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const EMAIL_FROM = Deno.env.get('EMAIL_FROM') ?? 'Studio 18 <onboarding@resend.dev>'
@@ -174,6 +191,11 @@ Deno.serve(async (req) => {
         `<p>Olá, ${customerName.split(' ')[0]}! Recebemos seu depoimento e já creditamos <strong style="color:#e6c778;">${TESTIMONIAL_BONUS_POINTS} pontos</strong> de bônus na sua conta.</p>
          <p>Nossa equipe revisa rapidinho antes de publicar no site — assim que aprovado, seu depoimento aparece na seção "O que os nossos colecionadores dizem".</p>`,
       ),
+    )
+
+    const stars = '⭐'.repeat(Math.max(1, Math.min(5, Math.round(rating))))
+    await sendTelegram(
+      `💬 <b>Novo depoimento — aguardando aprovação</b>\n${customerName} · ${stars}\n"${message.slice(0, 200)}${message.length > 200 ? '…' : ''}"\n\n${DASHBOARD_URL}/depoimentos`,
     )
 
     return json({ testimonialId: created.id })
