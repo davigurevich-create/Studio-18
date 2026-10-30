@@ -71,6 +71,39 @@
   }
 }
 
+/* Impressão — sempre força o tema claro (não gasta tinta com fundo escuro
+   mesmo se o navegador estiver em modo escuro) e esconde tudo que não é
+   conteúdo (menu lateral, filtros, formulários, botões de ação). Páginas
+   marcam o que deve sumir com a classe .no-print. */
+@media print {
+  :root {
+    --surface-1: #ffffff;
+    --page-plane: #ffffff;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --border-hairline: rgba(11, 11, 11, 0.2);
+    --gridline: #d7d6cd;
+    --baseline: #c3c2b7;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  body,
+  main {
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  main {
+    width: 100% !important;
+  }
+}
+
 body {
   margin: 0;
   background: var(--page-plane);

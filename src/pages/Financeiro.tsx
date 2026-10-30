@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Bar, BarChart, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, ComposedChart, LabelList, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { addExpense, deleteExpense, getExpenses, getSaleItems, getSales } from '@/lib/api'
 import { Badge, Button, Card, PageHeader, StatTile, formatBRL } from '@/components/ui'
 import type { Expense, ExpenseCategory, ExpenseRecurrence, Sale, SaleItem } from '@/types/domain'
@@ -250,16 +250,25 @@ export function Financeiro() {
       <PageHeader
         title="Financeiro"
         description="Fluxo de caixa, DRE e despesas"
-        action={<Button onClick={() => setShowForm((v) => !v)}>+ Despesa</Button>}
+        action={
+          <div className="no-print flex gap-2">
+            <Button variant="secondary" onClick={() => window.print()}>
+              Imprimir
+            </Button>
+            <Button onClick={() => setShowForm((v) => !v)}>+ Despesa</Button>
+          </div>
+        }
       />
 
       {showForm && (
-        <ExpenseForm
-          onDone={() => {
-            setShowForm(false)
-            reload()
-          }}
-        />
+        <div className="no-print">
+          <ExpenseForm
+            onDone={() => {
+              setShowForm(false)
+              reload()
+            }}
+          />
+        </div>
       )}
 
       {/* FLUXO DE CAIXA */}
@@ -361,7 +370,7 @@ export function Financeiro() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 print:grid-cols-1">
         <Card>
           <table className="w-full text-sm">
             <tbody>
@@ -398,7 +407,7 @@ export function Financeiro() {
           <h2 className="mb-4 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
             Últimas despesas
           </h2>
-          <table className="w-full min-w-[720px] text-sm">
+          <table className="w-full min-w-[720px] text-sm print:min-w-0">
             <thead>
               <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
                 <th className="pb-2 pr-3 font-medium">Data</th>
@@ -431,7 +440,7 @@ export function Financeiro() {
                   <td className="tabular py-2 pr-3 font-medium whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
                     {formatBRL(e.amount_brl)}
                   </td>
-                  <td className="py-2 whitespace-nowrap">
+                  <td className="no-print py-2 whitespace-nowrap">
                     <button
                       type="button"
                       onClick={() => removeExpense(e)}
@@ -460,8 +469,8 @@ export function Financeiro() {
             Nenhuma despesa registrada ainda.
           </p>
         ) : (
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={expensesByResponsible} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={expensesByResponsible} margin={{ left: 0, right: 8, top: 24, bottom: 0 }}>
               <CartesianGrid stroke="var(--gridline)" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={{ stroke: 'var(--baseline)' }} tickLine={false} />
               <YAxis
@@ -475,7 +484,15 @@ export function Financeiro() {
                 formatter={(v) => [formatBRL(Number(v)), 'Total pago']}
                 contentStyle={{ background: 'var(--surface-1)', border: '1px solid var(--border-hairline)', borderRadius: 8, fontSize: 12 }}
               />
-              <Bar dataKey="total" fill="var(--series-1)" radius={[4, 4, 0, 0]} maxBarSize={64} />
+              <Bar dataKey="total" fill="var(--series-1)" radius={[4, 4, 0, 0]} maxBarSize={64}>
+                <LabelList
+                  dataKey="total"
+                  position="top"
+                  offset={8}
+                  formatter={(v) => formatBRL(Number(v))}
+                  style={{ fill: 'var(--text-primary)', fontSize: 12, fontWeight: 600 }}
+                />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         )}

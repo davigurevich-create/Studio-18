@@ -100,7 +100,7 @@ export function Layout() {
       {/* Barra superior — só no mobile, com o botão de abrir/fechar o menu.
           No desktop a sidebar já fica sempre visível, então isso some. */}
       <header
-        className="fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b px-4 py-2.5 sm:hidden"
+        className="no-print fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b px-4 py-2.5 sm:hidden"
         style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)' }}
       >
         <div className="inline-flex px-2 py-1">
@@ -128,7 +128,7 @@ export function Layout() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col overflow-y-auto border-r p-4 transition-transform duration-200 sm:static sm:z-auto sm:w-60 sm:translate-x-0 ${
+        className={`no-print fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col overflow-y-auto border-r p-4 transition-transform duration-200 sm:static sm:z-auto sm:w-60 sm:translate-x-0 ${
           menuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)' }}
