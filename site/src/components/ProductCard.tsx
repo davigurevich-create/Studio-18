@@ -36,10 +36,8 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
       <Link
         id={`product-${product.id}`}
         to={`/produto/${product.id}`}
-        className="group block overflow-hidden rounded-xl border transition-colors"
+        className="group block overflow-hidden rounded-xl border transition-all duration-300 ease-out hover:-translate-y-1 hover:border-[var(--gold-dim)] hover:shadow-[0_24px_44px_-18px_rgba(0,0,0,0.6)]"
         style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}
-        onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--gold-dim)')}
-        onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--hairline)')}
         onClick={() => sessionStorage.setItem('lastViewedProduct', product.id)}
       >
         <div className="relative">

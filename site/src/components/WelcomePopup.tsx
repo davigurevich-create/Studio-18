@@ -121,7 +121,13 @@ export function WelcomePopup() {
           >
             <div
               className="relative w-full max-w-[400px] overflow-hidden rounded-2xl"
-              style={{ background: 'var(--carbon-1)', border: '1px solid var(--hairline-strong)', boxShadow: '0 30px 70px -20px rgba(0,0,0,0.7)' }}
+              style={{
+                background: 'rgba(6,6,6,0.72)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                border: '1px solid var(--hairline-strong)',
+                boxShadow: '0 30px 70px -20px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06)',
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               {!bannerFailed && (

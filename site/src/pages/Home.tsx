@@ -5,6 +5,7 @@ import { ChevronDown, Search } from 'lucide-react'
 import { HeroCar } from '@/components/HeroCar'
 import { CategoryBanner } from '@/components/CategoryBanner'
 import { ProductCard } from '@/components/ProductCard'
+import { ProductCardSkeleton } from '@/components/ProductCardSkeleton'
 import { ProductRail } from '@/components/ProductRail'
 import { BrazilDeliveryMap } from '@/components/BrazilDeliveryMap'
 import { SpotifySection } from '@/components/SpotifySection'
@@ -212,9 +213,13 @@ export function Home() {
         </div>
 
         {loading ? (
-          <p className="pb-24 text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
-            Carregando coleção...
-          </p>
+          <div className="mx-auto max-w-6xl px-6 pb-24">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <ProductCardSkeleton key={i} />
+              ))}
+            </div>
+          </div>
         ) : hasActiveFilter ? (
           filteredProducts.length === 0 ? (
             <p className="pb-24 text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
