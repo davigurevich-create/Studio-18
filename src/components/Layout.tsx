@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { LayoutDashboard, Package, ShoppingCart, Wallet, Ship, Newspaper, Wrench, ScrollText, LogOut, Bell, Megaphone, Menu, X, Ticket, KeyRound, Mail, MessageSquareQuote, Globe } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { getBlogPosts, getLeads, getPartnerNews, getPartRequests, getRestockWaitlist, getSales, getTestimonials } from '@/lib/api'
@@ -22,6 +23,16 @@ function markSeenNow(key: string) {
 const SEEN_SALES_KEY = 'studio18_seen_vendas_at'
 const SEEN_LEADS_KEY = 'studio18_seen_leads_at'
 const SEEN_CRITICAL_NEWS_KEY = 'studio18_seen_noticias_criticas_at'
+
+// Mesma lógica de "ativo" que o NavLink usa por baixo dos panos — calculada
+// à parte (em vez de usar a render-prop do NavLink) porque o pill deslizante
+// (motion.span com layoutId) precisa ser um filho normal do NavLink,
+// misturado com os outros badges condicionais, e o NavLink só aceita uma
+// função OU elementos como children, nunca os dois juntos.
+function isNavItemActive(pathname: string, to: string, end?: boolean): boolean {
+  if (end) return pathname === to
+  return pathname === to || pathname.startsWith(`${to}/`)
+}
 
 const navItems = [
   { to: '/', label: 'Visão geral', icon: LayoutDashboard, end: true },
@@ -96,7 +107,7 @@ export function Layout() {
   }, [location.pathname])
 
   return (
-    <div className="flex min-h-screen" style={{ background: 'var(--page-plane)' }}>
+    <div className="app-shell flex min-h-screen">
       {/* Barra superior — só no mobile, com o botão de abrir/fechar o menu.
           No desktop a sidebar já fica sempre visível, então isso some. */}
       <header
@@ -131,7 +142,12 @@ export function Layout() {
         className={`no-print fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col overflow-y-auto border-r p-4 transition-transform duration-200 sm:static sm:z-auto sm:w-60 sm:translate-x-0 ${
           menuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)' }}
+        style={{
+          borderColor: 'var(--glass-border)',
+          background: 'var(--glass-surface)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        }}
       >
         <div className="mb-6 px-2">
           <div className="mb-2 inline-flex px-2 py-1.5">
@@ -144,26 +160,35 @@ export function Layout() {
         </div>
 
         <nav className="flex flex-1 flex-col gap-1">
-          {navItems.map(({ to, label, icon: Icon, end }) => (
+          {navItems.map(({ to, label, icon: Icon, end }) => {
+            const active = isNavItemActive(location.pathname, to, end)
+            return (
             <NavLink
               key={to}
               to={to}
               end={end}
-              className={({ isActive }) =>
-                `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition ${
-                  isActive ? '' : 'hover:opacity-80'
+              className={() =>
+                `relative flex items-center gap-2.5 overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  active ? '' : 'hover:opacity-80'
                 }`
               }
-              style={({ isActive }) => ({
-                background: isActive ? 'var(--series-1)' : 'transparent',
-                color: isActive ? '#fff' : 'var(--text-secondary)',
-              })}
+              style={{ color: active ? '#fff' : 'var(--text-secondary)' }}
             >
-              <Icon size={16} />
-              {label}
+              {active && (
+                <motion.span
+                  layoutId="nav-active-pill"
+                  className="absolute inset-0 rounded-lg"
+                  style={{ background: 'var(--series-1)' }}
+                  transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                />
+              )}
+              <span className="relative z-10 flex items-center gap-2.5">
+                <Icon size={16} />
+                {label}
+              </span>
               {to === '/vendas' && pendingNewSales > 0 && (
                 <span
-                  className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
+                  className="relative z-10 ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
                   style={{ background: 'var(--status-warning)', color: '#3a2500' }}
                 >
                   {pendingNewSales}
@@ -171,7 +196,7 @@ export function Layout() {
               )}
               {to === '/leads' && pendingNewLeads > 0 && (
                 <span
-                  className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
+                  className="relative z-10 ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
                   style={{ background: 'var(--status-warning)', color: '#3a2500' }}
                 >
                   {pendingNewLeads}
@@ -179,7 +204,7 @@ export function Layout() {
               )}
               {to === '/blog' && pendingBlogDrafts > 0 && (
                 <span
-                  className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
+                  className="relative z-10 ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
                   style={{ background: 'var(--status-warning)', color: '#3a2500' }}
                 >
                   {pendingBlogDrafts}
@@ -187,7 +212,7 @@ export function Layout() {
               )}
               {to === '/pecas-faltantes' && pendingPartRequests > 0 && (
                 <span
-                  className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
+                  className="relative z-10 ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
                   style={{ background: 'var(--status-warning)', color: '#3a2500' }}
                 >
                   {pendingPartRequests}
@@ -195,7 +220,7 @@ export function Layout() {
               )}
               {to === '/lista-espera' && pendingWaitlist > 0 && (
                 <span
-                  className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
+                  className="relative z-10 ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
                   style={{ background: 'var(--status-warning)', color: '#3a2500' }}
                 >
                   {pendingWaitlist}
@@ -203,7 +228,7 @@ export function Layout() {
               )}
               {to === '/depoimentos' && pendingTestimonials > 0 && (
                 <span
-                  className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
+                  className="relative z-10 ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
                   style={{ background: 'var(--status-warning)', color: '#3a2500' }}
                 >
                   {pendingTestimonials}
@@ -211,14 +236,15 @@ export function Layout() {
               )}
               {to === '/noticias' && pendingCriticalNews > 0 && (
                 <span
-                  className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
+                  className="relative z-10 ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
                   style={{ background: 'var(--status-critical)', color: '#fff' }}
                 >
                   {pendingCriticalNews}
                 </span>
               )}
             </NavLink>
-          ))}
+            )
+          })}
         </nav>
 
         {demo && (

@@ -1,13 +1,49 @@
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
+import { motion } from 'framer-motion'
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div
-      className={`rounded-xl border p-5 ${className}`}
-      style={{ background: 'var(--surface-1)', borderColor: 'var(--border-hairline)' }}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      className={`glass-card rounded-xl p-5 ${className}`}
     >
       {children}
-    </div>
+    </motion.div>
+  )
+}
+
+/** Mini-gráfico de tendência — só decorativo, sem eixos nem tooltip. Usa
+ * dados reais já calculados pela página (nunca inventa série histórica). */
+export function Sparkline({ data, color = 'var(--series-1)' }: { data: number[]; color?: string }) {
+  const gradientId = useId()
+  if (data.length < 2) return null
+  const width = 72
+  const height = 28
+  const min = Math.min(...data)
+  const max = Math.max(...data)
+  const range = max - min || 1
+  const linePoints = data
+    .map((v, i) => {
+      const x = (i / (data.length - 1)) * width
+      const y = height - ((v - min) / range) * height
+      return `${x},${y}`
+    })
+    .join(' ')
+  const areaPoints = `0,${height} ${linePoints} ${width},${height}`
+
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="shrink-0 overflow-visible">
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.35} />
+          <stop offset="100%" stopColor={color} stopOpacity={0} />
+        </linearGradient>
+      </defs>
+      <polygon points={areaPoints} fill={`url(#${gradientId})`} />
+      <polyline points={linePoints} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   )
 }
 
@@ -16,11 +52,14 @@ export function StatTile({
   value,
   sub,
   status,
+  trend,
 }: {
   label: string
   value: string
   sub?: string
   status?: 'good' | 'warning' | 'critical'
+  /** Série histórica opcional (ex: últimos 6 meses) pro mini-gráfico ao lado do valor. */
+  trend?: number[]
 }) {
   const statusColor =
     status === 'good'
@@ -33,17 +72,22 @@ export function StatTile({
 
   return (
     <Card>
-      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-        {label}
-      </div>
-      <div className="tabular mt-1 text-3xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-        {value}
-      </div>
-      {sub && (
-        <div className="mt-1 text-sm" style={{ color: statusColor ?? 'var(--text-muted)' }}>
-          {sub}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+            {label}
+          </div>
+          <div className="tabular mt-1 text-3xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+            {value}
+          </div>
+          {sub && (
+            <div className="mt-1 text-sm" style={{ color: statusColor ?? 'var(--text-muted)' }}>
+              {sub}
+            </div>
+          )}
         </div>
-      )}
+        {trend && trend.length > 1 && <Sparkline data={trend} color={statusColor ?? 'var(--series-1)'} />}
+      </div>
     </Card>
   )
 }

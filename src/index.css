@@ -24,6 +24,13 @@
   --status-serious: #ec835a;
   --status-critical: #d03b3b;
 
+  /* véu sobre a textura de fundo — claro o bastante pra não brigar com o
+     conteúdo, escuro o bastante pra textura de carbono aparecer */
+  --bg-scrim: rgba(249, 249, 247, 0.9);
+  --glass-surface: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(11, 11, 11, 0.08);
+  --glass-shadow: 0 8px 30px rgba(11, 11, 11, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
   color-scheme: light dark;
   font: 15px/145% system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
@@ -68,6 +75,11 @@
     --status-warning: #fab219;
     --status-serious: #ec835a;
     --status-critical: #d03b3b;
+
+    --bg-scrim: rgba(13, 13, 13, 0.82);
+    --glass-surface: rgba(26, 26, 25, 0.55);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 8px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 }
 
@@ -92,8 +104,10 @@
   }
 
   body,
-  main {
+  main,
+  .app-shell {
     background: #ffffff !important;
+    background-image: none !important;
     padding: 0 !important;
     margin: 0 !important;
     overflow: visible !important;
@@ -101,6 +115,14 @@
 
   main {
     width: 100% !important;
+  }
+
+  .glass-card {
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
   }
 }
 
@@ -112,6 +134,30 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+/* Textura de fibra de carbono fixa atrás de todo o painel — a mesma usada
+   no fundo da tela de login do site, pra dar um ar "premium" discreto sem
+   competir com os dados. Um véu (--bg-scrim) por cima garante contraste
+   suficiente pro texto em qualquer tema. background-attachment: fixed faz
+   a textura não rolar junto com o conteúdo. */
+.app-shell {
+  background-image: linear-gradient(var(--bg-scrim), var(--bg-scrim)), url('/dashboard-background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/* Cards em vidro fosco — fundo translúcido + blur, com um reflexo sutil no
+   topo (inset highlight) simulando vidro de verdade. Cai pra opaco puro na
+   impressão (ver @media print acima), já que não há como "borrar" papel. */
+.glass-card {
+  background: var(--glass-surface);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
 }
 
 .tabular {

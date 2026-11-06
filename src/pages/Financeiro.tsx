@@ -234,12 +234,19 @@ export function Financeiro() {
       .filter((e) => e.recurrence === 'mensal')
       .reduce((sum, e) => sum + e.amount_brl, 0)
 
+    // Séries pros sparklines dos StatTiles acima — só os 6 meses reais
+    // (sem projeção), mesma janela do gráfico principal.
+    const historicalSeries = series.filter((s) => !s.projected)
+
     return {
       series,
       currentBalance,
       monthInflow: thisMonth?.inflow ?? 0,
       monthOutflow: thisMonth?.outflow ?? 0,
       monthlyRecurringTotal,
+      balanceTrend: historicalSeries.map((s) => s.balance),
+      inflowTrend: historicalSeries.map((s) => s.inflow),
+      outflowTrend: historicalSeries.map((s) => s.outflow),
     }
   }, [sales, saleItems, expenses])
 
@@ -282,9 +289,10 @@ export function Financeiro() {
           label="Saldo de caixa atual"
           value={formatBRL(cashFlow.currentBalance)}
           status={cashFlow.currentBalance >= 0 ? 'good' : 'critical'}
+          trend={cashFlow.balanceTrend}
         />
-        <StatTile label="Entradas do mês" value={formatBRL(cashFlow.monthInflow)} />
-        <StatTile label="Saídas do mês" value={formatBRL(cashFlow.monthOutflow)} />
+        <StatTile label="Entradas do mês" value={formatBRL(cashFlow.monthInflow)} trend={cashFlow.inflowTrend} />
+        <StatTile label="Saídas do mês" value={formatBRL(cashFlow.monthOutflow)} trend={cashFlow.outflowTrend} />
         <StatTile
           label="Compromissos fixos mensais"
           value={formatBRL(cashFlow.monthlyRecurringTotal)}
@@ -302,6 +310,16 @@ export function Financeiro() {
         </p>
         <ResponsiveContainer width="100%" height={260}>
           <ComposedChart data={cashFlow.series} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
+            <defs>
+              <linearGradient id="inflowGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--status-good)" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="var(--status-good)" stopOpacity={0.25} />
+              </linearGradient>
+              <linearGradient id="outflowGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--status-critical)" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="var(--status-critical)" stopOpacity={0.25} />
+              </linearGradient>
+            </defs>
             <CartesianGrid stroke="var(--gridline)" vertical={false} />
             <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={{ stroke: 'var(--baseline)' }} tickLine={false} />
             <YAxis
@@ -324,9 +342,9 @@ export function Financeiro() {
               ]}
               contentStyle={{ background: 'var(--surface-1)', border: '1px solid var(--border-hairline)', borderRadius: 8, fontSize: 12 }}
             />
-            <Bar dataKey="inflow" fill="var(--status-good)" radius={[4, 4, 0, 0]} maxBarSize={28} />
-            <Bar dataKey="outflow" fill="var(--status-critical)" radius={[4, 4, 0, 0]} maxBarSize={28} />
-            <Bar dataKey="projectedOutflow" fill="var(--status-critical)" fillOpacity={0.35} radius={[4, 4, 0, 0]} maxBarSize={28} />
+            <Bar dataKey="inflow" fill="url(#inflowGradient)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+            <Bar dataKey="outflow" fill="url(#outflowGradient)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+            <Bar dataKey="projectedOutflow" fill="url(#outflowGradient)" fillOpacity={0.35} radius={[4, 4, 0, 0]} maxBarSize={28} />
             <Line
               type="monotone"
               dataKey="balance"
@@ -471,6 +489,12 @@ export function Financeiro() {
         ) : (
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={expensesByResponsible} margin={{ left: 0, right: 8, top: 24, bottom: 0 }}>
+              <defs>
+                <linearGradient id="responsibleGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--series-1)" stopOpacity={0.95} />
+                  <stop offset="100%" stopColor="var(--series-1)" stopOpacity={0.35} />
+                </linearGradient>
+              </defs>
               <CartesianGrid stroke="var(--gridline)" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={{ stroke: 'var(--baseline)' }} tickLine={false} />
               <YAxis
@@ -484,7 +508,7 @@ export function Financeiro() {
                 formatter={(v) => [formatBRL(Number(v)), 'Total pago']}
                 contentStyle={{ background: 'var(--surface-1)', border: '1px solid var(--border-hairline)', borderRadius: 8, fontSize: 12 }}
               />
-              <Bar dataKey="total" fill="var(--series-1)" radius={[4, 4, 0, 0]} maxBarSize={64}>
+              <Bar dataKey="total" fill="url(#responsibleGradient)" radius={[4, 4, 0, 0]} maxBarSize={64}>
                 <LabelList
                   dataKey="total"
                   position="top"

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -195,7 +195,12 @@ export function Overview() {
       </div>
 
       <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatTile label={`Faturamento — ${periodLabels[periodPreset]}`} value={formatBRL(kpis.revenue)} />
+        <StatTile
+          label={`Faturamento — ${periodLabels[periodPreset]}`}
+          value={formatBRL(kpis.revenue)}
+          sub="Tendência dos últimos 14 dias"
+          trend={salesByDay.map((d) => d.revenue)}
+        />
         <StatTile label={`Vendas — ${periodLabels[periodPreset]}`} value={String(kpis.salesCount)} sub="pedidos, exceto cancelados" />
         <StatTile
           label={`Margem — ${periodLabels[periodPreset]}`}
@@ -227,7 +232,13 @@ export function Overview() {
             Faturamento — últimos 14 dias
           </h2>
           <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={salesByDay} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
+            <AreaChart data={salesByDay} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
+              <defs>
+                <linearGradient id="revenueAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--series-1)" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="var(--series-1)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid stroke="var(--gridline)" vertical={false} />
               <XAxis
                 dataKey="label"
@@ -251,15 +262,16 @@ export function Overview() {
                   fontSize: 12,
                 }}
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="revenue"
                 stroke="var(--series-1)"
                 strokeWidth={2}
+                fill="url(#revenueAreaGradient)"
                 dot={false}
                 activeDot={{ r: 4 }}
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         </Card>
 
@@ -281,6 +293,12 @@ export function Overview() {
                 layout="vertical"
                 margin={{ left: 0, right: 24, top: 4, bottom: 0 }}
               >
+                <defs>
+                  <linearGradient id="topModelsGradient" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="var(--series-2)" stopOpacity={0.5} />
+                    <stop offset="100%" stopColor="var(--series-2)" stopOpacity={0.95} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid stroke="var(--gridline)" horizontal={false} />
                 <XAxis
                   type="number"
@@ -306,7 +324,7 @@ export function Overview() {
                     fontSize: 12,
                   }}
                 />
-                <Bar dataKey="revenue" fill="var(--series-2)" radius={[0, 4, 4, 0]} maxBarSize={28} />
+                <Bar dataKey="revenue" fill="url(#topModelsGradient)" radius={[0, 4, 4, 0]} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
           )}
