@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { cancelInvoice, createSale, emitInvoice, generateShippingLabel, getProducts, getSaleItems, getSales, getStock, updateSaleStatus } from '@/lib/api'
+import { cancelInvoice, createSale, emitInvoice, generateShippingLabel, getProducts, getSaleItems, getSales, getStock, updateCustomerInfo, updateSaleStatus } from '@/lib/api'
 import { Badge, Button, Card, PageHeader, formatBRL } from '@/components/ui'
 import type { NewSaleItemInput } from '@/lib/api'
 import type { Product, ProductStock, Sale, SaleItem, SaleStatus } from '@/types/domain'
@@ -10,6 +10,28 @@ function formatPhone(phone: string | null | undefined): string | null {
   if (digits.length === 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
   if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
   return digits || null
+}
+
+function formatCPF(cpf: string | null | undefined): string | null {
+  if (!cpf) return null
+  const digits = cpf.replace(/\D/g, '')
+  if (digits.length !== 11) return digits || null
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`
+}
+
+// Mesma validação de dígito verificador que a Receita Federal usa — pega
+// um CPF errado/invertido na hora, antes de mandar pra nota fiscal de
+// novo e tomar outra rejeição.
+function isValidCPF(cpf: string): boolean {
+  const digits = cpf.replace(/\D/g, '')
+  if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) return false
+  const checkDigit = (len: number) => {
+    let sum = 0
+    for (let i = 0; i < len; i++) sum += Number(digits[i]) * (len + 1 - i)
+    const rest = (sum * 10) % 11
+    return rest === 10 ? 0 : rest
+  }
+  return checkDigit(9) === Number(digits[9]) && checkDigit(10) === Number(digits[10])
 }
 
 const statusTone: Record<SaleStatus, 'muted' | 'good' | 'warning' | 'critical' | 'info'> = {
@@ -235,16 +257,7 @@ export function Vendas() {
                     </button>
                   </td>
                   <td className="py-2.5 pr-4" style={{ color: 'var(--text-primary)' }}>
-                    <div className="font-medium">{s.customer_name ?? '—'}</div>
-                    <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {s.customer_contact ?? '—'}
-                    </div>
-                    <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {formatPhone(s.customer_phone) ?? '—'}
-                    </div>
-                    <div className="mt-0.5 text-xs capitalize" style={{ color: 'var(--text-muted)' }}>
-                      {s.channel}
-                    </div>
+                    <CustomerCell sale={s} onUpdated={reload} />
                   </td>
                   <td className="py-2.5 pr-4" style={{ color: 'var(--text-secondary)' }}>
                     {items.map((i) => {
@@ -342,6 +355,132 @@ export function Vendas() {
           </tbody>
         </table>
       </Card>
+    </div>
+  )
+}
+
+function CustomerCell({ sale, onUpdated }: { sale: Sale; onUpdated: () => void }) {
+  const [editing, setEditing] = useState(false)
+  const [name, setName] = useState(sale.customer_name ?? '')
+  const [contact, setContact] = useState(sale.customer_contact ?? '')
+  const [cpf, setCpf] = useState(formatCPF(sale.customer_cpf) ?? '')
+  const [phone, setPhone] = useState(formatPhone(sale.customer_phone) ?? '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const startEditing = () => {
+    setName(sale.customer_name ?? '')
+    setContact(sale.customer_contact ?? '')
+    setCpf(formatCPF(sale.customer_cpf) ?? '')
+    setPhone(formatPhone(sale.customer_phone) ?? '')
+    setError(null)
+    setEditing(true)
+  }
+
+  const save = async () => {
+    const cpfDigits = cpf.replace(/\D/g, '')
+    if (cpfDigits && !isValidCPF(cpfDigits)) {
+      setError('Esse CPF não é válido (dígito verificador não bate). Confirme com o cliente.')
+      return
+    }
+    setSaving(true)
+    setError(null)
+    try {
+      await updateCustomerInfo(sale.id, {
+        customer_name: name.trim() || null,
+        customer_contact: contact.trim() || null,
+        customer_cpf: cpfDigits || null,
+        customer_phone: phone.replace(/\D/g, '') || null,
+      })
+      setEditing(false)
+      onUpdated()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível salvar.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (editing) {
+    return (
+      <div className="flex w-56 flex-col gap-1.5">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Nome"
+          className="rounded-md border px-2 py-1 text-xs"
+          style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
+        />
+        <input
+          value={contact}
+          onChange={(e) => setContact(e.target.value)}
+          placeholder="E-mail / contato"
+          className="rounded-md border px-2 py-1 text-xs"
+          style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
+        />
+        <input
+          value={cpf}
+          onChange={(e) => setCpf(e.target.value)}
+          placeholder="CPF"
+          className="rounded-md border px-2 py-1 text-xs"
+          style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
+        />
+        <input
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="Telefone"
+          className="rounded-md border px-2 py-1 text-xs"
+          style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
+        />
+        {error && (
+          <span className="text-[11px]" style={{ color: 'var(--status-critical)' }}>
+            {error}
+          </span>
+        )}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving}
+            className="text-xs font-medium"
+            style={{ color: 'var(--series-1)' }}
+          >
+            {saving ? 'Salvando...' : 'Salvar'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditing(false)}
+            disabled={saving}
+            className="text-xs"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="font-medium">{sale.customer_name ?? '—'}</div>
+      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+        {sale.customer_contact ?? '—'}
+      </div>
+      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+        {formatCPF(sale.customer_cpf) ?? 'CPF não informado'}
+      </div>
+      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+        {formatPhone(sale.customer_phone) ?? '—'}
+      </div>
+      <div className="mt-0.5 flex items-center justify-between gap-2">
+        <span className="text-xs capitalize" style={{ color: 'var(--text-muted)' }}>
+          {sale.channel}
+        </span>
+        <button type="button" onClick={startEditing} className="text-[11px] font-medium" style={{ color: 'var(--series-1)' }}>
+          Editar dados
+        </button>
+      </div>
     </div>
   )
 }

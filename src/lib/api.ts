@@ -350,6 +350,25 @@ export async function updateSaleStatus(id: string, status: Sale['status'], previ
 }
 
 /**
+ * Corrige os dados do cliente num pedido já feito (nome, e-mail/contato,
+ * CPF, telefone) — útil quando a nota fiscal ou a etiqueta rejeitam por
+ * dado errado/digitado errado no checkout (ex: CPF inválido) e o cliente
+ * já confirmou o valor certo por outro canal.
+ */
+export async function updateCustomerInfo(
+  id: string,
+  patch: { customer_name: string | null; customer_contact: string | null; customer_cpf: string | null; customer_phone: string | null },
+): Promise<void> {
+  if (supabase) {
+    const { error } = await supabase.from('sales').update(patch).eq('id', id)
+    if (error) throw error
+  } else {
+    salesTable.update(id, patch)
+  }
+  await logAudit('editar', 'venda', id, 'Corrigiu os dados do cliente (nome/contato/CPF/telefone)')
+}
+
+/**
  * Compra e gera a etiqueta de envio de um pedido pago via Melhor Envio —
  * gasta saldo real da carteira, por isso só é chamado quando a equipe
  * clica no botão "Gerar etiqueta" (nunca automaticamente).
