@@ -24,6 +24,11 @@
   --status-serious: #ec835a;
   --status-critical: #d03b3b;
 
+  /* Dourado da marca (mesmo valor do site) — usado pro destaque de
+     navegação ativa, pra reforçar a identidade visual também no painel. */
+  --brand-gold: #cda44d;
+  --brand-gold-ink: #241905;
+
   /* véu sobre a textura de fundo — claro o bastante pra não brigar com o
      conteúdo, escuro o bastante pra textura de carbono aparecer */
   --bg-scrim: rgba(249, 249, 247, 0.9);
@@ -75,6 +80,11 @@
     --status-warning: #fab219;
     --status-serious: #ec835a;
     --status-critical: #d03b3b;
+
+    /* Gold-bright no escuro — mesma convenção do site, dourado mais claro
+       pra "brilhar" contra fundo quase preto. */
+    --brand-gold: #e6c778;
+    --brand-gold-ink: #241905;
 
     --bg-scrim: rgba(13, 13, 13, 0.82);
     --glass-surface: rgba(26, 26, 25, 0.55);

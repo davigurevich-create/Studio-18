@@ -168,17 +168,17 @@ export function Layout() {
               to={to}
               end={end}
               className={() =>
-                `relative flex items-center gap-2.5 overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                `relative flex items-center gap-2.5 overflow-hidden rounded-2xl px-3 py-2 text-sm font-medium transition-colors ${
                   active ? '' : 'hover:opacity-80'
                 }`
               }
-              style={{ color: active ? '#fff' : 'var(--text-secondary)' }}
+              style={{ color: active ? 'var(--brand-gold-ink)' : 'var(--text-secondary)' }}
             >
               {active && (
                 <motion.span
                   layoutId="nav-active-pill"
-                  className="absolute inset-0 rounded-lg"
-                  style={{ background: 'var(--series-1)' }}
+                  className="absolute inset-0 rounded-2xl"
+                  style={{ background: 'var(--brand-gold)' }}
                   transition={{ type: 'spring', stiffness: 420, damping: 32 }}
                 />
               )}
