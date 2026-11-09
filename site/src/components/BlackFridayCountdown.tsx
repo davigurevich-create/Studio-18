@@ -83,11 +83,11 @@ export function BlackFridayCountdown() {
               key={u.label}
               className="flex w-[72px] flex-col items-center justify-center rounded-2xl py-5 sm:w-28 sm:py-7"
               style={{
-                background: 'rgba(205,164,77,0.08)',
+                background: 'rgba(255,255,255,0.045)',
                 backdropFilter: 'blur(20px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                border: '1px solid rgba(205,164,77,0.35)',
-                boxShadow: '0 20px 50px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.14)',
+                boxShadow: '0 20px 50px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1)',
               }}
             >
               <span className="tabular text-3xl font-bold sm:text-5xl" style={{ color: 'var(--gold-bright)' }}>
