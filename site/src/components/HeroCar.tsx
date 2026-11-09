@@ -79,7 +79,11 @@ export function HeroCar({ darken }: { darken: MotionValue<number> }) {
         className={`absolute inset-x-0 bottom-0 top-0 ${isBlackFridayActive() ? 'sm:top-24' : ''}`}
         style={{ perspective: 1400 }}
       >
-        <picture>
+        {/* perspective de novo direto no pai do elemento rotacionado: o
+            <picture> entrou entre a div (que tinha o perspective) e a
+            <img>, então ela deixou de ser filha DIRETA e o tilt parou de
+            novo — mesma causa do ajuste anterior. */}
+        <picture className="block h-full w-full" style={{ perspective: 1400 }}>
           {isBlackFridayActive() && <source media="(min-width: 640px)" srcSet={IMAGE_URL} />}
           <motion.img
             src={IMAGE_URL_MOBILE}
