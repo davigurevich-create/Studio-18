@@ -14,6 +14,10 @@ import { isBlackFridayActive } from '@/lib/blackFriday'
 // campanha — volta pra imagem normal automaticamente depois do prazo
 // (ver isBlackFridayActive), sem precisar mexer aqui de novo.
 const IMAGE_URL = isBlackFridayActive() ? '/hero-black-friday.webp' : '/hero-car.jpg'
+// No mobile a Black Friday usa uma imagem própria (retrato, já composta pra
+// caber na tela toda sem sobra em cima/embaixo) — troca via <picture> abaixo,
+// olhando a largura da tela, não o dispositivo.
+const IMAGE_URL_MOBILE = isBlackFridayActive() ? '/hero-black-friday-mobile.webp' : IMAGE_URL
 const IMAGE_ALT = isBlackFridayActive()
   ? 'Black Friday Studio 18 — 25% OFF em supercarros de blocos de montar'
   : 'Supercarro dourado em blocos de montar da Studio 18 — Do nosso Studio ao seu'
@@ -75,15 +79,18 @@ export function HeroCar({ darken }: { darken: MotionValue<number> }) {
         className={`absolute inset-x-0 bottom-0 top-0 ${isBlackFridayActive() ? 'sm:top-24' : ''}`}
         style={{ perspective: 1400 }}
       >
-        <motion.img
-          src={IMAGE_URL}
-          alt={IMAGE_ALT}
-          className="absolute inset-0 h-full w-full object-contain"
-          style={{ rotateX, rotateY, x: translateX, y: translateY, scale }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.4, ease: 'easeOut' }}
-        />
+        <picture>
+          {isBlackFridayActive() && <source media="(min-width: 640px)" srcSet={IMAGE_URL} />}
+          <motion.img
+            src={IMAGE_URL_MOBILE}
+            alt={IMAGE_ALT}
+            className="absolute inset-0 h-full w-full object-contain"
+            style={{ rotateX, rotateY, x: translateX, y: translateY, scale }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.4, ease: 'easeOut' }}
+          />
+        </picture>
       </div>
 
       {/* Brilho dourado que acompanha o cursor */}
@@ -93,18 +100,16 @@ export function HeroCar({ darken }: { darken: MotionValue<number> }) {
       />
 
       {/* Vinheta lateral para fundir as bordas da foto com o carbono do site —
-          na Black Friday, estende a área totalmente transparente no centro
-          (de 0% pra 40% do raio) pra não escurecer os selos de desconto,
-          que ficam bem nessa região; as bordas continuam se fundindo com o
-          carbono igual antes. */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: isBlackFridayActive()
-            ? 'radial-gradient(ellipse 78% 65% at 50% 46%, transparent 0%, transparent 40%, var(--carbon-0) 100%)'
-            : 'radial-gradient(ellipse 78% 65% at 50% 46%, transparent, var(--carbon-0) 100%)',
-        }}
-      />
+          as imagens da Black Friday já são compostas sobre fundo preto
+          (igual ao --carbon-0 do site), então a vinheta não faz falta nelas
+          e só atrapalhava a leitura dos selos de desconto; fica só pra
+          imagem normal (fundo claro/estúdio, que precisa da fusão). */}
+      {!isBlackFridayActive() && (
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: 'radial-gradient(ellipse 78% 65% at 50% 46%, transparent, var(--carbon-0) 100%)' }}
+        />
+      )}
       {/* Escurecimento progressivo conforme o scroll — chega a 100% preto ao fim da hero */}
       <motion.div className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: darken }} />
     </div>
