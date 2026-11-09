@@ -159,6 +159,24 @@ body {
   animation: skeleton-shimmer 1.6s ease-in-out infinite;
 }
 
+/* Faixa da Black Friday no mobile — texto comprido demais pra caber numa
+   linha só, então roda em loop contínuo. Duas cópias idênticas lado a
+   lado (ver BlackFridayBanner.tsx); deslizar -50% da largura total (que é
+   exatamente a largura de uma cópia) emenda sem costura visível. */
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  width: max-content;
+  animation: marquee-scroll 12s linear infinite;
+}
+
 /* Cobre as transições CSS (Tailwind `transition-*`) que não passam pelo
    framer-motion — o MotionConfig em App.tsx já trata as animações via JS. */
 @media (prefers-reduced-motion: reduce) {

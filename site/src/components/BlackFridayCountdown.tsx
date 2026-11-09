@@ -50,6 +50,18 @@ export function BlackFridayCountdown() {
         style={{ background: 'radial-gradient(ellipse, rgba(205,164,77,0.18), transparent 70%)' }}
       />
 
+      {/* Fade pro preto nas bordas — a hero (acima) e a seção de coleção
+          (abaixo) já são 100% pretas; sem isso a textura de carbono corta
+          seco contra elas. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-20 sm:h-28"
+        style={{ background: 'linear-gradient(to bottom, #000, transparent)' }}
+      />
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-20 sm:h-28"
+        style={{ background: 'linear-gradient(to top, #000, transparent)' }}
+      />
+
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
