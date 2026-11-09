@@ -152,8 +152,8 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
             </button>
           )}
 
-          <div className="mt-4 flex items-center justify-between gap-2 border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
-            <div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-x-2 gap-y-3 border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
+            <div className="min-w-0">
               {priceUnknown ? (
                 <div className="text-sm font-medium" style={{ color: 'var(--ink-secondary)' }}>
                   Preço em breve
@@ -164,7 +164,7 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
                     À VISTA NO PIX
                   </div>
                   {isBlackFridayActive() ? (
-                    <div className="flex items-baseline gap-2">
+                    <div className="flex flex-wrap items-baseline gap-x-1.5">
                       <span className="tabular text-xs line-through" style={{ color: 'var(--ink-muted)' }}>
                         {formatBRL(pixPrice(effectivePrice))}
                       </span>
@@ -186,7 +186,7 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
             </div>
             {outOfStock ? (
               <span
-                className="shrink-0 rounded-full px-3 py-2 text-xs font-medium"
+                className="ml-auto shrink-0 rounded-full px-3 py-2 text-xs font-medium"
                 style={{ border: '1px solid var(--gold-dim)', color: 'var(--gold-bright)' }}
               >
                 Avise-me →
@@ -200,7 +200,7 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
                   addItem(product.id, 1, product.name, withMotor)
                   setJustAdded(true)
                 }}
-                className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium"
+                className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium"
                 style={{ background: 'var(--gold)', color: '#0a0a0a' }}
               >
                 <ShoppingBag size={13} strokeWidth={2} />
