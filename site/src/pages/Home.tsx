@@ -7,6 +7,7 @@ import { CategoryBanner } from '@/components/CategoryBanner'
 import { ProductCard } from '@/components/ProductCard'
 import { ProductCardSkeleton } from '@/components/ProductCardSkeleton'
 import { ProductRail } from '@/components/ProductRail'
+import { BlackFridayCountdown } from '@/components/BlackFridayCountdown'
 import { BrazilDeliveryMap } from '@/components/BrazilDeliveryMap'
 import { SpotifySection } from '@/components/SpotifySection'
 import { TestimonialsSection } from '@/components/TestimonialsSection'
@@ -131,6 +132,8 @@ export function Home() {
           <div className="h-[110px]" />
         </div>
       </div>
+
+      <BlackFridayCountdown />
 
       {/* COLEÇÃO / MARKETPLACE — vem direto depois da hero, sem bloco de
           transição intermediário. Fundo 100% preto (igual à hero) até o

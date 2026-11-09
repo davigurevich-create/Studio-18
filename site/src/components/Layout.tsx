@@ -2,6 +2,8 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { createContext, useContext, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronDown, User } from 'lucide-react'
+import { BlackFridayBanner, BLACK_FRIDAY_BANNER_HEIGHT } from '@/components/BlackFridayBanner'
+import { isBlackFridayActive } from '@/lib/blackFriday'
 import { ChatWidget } from '@/components/ChatWidget'
 import { CartDrawer } from '@/components/CartDrawer'
 import { WelcomePopup } from '@/components/WelcomePopup'
@@ -156,9 +158,14 @@ export function Layout() {
   // só a largura anima (100% -> calc(100% - 2rem)). Isso evita a troca de
   // "left: 0" pra "left: 50%" no meio da transição, que causava aquele
   // tremor/solavanco na formação do card.
+  // Durante a Black Friday, a faixa fixa ocupa o topo — o header (nos dois
+  // estados, reto ou flutuante) desce exatamente a altura dela, pra nunca
+  // sobrepor. Some sozinho, com o resto da campanha, depois do prazo.
+  const bfOffset = isBlackFridayActive() ? BLACK_FRIDAY_BANNER_HEIGHT : 0
+
   const headerStyle = floatingCard
     ? {
-        top: 12,
+        top: 12 + bfOffset,
         left: '50%',
         width: 'calc(100% - 2rem)',
         maxWidth: 1220,
@@ -172,7 +179,7 @@ export function Layout() {
         overflow: 'hidden' as const,
       }
     : {
-        top: 0,
+        top: bfOffset,
         left: '50%',
         width: '100%',
         maxWidth: '100%',
@@ -188,6 +195,7 @@ export function Layout() {
 
   return (
     <div style={{ background: 'var(--carbon-0)', color: 'var(--ink)', minHeight: '100vh' }}>
+      <BlackFridayBanner />
       <header className="fixed z-50 transition-all duration-300" style={headerStyle}>
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center">

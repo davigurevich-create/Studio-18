@@ -8,6 +8,7 @@ import { installmentValue, INTEREST_FREE_INSTALLMENTS, LOW_STOCK_THRESHOLD, pixP
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { useFavorites } from '@/lib/favorites'
+import { BLACK_FRIDAY_PIX_TOTAL_PCT, isBlackFridayActive } from '@/lib/blackFriday'
 import type { CatalogProduct } from '@/types/catalog'
 
 export function ProductCard({ product, index = 0 }: { product: CatalogProduct; index?: number }) {
@@ -42,6 +43,14 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
       >
         <div className="relative">
           <ProductArt product={product} className="h-52 w-full" />
+          {isBlackFridayActive() && !priceUnknown && !outOfStock && (
+            <span
+              className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
+              style={{ background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))', color: '#1a1206' }}
+            >
+              Black Friday
+            </span>
+          )}
           <span
             className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide opacity-90 transition-opacity group-hover:opacity-100"
             style={{ background: 'rgba(6,6,6,0.7)', color: 'var(--ink-secondary)', border: '1px solid var(--hairline)' }}
@@ -154,9 +163,20 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
                   <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
                     À VISTA NO PIX
                   </div>
-                  <div className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                    {formatBRL(pixPrice(effectivePrice))}
-                  </div>
+                  {isBlackFridayActive() ? (
+                    <div className="flex items-baseline gap-2">
+                      <span className="tabular text-xs line-through" style={{ color: 'var(--ink-muted)' }}>
+                        {formatBRL(pixPrice(effectivePrice))}
+                      </span>
+                      <span className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
+                        {formatBRL(effectivePrice * (1 - BLACK_FRIDAY_PIX_TOTAL_PCT / 100))}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
+                      {formatBRL(pixPrice(effectivePrice))}
+                    </div>
+                  )}
                   <div className="tabular text-[11px]" style={{ color: 'var(--ink-muted)' }}>
                     ou {formatBRL(effectivePrice)} em {INTEREST_FREE_INSTALLMENTS}x de{' '}
                     {formatBRL(installmentValue(effectivePrice, INTEREST_FREE_INSTALLMENTS))} sem juros

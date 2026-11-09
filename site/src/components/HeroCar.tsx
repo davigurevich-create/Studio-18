@@ -8,7 +8,15 @@ import {
   type MotionValue,
 } from 'framer-motion'
 
-const IMAGE_URL = '/hero-car.jpg'
+import { isBlackFridayActive } from '@/lib/blackFriday'
+
+// Durante a Black Friday, a imagem da hero troca sozinha pro banner da
+// campanha — volta pra imagem normal automaticamente depois do prazo
+// (ver isBlackFridayActive), sem precisar mexer aqui de novo.
+const IMAGE_URL = isBlackFridayActive() ? '/hero-black-friday.webp' : '/hero-car.jpg'
+const IMAGE_ALT = isBlackFridayActive()
+  ? 'Black Friday Studio 18 — 25% OFF em supercarros de blocos de montar'
+  : 'Supercarro dourado em blocos de montar da Studio 18 — Do nosso Studio ao seu'
 
 export function HeroCar({ darken }: { darken: MotionValue<number> }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -52,7 +60,7 @@ export function HeroCar({ darken }: { darken: MotionValue<number> }) {
     <div ref={containerRef} className="absolute inset-0 overflow-hidden" style={{ perspective: 1400 }}>
       <motion.img
         src={IMAGE_URL}
-        alt="Supercarro dourado em blocos de montar da Studio 18 — Do nosso Studio ao seu"
+        alt={IMAGE_ALT}
         className="absolute inset-0 h-full w-full object-contain"
         style={{ rotateX, rotateY, x: translateX, y: translateY, scale }}
         initial={{ opacity: 0 }}
