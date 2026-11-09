@@ -58,25 +58,27 @@ export function HeroCar({ darken }: { darken: MotionValue<number> }) {
 
   return (
     <div ref={containerRef} className="absolute inset-0 overflow-hidden" style={{ perspective: 1400 }}>
-      <motion.img
-        src={IMAGE_URL}
-        alt={IMAGE_ALT}
-        // O banner da Black Friday tem os selos de desconto (25%/30%) perto
-        // do topo da imagem — no desktop, a combinação do header fixo com a
-        // faixa fixa (ver BlackFridayBanner) cobre essa faixa superior, e
-        // "contain" sem folga deixava os selos colados/escondidos atrás
-        // deles. Um respiro no topo só em telas sm+ empurra (e encolhe
-        // ligeiramente) a imagem inteira pra baixo, sem cortar nada — no
-        // mobile a imagem já renderiza menor por natureza (portrait),
-        // então os selos nunca chegam perto do header.
-        className={`absolute inset-x-0 bottom-0 top-0 h-auto w-full object-contain ${
-          isBlackFridayActive() ? 'sm:top-28' : ''
-        }`}
-        style={{ rotateX, rotateY, x: translateX, y: translateY, scale }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.4, ease: 'easeOut' }}
-      />
+      {/* O banner da Black Friday tem os selos de desconto (25%/30%) perto
+          do topo da imagem — no desktop, a faixa fixa + header cobrem essa
+          área, e um respiro ali precisa encolher a CAIXA da imagem (não a
+          tag <img> em si: <img> é elemento substituído, e top+bottom com
+          height:auto nela é ignorado pelo browser — ele usa a proporção
+          intrínseca a partir da largura e ancora no topo, estourando por
+          baixo e cortando o carro no overflow-hidden do container, em
+          qualquer tamanho de tela). Por isso a caixa menor fica numa div
+          comum (não substituída, top/bottom funcionam normal) por fora,
+          e a <img> dentro continua com inset-0 + contain centralizado. */}
+      <div className={`absolute inset-x-0 bottom-0 top-0 ${isBlackFridayActive() ? 'sm:top-24' : ''}`}>
+        <motion.img
+          src={IMAGE_URL}
+          alt={IMAGE_ALT}
+          className="absolute inset-0 h-full w-full object-contain"
+          style={{ rotateX, rotateY, x: translateX, y: translateY, scale }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.4, ease: 'easeOut' }}
+        />
+      </div>
 
       {/* Brilho dourado que acompanha o cursor */}
       <motion.div
