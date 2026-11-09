@@ -68,7 +68,13 @@ export function HeroCar({ darken }: { darken: MotionValue<number> }) {
           qualquer tamanho de tela). Por isso a caixa menor fica numa div
           comum (não substituída, top/bottom funcionam normal) por fora,
           e a <img> dentro continua com inset-0 + contain centralizado. */}
-      <div className={`absolute inset-x-0 bottom-0 top-0 ${isBlackFridayActive() ? 'sm:top-24' : ''}`}>
+      {/* perspective precisa estar no PAI direto do elemento rotacionado em 3D
+          (a <img>) — como ela agora mora dentro desta div, e não mais direto
+          dentro do container, o tilt só funciona se a div também tiver. */}
+      <div
+        className={`absolute inset-x-0 bottom-0 top-0 ${isBlackFridayActive() ? 'sm:top-24' : ''}`}
+        style={{ perspective: 1400 }}
+      >
         <motion.img
           src={IMAGE_URL}
           alt={IMAGE_ALT}
@@ -86,10 +92,18 @@ export function HeroCar({ darken }: { darken: MotionValue<number> }) {
         style={{ background: glowBackground, opacity: glowOpacity, mixBlendMode: 'screen' }}
       />
 
-      {/* Vinheta lateral para fundir as bordas da foto com o carbono do site */}
+      {/* Vinheta lateral para fundir as bordas da foto com o carbono do site —
+          na Black Friday, estende a área totalmente transparente no centro
+          (de 0% pra 40% do raio) pra não escurecer os selos de desconto,
+          que ficam bem nessa região; as bordas continuam se fundindo com o
+          carbono igual antes. */}
       <div
         className="pointer-events-none absolute inset-0"
-        style={{ background: 'radial-gradient(ellipse 78% 65% at 50% 46%, transparent, var(--carbon-0) 100%)' }}
+        style={{
+          background: isBlackFridayActive()
+            ? 'radial-gradient(ellipse 78% 65% at 50% 46%, transparent 0%, transparent 40%, var(--carbon-0) 100%)'
+            : 'radial-gradient(ellipse 78% 65% at 50% 46%, transparent, var(--carbon-0) 100%)',
+        }}
       />
       {/* Escurecimento progressivo conforme o scroll — chega a 100% preto ao fim da hero */}
       <motion.div className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: darken }} />
