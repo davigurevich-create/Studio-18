@@ -8,7 +8,7 @@ import { installmentValue, INTEREST_FREE_INSTALLMENTS, LOW_STOCK_THRESHOLD, pixP
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { useFavorites } from '@/lib/favorites'
-import { BLACK_FRIDAY_COUPON_PCT, BLACK_FRIDAY_PIX_TOTAL_PCT, isBlackFridayActive } from '@/lib/blackFriday'
+import { isBlackFridayActive } from '@/lib/blackFriday'
 import type { CatalogProduct } from '@/types/catalog'
 
 export function ProductCard({ product, index = 0 }: { product: CatalogProduct; index?: number }) {
@@ -163,33 +163,13 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
                   <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
                     À VISTA NO PIX
                   </div>
-                  {isBlackFridayActive() ? (
-                    <div className="flex flex-wrap items-baseline gap-x-1.5">
-                      <span className="tabular text-xs line-through" style={{ color: 'var(--ink-muted)' }}>
-                        {formatBRL(pixPrice(effectivePrice))}
-                      </span>
-                      <span className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                        {formatBRL(effectivePrice * (1 - BLACK_FRIDAY_PIX_TOTAL_PCT / 100))}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                      {formatBRL(pixPrice(effectivePrice))}
-                    </div>
-                  )}
-                  {(() => {
-                    // Na Black Friday o cupom de 25% também vale pro cartão
-                    // (só os 5% extras do Pix exigem pagamento à vista) —
-                    // essa linha tinha ficado mostrando o valor cheio, sem o
-                    // desconto, destoando do preço em destaque logo acima.
-                    const cardTotal = isBlackFridayActive() ? effectivePrice * (1 - BLACK_FRIDAY_COUPON_PCT / 100) : effectivePrice
-                    return (
-                      <div className="tabular text-[11px]" style={{ color: 'var(--ink-muted)' }}>
-                        ou {formatBRL(cardTotal)} em {INTEREST_FREE_INSTALLMENTS}x de{' '}
-                        {formatBRL(installmentValue(cardTotal, INTEREST_FREE_INSTALLMENTS))} sem juros
-                      </div>
-                    )
-                  })()}
+                  <div className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
+                    {formatBRL(pixPrice(effectivePrice))}
+                  </div>
+                  <div className="tabular text-[11px]" style={{ color: 'var(--ink-muted)' }}>
+                    ou {formatBRL(effectivePrice)} em {INTEREST_FREE_INSTALLMENTS}x de{' '}
+                    {formatBRL(installmentValue(effectivePrice, INTEREST_FREE_INSTALLMENTS))} sem juros
+                  </div>
                 </>
               )}
             </div>
