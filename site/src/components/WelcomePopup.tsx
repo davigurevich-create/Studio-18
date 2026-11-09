@@ -3,12 +3,13 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Tag } from 'lucide-react'
 import { submitLead } from '@/lib/api'
 import {
+  activeWelcomeCoupon,
   markWelcomeConverted,
   markWelcomeDismissed,
   shouldShowWelcomePopup,
   shouldShowWelcomeTab,
-  WELCOME_COUPON_CODE,
 } from '@/lib/welcomeOffer'
+import { BLACK_FRIDAY_PIX_TOTAL_PCT, isBlackFridayActive } from '@/lib/blackFriday'
 
 // Contorno de "língua" triangular arredondada apontando pra direita, em
 // percentuais (acompanha o tamanho do elemento nos breakpoints do
@@ -23,6 +24,7 @@ const TRIGGER_DELAY_MS = 5000
 const BANNER_SRC = '/welcome-popup-banner.jpg'
 
 export function WelcomePopup() {
+  const { code: couponCode, pct: couponPct } = activeWelcomeCoupon()
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<'locked' | 'revealed'>('locked')
   const [email, setEmail] = useState('')
@@ -62,7 +64,7 @@ export function WelcomePopup() {
 
   const [copied, setCopied] = useState(false)
   const copyCode = () => {
-    navigator.clipboard?.writeText(WELCOME_COUPON_CODE).then(() => {
+    navigator.clipboard?.writeText(couponCode).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 1600)
     })
@@ -95,7 +97,7 @@ export function WelcomePopup() {
             className="whitespace-nowrap text-[9px] font-extrabold leading-none"
             style={{ color: 'var(--carbon-0)', writingMode: 'vertical-rl' }}
           >
-            10%
+            {couponPct}%
           </span>
         </motion.button>
       )}
@@ -150,13 +152,17 @@ export function WelcomePopup() {
               </button>
 
               <div className="px-7 pb-6 pt-8">
-                <p className="eyebrow mb-2.5 text-center">Oferta de boas-vindas</p>
+                <p className="eyebrow mb-2.5 text-center">
+                  {isBlackFridayActive() ? 'Oferta de Black Friday' : 'Oferta de boas-vindas'}
+                </p>
                 <h2 className="mb-2.5 text-center text-2xl font-extrabold leading-tight tracking-tight" style={{ color: 'var(--ink)' }}>
-                  Ganhe <span style={{ color: 'var(--gold-bright)' }}>10% off</span>
+                  Ganhe <span style={{ color: 'var(--gold-bright)' }}>{couponPct}% off</span>
                   <br />na sua primeira compra
                 </h2>
                 <p className="mb-5 text-center text-[13px]" style={{ color: 'var(--ink-muted)' }}>
-                  Entre pra nossa lista e receba o cupom agora — fique por dentro dos lançamentos e novidades do Studio 18.
+                  {isBlackFridayActive()
+                    ? `Entre pra nossa lista e desbloqueie o cupom agora — ${BLACK_FRIDAY_PIX_TOTAL_PCT}% off pagando à vista no Pix.`
+                    : 'Entre pra nossa lista e receba o cupom agora — fique por dentro dos lançamentos e novidades do Studio 18.'}
                 </p>
 
                 <div
@@ -173,7 +179,7 @@ export function WelcomePopup() {
                   />
                   <div className="relative flex items-center justify-center gap-2">
                     <span className="text-[10px] font-bold tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-                      SEU CUPOM DE 10%
+                      SEU CUPOM DE {couponPct}%
                     </span>
                     {state === 'locked' && (
                       <span
@@ -188,7 +194,7 @@ export function WelcomePopup() {
                     className="relative mt-1.5 font-mono text-2xl font-bold tracking-[0.08em]"
                     style={{ color: 'var(--gold-bright)', filter: state === 'locked' ? 'blur(6px)' : 'none', userSelect: state === 'locked' ? 'none' : 'auto' }}
                   >
-                    {WELCOME_COUPON_CODE}
+                    {couponCode}
                   </div>
                   {state === 'revealed' && (
                     <button

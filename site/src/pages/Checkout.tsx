@@ -17,7 +17,7 @@ import {
   type CreatePaymentResult,
 } from '@/lib/api'
 import { formatBRL } from '@/lib/format'
-import { INSTALLMENT_SURCHARGE_FROM, installmentTotal, installmentValue, pixPrice, unitPriceWithMotor } from '@/lib/pricing'
+import { INSTALLMENT_SURCHARGE_FROM, installmentTotal, installmentValue, PIX_DISCOUNT, pixPrice, unitPriceWithMotor } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { consumePendingCoupon, markHasPurchased } from '@/lib/welcomeOffer'
@@ -60,7 +60,7 @@ export function Checkout() {
   const [couponInput, setCouponInput] = useState('')
   const [couponStatus, setCouponStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle')
   const [couponMessage, setCouponMessage] = useState<string | null>(null)
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPct: number; freeShipping: boolean } | null>(null)
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPct: number; freeShipping: boolean; additiveWithPix: boolean } | null>(null)
   const [shippingOptions, setShippingOptions] = useState<ShippingOption[] | null>(null)
   const [shippingLoading, setShippingLoading] = useState(false)
   const [shippingMessage, setShippingMessage] = useState<string | null>(null)
@@ -173,8 +173,15 @@ export function Checkout() {
 
   const subtotal = items.reduce((t, i) => t + unitPriceWithMotor(i.product, Boolean(i.line.withMotor)) * i.line.quantity, 0)
   const priceBeforeCoupon = method === 'pix' ? pixPrice(subtotal) : subtotal
+  // additiveWithPix é uma exceção pontual (hoje só a BLACKFRIDAY25): soma
+  // o % do cupom com o do Pix e aplica uma vez só sobre o preço cheio, em
+  // vez do empilhamento multiplicativo padrão (que resultaria em ~28,75%
+  // em vez dos 30% anunciados). Precisa bater com o mesmo cálculo em
+  // rede-create-payment, senão o valor mostrado aqui diverge do cobrado.
   const productsTotal = appliedCoupon
-    ? Math.round(priceBeforeCoupon * (1 - appliedCoupon.discountPct / 100) * 100) / 100
+    ? appliedCoupon.additiveWithPix && method === 'pix'
+      ? Math.round(subtotal * (1 - (appliedCoupon.discountPct + PIX_DISCOUNT * 100) / 100) * 100) / 100
+      : Math.round(priceBeforeCoupon * (1 - appliedCoupon.discountPct / 100) * 100) / 100
     : priceBeforeCoupon
   const shippingCost = appliedCoupon?.freeShipping ? 0 : (selectedShipping?.price ?? 0)
   const total = Math.round((productsTotal + shippingCost) * 100) / 100
@@ -212,7 +219,7 @@ export function Checkout() {
     try {
       const res = await validateCoupon(code)
       if (res.valid) {
-        setAppliedCoupon({ code: code.toUpperCase(), discountPct: res.discountPct, freeShipping: res.freeShipping })
+        setAppliedCoupon({ code: code.toUpperCase(), discountPct: res.discountPct, freeShipping: res.freeShipping, additiveWithPix: res.additiveWithPix })
         setCouponStatus('valid')
       } else {
         setAppliedCoupon(null)
@@ -246,7 +253,7 @@ export function Checkout() {
       try {
         const res = await validateCoupon(pending)
         if (res.valid) {
-          setAppliedCoupon({ code: pending.toUpperCase(), discountPct: res.discountPct, freeShipping: res.freeShipping })
+          setAppliedCoupon({ code: pending.toUpperCase(), discountPct: res.discountPct, freeShipping: res.freeShipping, additiveWithPix: res.additiveWithPix })
           setCouponStatus('valid')
         } else {
           setCouponStatus('idle')
@@ -963,7 +970,10 @@ export function Checkout() {
                 style={{ background: 'rgba(143,206,143,0.1)', border: '1px solid rgba(143,206,143,0.3)', color: '#8fce8f' }}
               >
                 <span>
-                  ✓ Cupom <strong>{appliedCoupon.code}</strong> aplicado — {appliedCoupon.discountPct}% de desconto
+                  ✓ Cupom <strong>{appliedCoupon.code}</strong> aplicado —{' '}
+                  {appliedCoupon.additiveWithPix && method === 'pix'
+                    ? `${appliedCoupon.discountPct + PIX_DISCOUNT * 100}% de desconto no Pix`
+                    : `${appliedCoupon.discountPct}% de desconto`}
                 </span>
                 <button type="button" onClick={removeCoupon} className="underline" style={{ color: '#8fce8f' }}>
                   Remover

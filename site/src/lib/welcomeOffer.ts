@@ -1,11 +1,22 @@
-// Regras de quando o pop-up de boas-vindas (cupom de 10% na primeira
-// compra) pode aparecer de novo — tudo guardado no navegador da pessoa
-// (localStorage), sem precisar de login:
+// Regras de quando o pop-up de boas-vindas (cupom na primeira compra) pode
+// aparecer de novo — tudo guardado no navegador da pessoa (localStorage),
+// sem precisar de login:
 //   1. Já comprou nesse navegador -> nunca mais aparece.
 //   2. Já deixou o e-mail no próprio pop-up -> nunca mais aparece.
 //   3. Fechou no X / "Agora não" -> some por 2h, depois volta a valer
 //      (se nenhuma das outras regras já tiver marcado o navegador).
+import { BLACK_FRIDAY_COUPON_CODE, BLACK_FRIDAY_COUPON_PCT, isBlackFridayActive } from '@/lib/blackFriday'
+
 export const WELCOME_COUPON_CODE = 'ENTREINOFLOW10'
+export const WELCOME_COUPON_PCT = 10
+
+// Durante a Black Friday, o pop-up de boas-vindas inteiro vira a oferta da
+// campanha (25% em vez de 10%) — volta sozinho ao normal depois do prazo.
+export function activeWelcomeCoupon(): { code: string; pct: number } {
+  return isBlackFridayActive()
+    ? { code: BLACK_FRIDAY_COUPON_CODE, pct: BLACK_FRIDAY_COUPON_PCT }
+    : { code: WELCOME_COUPON_CODE, pct: WELCOME_COUPON_PCT }
+}
 
 const STATE_KEY = 'studio18_welcome_popup'
 const PURCHASED_KEY = 'studio18_has_purchased'
@@ -66,7 +77,7 @@ export function markWelcomeDismissed(): void {
 export function markWelcomeConverted(): void {
   try {
     localStorage.setItem(STATE_KEY, JSON.stringify({ status: 'converted' }))
-    localStorage.setItem(PENDING_COUPON_KEY, WELCOME_COUPON_CODE)
+    localStorage.setItem(PENDING_COUPON_KEY, activeWelcomeCoupon().code)
   } catch {
     // ver comentário acima
   }

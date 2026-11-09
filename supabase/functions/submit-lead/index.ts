@@ -36,6 +36,17 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const EMAIL_FROM = Deno.env.get('EMAIL_FROM') ?? 'Studio 18 <onboarding@resend.dev>'
 const SITE_URL = Deno.env.get('SITE_URL') ?? 'https://studio18.vercel.app'
 const WELCOME_COUPON_CODE = 'ENTREINOFLOW10'
+const WELCOME_COUPON_PCT = 10
+// Mesma data de corte usada no site (site/src/lib/blackFriday.ts) — depois
+// do prazo, esse e-mail volta sozinho a oferecer o cupom normal de 10%.
+const BLACK_FRIDAY_END = new Date('2026-11-28T00:00:00-03:00')
+const BLACK_FRIDAY_COUPON_CODE = 'BLACKFRIDAY25'
+const BLACK_FRIDAY_COUPON_PCT = 25
+function isBlackFridayActive(): boolean {
+  return Date.now() < BLACK_FRIDAY_END.getTime()
+}
+const activeCouponCode = isBlackFridayActive() ? BLACK_FRIDAY_COUPON_CODE : WELCOME_COUPON_CODE
+const activeCouponPct = isBlackFridayActive() ? BLACK_FRIDAY_COUPON_PCT : WELCOME_COUPON_PCT
 
 async function sendEmail(to: string, subject: string, html: string): Promise<void> {
   if (!RESEND_API_KEY) {
@@ -140,12 +151,12 @@ Deno.serve(async (req) => {
     // perdido o cupom da primeira vez e estar tentando de novo.
     await sendEmail(
       cleanEmail,
-      'Seu cupom de 10% — Studio 18',
+      `Seu cupom de ${activeCouponPct}% — Studio 18`,
       emailShell(
         'Seu cupom chegou!',
-        `<p>Obrigado por entrar pra nossa lista. Use o código abaixo pra garantir <strong>10% de desconto</strong> na sua primeira compra:</p>
+        `<p>Obrigado por entrar pra nossa lista. Use o código abaixo pra garantir <strong>${activeCouponPct}% de desconto</strong> na sua primeira compra${isBlackFridayActive() ? ' — ou 30% pagando à vista no Pix' : ''}:</p>
          <p style="margin:16px 0;padding:16px;text-align:center;border-radius:8px;background:rgba(230,199,120,0.08);border:1px solid rgba(205,164,77,0.35);">
-           <span style="font-family:'SFMono-Regular',Consolas,'Courier New',monospace;font-size:22px;font-weight:700;letter-spacing:0.08em;color:#e6c778;">${WELCOME_COUPON_CODE}</span>
+           <span style="font-family:'SFMono-Regular',Consolas,'Courier New',monospace;font-size:22px;font-weight:700;letter-spacing:0.08em;color:#e6c778;">${activeCouponCode}</span>
          </p>
          <p>Aplique esse código no campo de cupom durante o checkout.</p>
          <p style="margin-top:20px;">

@@ -352,10 +352,11 @@ Deno.serve(async (req) => {
     let appliedCoupon: { id: string; code: string; uses_count: number; kind: string; ownerUserId: string | null } | null = null
     let couponDiscountPct = 0
     let couponFreeShipping = false
+    let couponAdditiveWithPix = false
     if (couponCode) {
       const { data: coupon } = await supabase
         .from('coupons')
-        .select('id, code, discount_pct, active, max_uses, uses_count, expires_at, kind, owner_user_id, free_shipping')
+        .select('id, code, discount_pct, active, max_uses, uses_count, expires_at, kind, owner_user_id, free_shipping, additive_with_pix')
         .ilike('code', couponCode)
         .maybeSingle()
       const isValid =
@@ -373,15 +374,24 @@ Deno.serve(async (req) => {
         }
         couponDiscountPct = Number(coupon.discount_pct)
         couponFreeShipping = Boolean(coupon.free_shipping)
+        couponAdditiveWithPix = Boolean(coupon.additive_with_pix)
       }
     }
 
     const fullTotalAmount = lineItems.reduce((t, li) => t + li.fullUnitPrice * li.quantity, 0)
     const pixAdjustedTotal = lineItems.reduce((t, li) => t + li.unitPrice * li.quantity, 0)
+    // additive_with_pix é uma exceção pontual (hoje só a BLACKFRIDAY25): em
+    // vez do cupom descontar em cima do preço já reduzido pelo Pix
+    // (empilhamento multiplicativo padrão — 25% + 5% dá ~28,75%), soma os
+    // dois percentuais e aplica uma vez só sobre o preço cheio, fechando
+    // exatamente nos 30% anunciados. Só vale pagando no Pix — no cartão/
+    // outros não tem o desconto do Pix pra somar, então o cupom age normal.
     const productsTotal =
-      couponDiscountPct > 0
-        ? Math.round(pixAdjustedTotal * (1 - couponDiscountPct / 100) * 100) / 100
-        : pixAdjustedTotal
+      couponAdditiveWithPix && paymentMethod === 'pix' && couponDiscountPct > 0
+        ? Math.round(fullTotalAmount * (1 - (couponDiscountPct + PIX_DISCOUNT * 100) / 100) * 100) / 100
+        : couponDiscountPct > 0
+          ? Math.round(pixAdjustedTotal * (1 - couponDiscountPct / 100) * 100) / 100
+          : pixAdjustedTotal
     // Recalcula o frete no servidor em vez de confiar no preço que o
     // cliente mandou — o cupom de frete grátis (FUNDADORES40) zera o valor
     // cobrado aqui, mas o serviço/transportadora escolhido continua o
@@ -665,7 +675,10 @@ Deno.serve(async (req) => {
       .join('')
 
     const discountLabel = [
-      paymentMethod === 'pix' ? 'à vista no PIX (10%)' : null,
+      // Corrigido de "10%" fixo pro valor real da constante PIX_DISCOUNT
+      // (5%) — rótulo errado não afetava a cobrança (só o texto do
+      // e-mail), mas aproveitei que já estava mexendo aqui perto.
+      paymentMethod === 'pix' ? `à vista no PIX (${PIX_DISCOUNT * 100}%)` : null,
       appliedCoupon ? `cupom ${appliedCoupon.code} (${couponDiscountPct}%)` : null,
     ]
       .filter(Boolean)
