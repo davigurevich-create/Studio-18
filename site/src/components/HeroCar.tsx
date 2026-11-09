@@ -61,7 +61,17 @@ export function HeroCar({ darken }: { darken: MotionValue<number> }) {
       <motion.img
         src={IMAGE_URL}
         alt={IMAGE_ALT}
-        className="absolute inset-0 h-full w-full object-contain"
+        // O banner da Black Friday tem os selos de desconto (25%/30%) perto
+        // do topo da imagem — no desktop, a combinação do header fixo com a
+        // faixa fixa (ver BlackFridayBanner) cobre essa faixa superior, e
+        // "contain" sem folga deixava os selos colados/escondidos atrás
+        // deles. Um respiro no topo só em telas sm+ empurra (e encolhe
+        // ligeiramente) a imagem inteira pra baixo, sem cortar nada — no
+        // mobile a imagem já renderiza menor por natureza (portrait),
+        // então os selos nunca chegam perto do header.
+        className={`absolute inset-x-0 bottom-0 top-0 h-auto w-full object-contain ${
+          isBlackFridayActive() ? 'sm:top-28' : ''
+        }`}
         style={{ rotateX, rotateY, x: translateX, y: translateY, scale }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
