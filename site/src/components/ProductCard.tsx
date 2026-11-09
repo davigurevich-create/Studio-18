@@ -8,7 +8,6 @@ import { installmentValue, INTEREST_FREE_INSTALLMENTS, LOW_STOCK_THRESHOLD, pixP
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { useFavorites } from '@/lib/favorites'
-import { isBlackFridayActive } from '@/lib/blackFriday'
 import type { CatalogProduct } from '@/types/catalog'
 
 export function ProductCard({ product, index = 0 }: { product: CatalogProduct; index?: number }) {
@@ -43,14 +42,6 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
       >
         <div className="relative">
           <ProductArt product={product} className="h-52 w-full" />
-          {isBlackFridayActive() && !priceUnknown && !outOfStock && (
-            <span
-              className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
-              style={{ background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))', color: '#1a1206' }}
-            >
-              Black Friday
-            </span>
-          )}
           <span
             className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide opacity-90 transition-opacity group-hover:opacity-100"
             style={{ background: 'rgba(6,6,6,0.7)', color: 'var(--ink-secondary)', border: '1px solid var(--hairline)' }}
