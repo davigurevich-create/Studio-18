@@ -474,6 +474,7 @@ const PLACEHOLDER_ROWS: LeaderboardEntry[] = Array.from({ length: 8 }, (_, i) =>
   displayName: '••••••• •.',
   totalPoints: 0,
   isYou: false,
+  publicUserId: null,
 }))
 
 const MEDAL_COLOR = ['#e6c778', '#c7c7c7', '#b5742f']
@@ -565,6 +566,15 @@ function RankingSection() {
                   >
                     {c.isYou ? `${c.displayName} (você)` : c.displayName}
                   </span>
+                  {c.publicUserId && !c.isYou && (
+                    <Link
+                      to={`/colecionador/${c.publicUserId}`}
+                      className="shrink-0 text-xs underline"
+                      style={{ color: 'var(--ink-muted)' }}
+                    >
+                      Ver sets
+                    </Link>
+                  )}
                   <span className="tabular text-sm" style={{ color: 'var(--ink-muted)' }}>
                     {c.totalPoints.toLocaleString('pt-BR')} pts
                   </span>

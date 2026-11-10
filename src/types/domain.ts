@@ -221,6 +221,20 @@ export interface Testimonial {
   status: TestimonialStatus
 }
 
+// Fase 1 da comunidade de colecionadores: fotos dos sets montados, enviadas
+// pelo cliente na própria conta e aprovadas aqui antes de ficar públicas
+// (mesmo status 'pendente'/'aprovado'/'rejeitado' dos depoimentos).
+export type SetPhotoStatus = 'pendente' | 'aprovado' | 'rejeitado'
+
+export interface SetPhotoModeration {
+  id: string
+  photo_url: string
+  status: SetPhotoStatus
+  created_at: string
+  product_name: string
+  customer_email: string
+}
+
 export type AuditAction = 'criar' | 'editar' | 'excluir'
 
 export interface AuditLogEntry {

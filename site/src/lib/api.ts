@@ -588,16 +588,18 @@ export interface MyBadge {
   sku: string
   name: string
   points: number
+  productId: string
 }
 
 export async function getMyBadges(): Promise<MyBadge[]> {
   if (!supabase) return []
   const { data, error } = await supabase.rpc('get_my_badges')
   if (error) throw error
-  return ((data ?? []) as { sku: string; name: string; points: number }[]).map((r) => ({
+  return ((data ?? []) as { sku: string; name: string; points: number; product_id: string }[]).map((r) => ({
     sku: r.sku,
     name: r.name,
     points: Number(r.points),
+    productId: r.product_id,
   }))
 }
 
@@ -606,17 +608,21 @@ export interface LeaderboardEntry {
   displayName: string
   totalPoints: number
   isYou: boolean
+  publicUserId: string | null
 }
 
 export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
   if (!supabase) return []
   const { data, error } = await supabase.rpc('get_leaderboard', { p_limit: limit })
   if (error) throw error
-  return ((data ?? []) as { rank_position: number; display_name: string; total_points: number; is_you: boolean }[]).map((r) => ({
+  return (
+    (data ?? []) as { rank_position: number; display_name: string; total_points: number; is_you: boolean; public_user_id: string | null }[]
+  ).map((r) => ({
     rankPosition: Number(r.rank_position),
     displayName: r.display_name,
     totalPoints: Number(r.total_points),
     isYou: r.is_you,
+    publicUserId: r.public_user_id,
   }))
 }
 
@@ -659,6 +665,132 @@ export async function getMyActiveClubCoupon(): Promise<{ code: string; discountP
   if (error) throw error
   const row = (data ?? [])[0] as { code: string; discount_pct: number } | undefined
   return row ? { code: row.code, discountPct: Number(row.discount_pct) } : null
+}
+
+// ---------------------------------------------------------------------------
+// Comunidade — fotos dos sets montados (aprovação da equipe antes de
+// ficar público, mesmo padrão dos depoimentos), curtidas e perfil público
+// opcional do colecionador (linkável a partir do ranking).
+// ---------------------------------------------------------------------------
+export async function getMyPublicProfileFlag(): Promise<boolean> {
+  if (!supabase) return false
+  const { data, error } = await supabase.from('customer_profiles').select('public_profile').maybeSingle()
+  if (error) throw error
+  return Boolean(data?.public_profile)
+}
+
+export async function setMyPublicProfile(value: boolean): Promise<void> {
+  if (!supabase) return
+  const { error } = await supabase
+    .from('customer_profiles')
+    .upsert({ public_profile: value, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+  if (error) throw error
+}
+
+export interface MySetPhoto {
+  id: string
+  productId: string
+  photoUrl: string
+  status: 'pendente' | 'aprovado' | 'rejeitado'
+  createdAt: string
+}
+
+export async function getMySetPhotos(): Promise<MySetPhoto[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('get_my_set_photos')
+  if (error) throw error
+  return ((data ?? []) as { id: string; product_id: string; photo_url: string; status: string; created_at: string }[]).map((r) => ({
+    id: r.id,
+    productId: r.product_id,
+    photoUrl: r.photo_url,
+    status: r.status as MySetPhoto['status'],
+    createdAt: r.created_at,
+  }))
+}
+
+/**
+ * Sobe a foto pro bucket (nome aleatório — não precisa de significado,
+ * só precisa ser único) e registra via submit_set_photo, que confere no
+ * servidor se o cliente realmente comprou esse set antes de aceitar.
+ */
+export async function submitSetPhoto(productId: string, file: File): Promise<void> {
+  if (!supabase) throw new Error('Modo demonstração: conecte o Supabase pra enviar fotos de verdade.')
+  const ext = file.name.split('.').pop() || 'jpg'
+  const path = `${crypto.randomUUID()}.${ext}`
+  const { error: uploadError } = await supabase.storage.from('set-photos').upload(path, file)
+  if (uploadError) throw uploadError
+  const { data: pub } = supabase.storage.from('set-photos').getPublicUrl(path)
+  const { error } = await supabase.rpc('submit_set_photo', { p_product_id: productId, p_photo_url: pub.publicUrl })
+  if (error) throw error
+}
+
+export async function toggleSetPhotoLike(photoId: string): Promise<boolean> {
+  if (!supabase) return false
+  const { data, error } = await supabase.rpc('toggle_set_photo_like', { p_photo_id: photoId })
+  if (error) throw error
+  return Boolean(data)
+}
+
+export interface PublicProfile {
+  displayName: string | null
+  totalPoints: number
+  isPublic: boolean
+}
+
+export async function getPublicProfile(userId: string): Promise<PublicProfile> {
+  if (!supabase) return { displayName: null, totalPoints: 0, isPublic: false }
+  const { data, error } = await supabase.rpc('get_public_profile', { p_user_id: userId })
+  if (error) throw error
+  const row = (data ?? [])[0] as { display_name: string | null; total_points: number; is_public: boolean } | undefined
+  return { displayName: row?.display_name ?? null, totalPoints: row ? Number(row.total_points) : 0, isPublic: Boolean(row?.is_public) }
+}
+
+export interface PublicBadge {
+  sku: string
+  name: string
+  points: number
+}
+
+export async function getPublicProfileBadges(userId: string): Promise<PublicBadge[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('get_public_profile_badges', { p_user_id: userId })
+  if (error) throw error
+  return ((data ?? []) as { sku: string; name: string; points: number }[]).map((r) => ({ sku: r.sku, name: r.name, points: Number(r.points) }))
+}
+
+export interface PublicSetPhoto {
+  id: string
+  productId: string
+  productName: string
+  photoUrl: string
+  likesCount: number
+  likedByMe: boolean
+  createdAt: string
+}
+
+export async function getPublicProfilePhotos(userId: string): Promise<PublicSetPhoto[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('get_public_profile_photos', { p_user_id: userId })
+  if (error) throw error
+  return (
+    (data ?? []) as {
+      id: string
+      product_id: string
+      product_name: string
+      photo_url: string
+      likes_count: number
+      liked_by_me: boolean
+      created_at: string
+    }[]
+  ).map((r) => ({
+    id: r.id,
+    productId: r.product_id,
+    productName: r.product_name,
+    photoUrl: r.photo_url,
+    likesCount: Number(r.likes_count),
+    likedByMe: r.liked_by_me,
+    createdAt: r.created_at,
+  }))
 }
 
 // ---------------------------------------------------------------------------

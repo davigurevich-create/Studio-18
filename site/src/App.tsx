@@ -19,6 +19,7 @@ import { QuemSomos } from '@/pages/QuemSomos'
 import { Diferenciais } from '@/pages/Diferenciais'
 import { Badges } from '@/pages/Badges'
 import { Conta } from '@/pages/Conta'
+import { Colecionador } from '@/pages/Colecionador'
 import { Avaliacao } from '@/pages/Avaliacao'
 import { NotFound } from '@/pages/NotFound'
 
@@ -50,6 +51,7 @@ function App() {
                   <Route path="/diferenciais" element={<Diferenciais />} />
                   <Route path="/badges" element={<Badges />} />
                   <Route path="/conta" element={<Conta />} />
+                  <Route path="/colecionador/:userId" element={<Colecionador />} />
                   <Route path="/avaliacao/:saleId" element={<Avaliacao />} />
                   <Route path="*" element={<NotFound />} />
                 </Route>

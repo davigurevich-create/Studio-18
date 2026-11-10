@@ -41,6 +41,8 @@ import type {
   SocialContentStatus,
   Testimonial,
   TestimonialStatus,
+  SetPhotoModeration,
+  SetPhotoStatus,
 } from '@/types/domain'
 
 const productsTable = makeTable<Product>('products', seedProducts)
@@ -727,6 +729,25 @@ export async function getPointsLedger(): Promise<PointsLedgerEntry[]> {
     return data as PointsLedgerEntry[]
   }
   return [...pointsLedgerTable.all()].sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+// ---------------------------------------------------------------------------
+// Fotos de sets da comunidade — fila de aprovação (mesmo fluxo dos
+// depoimentos: cliente envia na própria conta, só aparece pra outros
+// colecionadores depois de aprovado aqui).
+// ---------------------------------------------------------------------------
+export async function getSetPhotosForModeration(): Promise<SetPhotoModeration[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('get_set_photos_for_moderation')
+  if (error) throw error
+  return (data ?? []) as SetPhotoModeration[]
+}
+
+export async function updateSetPhotoStatus(id: string, status: SetPhotoStatus): Promise<void> {
+  if (!supabase) return
+  const { error } = await supabase.from('set_photos').update({ status }).eq('id', id)
+  if (error) throw error
+  await logAudit('editar', 'foto_set', id, `Alterou status da foto do set para "${status}"`)
 }
 
 // ---------------------------------------------------------------------------

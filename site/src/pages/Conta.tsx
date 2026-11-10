@@ -1,8 +1,9 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Award, Bell, Gift, Heart, IdCard, LogOut, MessageSquareQuote, Package, PackageX, Trophy, Wrench } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
+import { CLUBS } from '@/lib/clubs'
 import { useFavorites } from '@/lib/favorites'
 import {
   getMyOrders,
@@ -23,6 +24,10 @@ import {
   getMyBadges,
   getMyActiveClubCoupon,
   activateClubBenefit,
+  getMySetPhotos,
+  submitSetPhoto,
+  getMyPublicProfileFlag,
+  setMyPublicProfile,
   type MyOrder,
   type MyPartRequest,
   type MyWaitlistEntry,
@@ -32,6 +37,7 @@ import {
   type NotificationPrefs,
   type MyPoints,
   type MyBadge,
+  type MySetPhoto,
 } from '@/lib/api'
 import { PartRequestForm, formatOrderTotal } from '@/components/PartRequestForm'
 import { OrderTrackingSteps } from '@/components/OrderTrackingSteps'
@@ -586,18 +592,6 @@ function FavoritesTab() {
   )
 }
 
-// Marcos de gamificação — não são selos, só títulos exibidos quando o
-// cliente atinge a pontuação (o cálculo de verdade, incluindo o % de
-// desconto de cada um, é sempre feito no banco por activate_club_benefit();
-// esta lista é só pra exibir o progresso/próximo clube na tela).
-const CLUBS = [
-  { threshold: 10000, name: 'Clube 10K', title: 'Mecânico de Elite', discountPct: 5 },
-  { threshold: 25000, name: 'Clube 25K', title: 'Engenheiro de Pista', discountPct: 10 },
-  { threshold: 50000, name: 'Clube 50K', title: 'Projetista Chefe', discountPct: 20 },
-  { threshold: 75000, name: 'Clube 75K', title: 'Estrategista Supremo', discountPct: 35 },
-  { threshold: 100000, name: 'Clube 100K', title: 'Chefe de Equipe', discountPct: 50 },
-]
-
 // Selo de cada set — 1 imagem por SKU, mesmo nome do SKU (ex: S18-016.png).
 // Enquanto o arquivo não existir em site/public/selos/, cai sozinho pro
 // ícone genérico (mesmo esquema já usado em EliteClubCard/WelcomePopup).
@@ -627,17 +621,34 @@ function BadgesTab() {
   const [points, setPoints] = useState<MyPoints | null>(null)
   const [badges, setBadges] = useState<MyBadge[]>([])
   const [activeCoupon, setActiveCoupon] = useState<{ code: string; discountPct: number } | null>(null)
+  const [myPhotos, setMyPhotos] = useState<MySetPhoto[]>([])
+  const [publicProfile, setPublicProfile] = useState(false)
+  const [togglingPublic, setTogglingPublic] = useState(false)
   const [loading, setLoading] = useState(true)
   const [activating, setActivating] = useState(false)
   const [activateError, setActivateError] = useState<string | null>(null)
 
   const reload = () => {
-    Promise.all([getMyPoints(), getMyBadges(), getMyActiveClubCoupon()]).then(([p, b, c]) => {
-      setPoints(p)
-      setBadges(b)
-      setActiveCoupon(c)
-      setLoading(false)
-    })
+    Promise.all([getMyPoints(), getMyBadges(), getMyActiveClubCoupon(), getMySetPhotos(), getMyPublicProfileFlag()]).then(
+      ([p, b, c, photos, pub]) => {
+        setPoints(p)
+        setBadges(b)
+        setActiveCoupon(c)
+        setMyPhotos(photos)
+        setPublicProfile(pub)
+        setLoading(false)
+      },
+    )
+  }
+
+  const handleTogglePublic = async () => {
+    setTogglingPublic(true)
+    try {
+      await setMyPublicProfile(!publicProfile)
+      setPublicProfile((v) => !v)
+    } finally {
+      setTogglingPublic(false)
+    }
   }
 
   useEffect(reload, [])
@@ -743,6 +754,36 @@ function BadgesTab() {
         </p>
       </div>
 
+      {/* Comunidade — perfil público opcional. Sem isso marcado, ninguém
+          além da própria pessoa vê os selos/fotos, mesmo aparecendo no
+          ranking (o link "Ver sets" só aparece pra quem deixou público). */}
+      <div
+        className="flex items-center justify-between gap-4 rounded-xl border p-4"
+        style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}
+      >
+        <div>
+          <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
+            Perfil público na comunidade
+          </p>
+          <p className="mt-0.5 text-xs" style={{ color: 'var(--ink-muted)' }}>
+            Outros colecionadores logados podem ver seus selos e fotos pelo link "Ver sets" no ranking.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleTogglePublic}
+          disabled={togglingPublic}
+          className="relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60"
+          style={{ background: publicProfile ? 'var(--gold)' : 'var(--carbon-1)' }}
+          aria-label={publicProfile ? 'Tornar perfil privado' : 'Tornar perfil público'}
+        >
+          <span
+            className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform"
+            style={{ transform: publicProfile ? 'translateX(22px)' : 'translateX(2px)' }}
+          />
+        </button>
+      </div>
+
       {/* Vitrine de selos conquistados */}
       <div>
         <h3 className="mb-3 text-sm font-semibold" style={{ color: 'var(--ink)' }}>
@@ -767,11 +808,82 @@ function BadgesTab() {
                 <p className="tabular text-[11px]" style={{ color: 'var(--gold-bright)' }}>
                   +{b.points.toLocaleString('pt-BR')} pontos
                 </p>
+                <SetPhotoUploader
+                  productId={b.productId}
+                  photos={myPhotos.filter((p) => p.productId === b.productId)}
+                  onUploaded={reload}
+                />
               </div>
             ))}
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+const PHOTO_STATUS_LABEL: Record<MySetPhoto['status'], string> = {
+  pendente: 'Em análise',
+  aprovado: 'Aprovada',
+  rejeitado: 'Não aprovada',
+}
+const PHOTO_STATUS_COLOR: Record<MySetPhoto['status'], string> = {
+  pendente: 'var(--ink-muted)',
+  aprovado: '#8fce8f',
+  rejeitado: '#e88b8b',
+}
+
+function SetPhotoUploader({ productId, photos, onUploaded }: { productId: string; photos: MySetPhoto[]; onUploaded: () => void }) {
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const inputId = `set-photo-${productId}`
+
+  const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setUploading(true)
+    setError(null)
+    try {
+      await submitSetPhoto(productId, file)
+      onUploaded()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível enviar a foto agora.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="mt-1 w-full">
+      {photos.length > 0 && (
+        <div className="mb-2 flex flex-wrap justify-center gap-1.5">
+          {photos.map((p) => (
+            <div key={p.id} className="relative h-10 w-10 overflow-hidden rounded-md" style={{ border: '1px solid var(--hairline)' }}>
+              <img src={p.photoUrl} alt="" className="h-full w-full object-cover" />
+              <span
+                className="absolute inset-x-0 bottom-0 truncate px-0.5 text-center text-[7px] font-medium"
+                style={{ background: 'rgba(6,6,6,0.75)', color: PHOTO_STATUS_COLOR[p.status] }}
+              >
+                {PHOTO_STATUS_LABEL[p.status]}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      <label
+        htmlFor={inputId}
+        className="block w-full cursor-pointer rounded-full border px-2 py-1.5 text-center text-[11px] font-medium"
+        style={{ borderColor: 'var(--gold-dim)', color: 'var(--gold-bright)' }}
+      >
+        {uploading ? 'Enviando...' : '+ Incluir imagens do set'}
+      </label>
+      <input id={inputId} type="file" accept="image/*" className="hidden" disabled={uploading} onChange={handleFile} />
+      {error && (
+        <p className="mt-1 text-[10px]" style={{ color: '#e88b8b' }}>
+          {error}
+        </p>
+      )}
     </div>
   )
 }
