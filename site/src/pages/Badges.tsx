@@ -60,12 +60,15 @@ const PCT_FONT_SIZE = 30
 
 // Um degrau visual bem marcado por nível, do mais discreto (10K) ao mais
 // rico (100K): fundo, espessura/cor da borda e intensidade do brilho.
+// Fundo translúcido (glass) em vez de sólido — intensifica levemente a
+// cada nível, igual já fazia antes, só que agora deixando a textura de
+// fibra de carbono por trás aparecer através do vidro.
 const CARD_BG = [
-  'var(--carbon-1)',
-  'var(--carbon-1)',
-  'var(--carbon-2)',
-  'var(--carbon-2)',
-  'linear-gradient(180deg, var(--carbon-2), var(--carbon-3))',
+  'rgba(255,255,255,0.035)',
+  'rgba(255,255,255,0.045)',
+  'rgba(255,255,255,0.055)',
+  'rgba(255,255,255,0.07)',
+  'linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.04))',
 ]
 const CARD_BORDER = ['var(--hairline)', 'rgba(205,164,77,0.28)', 'rgba(205,164,77,0.5)', 'rgba(230,199,120,0.65)', 'var(--gold-bright)']
 const CARD_BORDER_WIDTH = [1, 1, 1, 1.5, 2]
@@ -82,6 +85,11 @@ const PCT_COLOR = ['var(--ink-secondary)', 'var(--ink)', 'var(--gold)', 'var(--g
 function EliteClubCard({ club, index }: { club: (typeof eliteClubs)[number]; index: number }) {
   const [imgFailed, setImgFailed] = useState(false)
   const isTop = index === eliteClubs.length - 1
+  // CARD_SHADOW[0] é 'none' — não dá pra combinar com outro box-shadow na
+  // mesma lista separada por vírgula (vira CSS inválido e o navegador
+  // descarta a propriedade inteira), por isso só junta quando não for 'none'.
+  const glassBoxShadow =
+    CARD_SHADOW[index] === 'none' ? 'inset 0 1px 0 rgba(255,255,255,0.06)' : `${CARD_SHADOW[index]}, inset 0 1px 0 rgba(255,255,255,0.06)`
 
   return (
     <MotionLink
@@ -95,8 +103,10 @@ function EliteClubCard({ club, index }: { club: (typeof eliteClubs)[number]; ind
       className="group relative flex h-full cursor-pointer flex-col items-center overflow-hidden rounded-2xl px-4 py-6"
       style={{
         background: CARD_BG[index],
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
         border: `${CARD_BORDER_WIDTH[index]}px solid ${CARD_BORDER[index]}`,
-        boxShadow: CARD_SHADOW[index],
+        boxShadow: glassBoxShadow,
         transform: isTop ? 'scale(1.05)' : undefined,
       }}
     >
@@ -524,7 +534,10 @@ function RankingSection() {
                   style={{
                     borderColor: isPodium ? MEDAL_COLOR[i] : c.isYou ? 'var(--gold-bright)' : 'var(--hairline)',
                     borderWidth: i === 0 ? 1.5 : 1,
-                    background: c.isYou ? 'var(--gold-wash)' : 'var(--carbon-2)',
+                    background: c.isYou ? 'var(--gold-wash)' : 'rgba(255,255,255,0.045)',
+                    backdropFilter: 'blur(20px) saturate(180%)',
+                    WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
                   }}
                 >
                   <div
