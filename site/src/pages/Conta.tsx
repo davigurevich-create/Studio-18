@@ -793,7 +793,7 @@ function BadgesTab() {
             style={{ background: publicProfile ? 'var(--gold)' : 'var(--carbon-1)' }}
           >
             <span
-              className="absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform"
+              className="absolute left-0 top-0.5 h-4 w-4 rounded-full bg-white transition-transform"
               style={{ transform: publicProfile ? 'translateX(18px)' : 'translateX(2px)' }}
             />
           </span>
