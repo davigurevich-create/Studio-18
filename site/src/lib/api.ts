@@ -735,14 +735,22 @@ export interface PublicProfile {
   displayName: string | null
   totalPoints: number
   isPublic: boolean
+  rankPosition: number | null
 }
 
 export async function getPublicProfile(userId: string): Promise<PublicProfile> {
-  if (!supabase) return { displayName: null, totalPoints: 0, isPublic: false }
+  if (!supabase) return { displayName: null, totalPoints: 0, isPublic: false, rankPosition: null }
   const { data, error } = await supabase.rpc('get_public_profile', { p_user_id: userId })
   if (error) throw error
-  const row = (data ?? [])[0] as { display_name: string | null; total_points: number; is_public: boolean } | undefined
-  return { displayName: row?.display_name ?? null, totalPoints: row ? Number(row.total_points) : 0, isPublic: Boolean(row?.is_public) }
+  const row = (data ?? [])[0] as
+    | { display_name: string | null; total_points: number; is_public: boolean; rank_position: number | null }
+    | undefined
+  return {
+    displayName: row?.display_name ?? null,
+    totalPoints: row ? Number(row.total_points) : 0,
+    isPublic: Boolean(row?.is_public),
+    rankPosition: row?.rank_position != null ? Number(row.rank_position) : null,
+  }
 }
 
 export interface PublicBadge {

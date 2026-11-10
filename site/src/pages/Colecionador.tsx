@@ -17,10 +17,10 @@ function BadgeImage({ sku, name }: { sku: string; name: string }) {
   if (failed) {
     return (
       <div
-        className="flex h-12 w-12 items-center justify-center rounded-full"
+        className="flex h-[222px] w-[222px] items-center justify-center rounded-full"
         style={{ background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))' }}
       >
-        <Award size={22} strokeWidth={2} style={{ color: '#1a1206' }} />
+        <Award size={90} strokeWidth={2} style={{ color: '#1a1206' }} />
       </div>
     )
   }
@@ -28,7 +28,7 @@ function BadgeImage({ sku, name }: { sku: string; name: string }) {
     <img
       src={`/selos/${sku}.png`}
       alt={`Selo — ${name}`}
-      className="h-12 w-12 rounded-full object-cover"
+      className="h-[222px] w-[222px] object-contain"
       onError={() => setFailed(true)}
     />
   )
@@ -153,6 +153,14 @@ export function Colecionador() {
             <Trophy size={14} strokeWidth={2} />
             {profile.totalPoints.toLocaleString('pt-BR')} pontos
           </span>
+          {profile.rankPosition != null && (
+            <span
+              className="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium"
+              style={{ borderColor: 'var(--gold-dim)', color: 'var(--gold-bright)' }}
+            >
+              <Trophy size={14} strokeWidth={2} />#{profile.rankPosition} no ranking Studio 18
+            </span>
+          )}
           {club && (
             <span className="rounded-full px-3.5 py-1.5 text-sm font-medium" style={{ background: 'var(--gold-wash)', color: 'var(--gold-bright)' }}>
               {club.name} — {club.title}
@@ -169,15 +177,15 @@ export function Colecionador() {
           Nenhum selo ainda.
         </p>
       ) : (
-        <div className="mb-10 grid grid-cols-3 gap-3 sm:grid-cols-5">
+        <div className="mb-10 grid grid-cols-2 gap-4 sm:grid-cols-3">
           {badges.map((b) => (
             <div
               key={b.sku}
-              className="flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center"
+              className="flex flex-col items-center gap-2 rounded-xl border p-5 text-center"
               style={{ borderColor: 'var(--gold-dim)', background: 'var(--carbon-2)' }}
             >
               <BadgeImage sku={b.sku} name={b.name} />
-              <p className="text-[11px] font-medium leading-snug" style={{ color: 'var(--ink)' }}>
+              <p className="text-xs font-medium leading-snug" style={{ color: 'var(--ink)' }}>
                 {b.name}
               </p>
             </div>
