@@ -600,10 +600,10 @@ function BadgeImage({ sku, name }: { sku: string; name: string }) {
   if (failed) {
     return (
       <div
-        className="flex h-32 w-32 items-center justify-center rounded-full"
+        className="flex h-[222px] w-[222px] items-center justify-center rounded-full"
         style={{ background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))' }}
       >
-        <Award size={52} strokeWidth={2} style={{ color: '#1a1206' }} />
+        <Award size={90} strokeWidth={2} style={{ color: '#1a1206' }} />
       </div>
     )
   }
@@ -611,7 +611,7 @@ function BadgeImage({ sku, name }: { sku: string; name: string }) {
     <img
       src={`/selos/${sku}.png`}
       alt={`Selo — ${name}`}
-      className="h-32 w-32 object-contain"
+      className="h-[222px] w-[222px] object-contain"
       onError={() => setFailed(true)}
     />
   )
@@ -785,14 +785,18 @@ function BadgesTab() {
           type="button"
           onClick={handleTogglePublic}
           disabled={togglingPublic}
-          className="relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60"
-          style={{ background: publicProfile ? 'var(--gold)' : 'var(--carbon-1)' }}
+          className="shrink-0 disabled:opacity-60"
           aria-label={publicProfile ? 'Tornar perfil privado' : 'Tornar perfil público'}
         >
           <span
-            className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform"
-            style={{ transform: publicProfile ? 'translateX(22px)' : 'translateX(2px)' }}
-          />
+            className="relative block h-5 w-9 rounded-full transition-colors"
+            style={{ background: publicProfile ? 'var(--gold)' : 'var(--carbon-1)' }}
+          >
+            <span
+              className="absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform"
+              style={{ transform: publicProfile ? 'translateX(18px)' : 'translateX(2px)' }}
+            />
+          </span>
         </button>
       </div>
 
