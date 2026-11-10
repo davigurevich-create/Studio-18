@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { createContext, useContext, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, User } from 'lucide-react'
+import { ChevronDown, Trophy, User } from 'lucide-react'
 import { BlackFridayBanner, BLACK_FRIDAY_BANNER_HEIGHT } from '@/components/BlackFridayBanner'
 import { isBlackFridayActive } from '@/lib/blackFriday'
 import { ChatWidget } from '@/components/ChatWidget'
@@ -223,6 +223,19 @@ export function Layout() {
                 ),
               )}
             </nav>
+
+            {/* MOCK — simulação visual do botão de ranking (pedido do
+                usuário), antes da implementação real: a seção de ranking em
+                si só existe pra quem está logado, mas o botão do header fica
+                sempre visível (quem não está logado cai na tela de login). */}
+            <Link
+              to="/badges#ranking"
+              aria-label="Ranking de colecionadores"
+              className="relative hidden h-9 w-9 items-center justify-center sm:flex"
+              style={{ color: 'var(--ink)' }}
+            >
+              <Trophy size={19} strokeWidth={1.8} />
+            </Link>
 
             <Link
               to="/conta"

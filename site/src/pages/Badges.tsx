@@ -1,9 +1,11 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from 'framer-motion'
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Lock, Trophy } from 'lucide-react'
+import { useAuth } from '@/lib/auth'
+import { getBadgesPublicStats, getLeaderboard, type LeaderboardEntry } from '@/lib/api'
 
-const BOB_URL = 'https://brasilopenbadge.com.br/partner/studio-18'
-const INSTAGRAM_URL = 'https://www.instagram.com/studio18_bricks/'
+const MotionLink = motion(Link)
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -115,10 +117,8 @@ function EliteClubCard({ club, index }: { club: (typeof eliteClubs)[number]; ind
   const isTop = index === eliteClubs.length - 1
 
   return (
-    <motion.a
-      href={club.url}
-      target="_blank"
-      rel="noreferrer"
+    <MotionLink
+      to="/conta"
       variants={fadeUp}
       initial="hidden"
       whileInView="show"
@@ -181,7 +181,7 @@ function EliteClubCard({ club, index }: { club: (typeof eliteClubs)[number]; ind
       <div className="relative z-10 mt-4 text-sm font-medium" style={{ color: 'var(--ink-muted)' }}>
         {club.points}
       </div>
-    </motion.a>
+    </MotionLink>
   )
 }
 
@@ -445,36 +445,31 @@ function CountUp({ value, prefix = '' }: { value: number; prefix?: string }) {
   )
 }
 
+// Reescrito pra refletir o novo mecanismo (selo automático na compra,
+// direto na área logada do site — sem passo manual de postar no Instagram
+// nem emissão pela BOB).
 const steps: { title: string; text: ReactNode; bannerDesktop: string; bannerMobile: string }[] = [
   {
-    title: 'Monte seu set',
-    text: 'Termine a montagem de qualquer set Studio 18 — do primeiro carro à moto mais complexa do catálogo.',
+    title: 'Compre seu set',
+    text: 'Finalize a compra de qualquer set Studio 18 — do primeiro carro à moto mais complexa do catálogo.',
     bannerDesktop: '/badges-step-01-desktop.png',
     bannerMobile: '/badges-step-01-mobile.png',
   },
   {
-    title: 'Poste no Instagram',
-    text: (
-      <>
-        Compartilhe uma foto ou vídeo do set montado, marcando{' '}
-        <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className="underline" style={{ color: 'var(--gold-bright)' }}>
-          @studio18_bricks
-        </a>{' '}
-        no Instagram.
-      </>
-    ),
+    title: 'Ganhe seu selo na hora',
+    text: 'Assim que o pagamento é confirmado, o selo digital daquele set já aparece na sua conta — automático, sem precisar fazer nada.',
     bannerDesktop: '/badges-step-02-desktop.png',
     bannerMobile: '/badges-step-02-mobile.png',
   },
   {
-    title: 'Receba seu selo',
-    text: 'Sua conquista vira um selo digital verificável, emitido pela BOB e guardado no seu portal de selos.',
+    title: 'Acumule pontos',
+    text: 'Cada selo vale pontos — o mesmo número de peças do set (+500 de bônus se o set tiver motor funcional).',
     bannerDesktop: '/badges-step-03-desktop.png',
     bannerMobile: '/badges-step-03-mobile.png',
   },
   {
-    title: 'Suba no ranking',
-    text: 'Cada selo vale pontos — o mesmo número de peças do set. Acumule pontos e ganhe benefícios exclusivos.',
+    title: 'Suba de clube',
+    text: 'Acumule pontos, suba no ranking e desbloqueie títulos e descontos exclusivos, do Clube 10K ao Clube 100K.',
     bannerDesktop: '/badges-step-04-desktop.png',
     bannerMobile: '/badges-step-04-mobile.png',
   },
@@ -490,7 +485,6 @@ const eliteClubs = [
     points: '10.000 pontos',
     pct: 5,
     image: '/clube-10k.png',
-    url: 'https://brasilopenbadge.com.br/partner/studio-18&pg=1be28d1fda591a84d6d478dc897495d4&b=11444',
   },
   {
     club: 'Clube 25K',
@@ -498,7 +492,6 @@ const eliteClubs = [
     points: '25.000 pontos',
     pct: 10,
     image: '/clube-25k.png',
-    url: 'https://brasilopenbadge.com.br/partner/studio-18&pg=1be28d1fda591a84d6d478dc897495d4&b=11470',
   },
   {
     club: 'Clube 50K',
@@ -506,7 +499,6 @@ const eliteClubs = [
     points: '50.000 pontos',
     pct: 20,
     image: '/clube-50k.png',
-    url: 'https://brasilopenbadge.com.br/partner/studio-18&pg=1be28d1fda591a84d6d478dc897495d4&b=11471',
   },
   {
     club: 'Clube 75K',
@@ -514,7 +506,6 @@ const eliteClubs = [
     points: '75.000 pontos',
     pct: 35,
     image: '/clube-75k.png',
-    url: 'https://brasilopenbadge.com.br/partner/studio-18&pg=1be28d1fda591a84d6d478dc897495d4&b=11472',
   },
   {
     club: 'Clube 100K',
@@ -522,9 +513,103 @@ const eliteClubs = [
     points: '100.000 pontos',
     pct: 50,
     image: '/clube-100k.png',
-    url: 'https://brasilopenbadge.com.br/partner/studio-18&pg=1be28d1fda591a84d6d478dc897495d4&b=11473',
   },
 ]
+
+// Preenchimento puramente decorativo pro estado "deslogado" (borrado +
+// cadeado por cima) — nunca mostra dado real de ninguém, só dá volume
+// visual à lista enquanto a pessoa não loga pra ver a de verdade.
+const PLACEHOLDER_ROWS: LeaderboardEntry[] = Array.from({ length: 8 }, (_, i) => ({
+  rankPosition: i + 1,
+  displayName: '••••••• •.',
+  totalPoints: 0,
+  isYou: false,
+}))
+
+const MEDAL_COLOR = ['#e6c778', '#c7c7c7', '#b5742f']
+
+function RankingSection() {
+  const { session } = useAuth()
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+
+  useEffect(() => {
+    if (!session) return
+    getLeaderboard(10).then(setLeaderboard)
+  }, [session])
+
+  const rows = session ? leaderboard : PLACEHOLDER_ROWS
+
+  return (
+    <section id="ranking" className="relative px-6 py-24 sm:py-32" style={{ background: '#000' }}>
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: '-80px' }}
+        className="mx-auto mb-14 max-w-2xl text-center"
+      >
+        <p className="eyebrow mb-2">Ranking</p>
+        <h2 className="text-3xl font-medium sm:text-4xl">Os maiores colecionadores Studio 18</h2>
+        <p className="mt-3 text-sm" style={{ color: 'var(--ink-muted)' }}>
+          Quem mais acumulou pontos montando sets — entre e veja sua posição.
+        </p>
+      </motion.div>
+
+      <div className="relative mx-auto max-w-xl">
+        <div className={`flex flex-col gap-2 ${!session ? 'pointer-events-none select-none blur-sm' : ''}`}>
+          {rows.map((c, i) => (
+            <div
+              key={`${c.rankPosition}-${c.displayName}`}
+              className="flex items-center gap-4 rounded-xl border px-4 py-3"
+              style={{
+                borderColor: c.isYou ? 'var(--gold-bright)' : 'var(--hairline)',
+                background: c.isYou ? 'var(--gold-wash)' : 'var(--carbon-2)',
+              }}
+            >
+              <div
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular"
+                style={{
+                  background: i < 3 ? MEDAL_COLOR[i] : 'var(--carbon-1)',
+                  color: i < 3 ? '#1a1206' : 'var(--ink-muted)',
+                }}
+              >
+                {c.rankPosition}
+              </div>
+              <span className="flex-1 text-sm font-medium" style={{ color: c.isYou ? 'var(--gold-bright)' : 'var(--ink)' }}>
+                {c.isYou ? `${c.displayName} (você)` : c.displayName}
+              </span>
+              <span className="tabular text-sm" style={{ color: 'var(--ink-muted)' }}>
+                {c.totalPoints.toLocaleString('pt-BR')} pts
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {!session && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-center">
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-full"
+              style={{ background: 'var(--carbon-1)', border: '1px solid var(--gold-dim)' }}
+            >
+              <Lock size={20} strokeWidth={2} style={{ color: 'var(--gold-bright)' }} />
+            </div>
+            <p className="max-w-xs text-sm font-medium" style={{ color: 'var(--ink)' }}>
+              Faça login para ver o ranking completo e sua posição
+            </p>
+            <Link
+              to="/conta"
+              className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-medium"
+              style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+            >
+              <Trophy size={15} strokeWidth={2} />
+              Entrar e ver meu ranking
+            </Link>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
 
 export function Badges() {
   const stepsListRef = useRef<HTMLDivElement>(null)
@@ -544,6 +629,19 @@ export function Badges() {
   // invés disso, escondemos a tag e mostramos um título simples no lugar,
   // que some sozinho assim que o arquivo certo for enviado.
   const [heroBannerFailed, setHeroBannerFailed] = useState(false)
+  // Peças montadas / selos emitidos / colecionadores — calculados ao vivo
+  // a partir do histórico de vendas pagas (sem backfill nenhum: desde o
+  // primeiro carregamento já reflete tudo que já foi vendido até hoje).
+  const [publicStats, setPublicStats] = useState(stats)
+  useEffect(() => {
+    getBadgesPublicStats().then((s) =>
+      setPublicStats([
+        { value: s.totalPieces, prefix: '+', label: 'peças montadas' },
+        { value: s.totalBadges, prefix: '+', label: 'selos emitidos' },
+        { value: s.totalCollectors, prefix: '+', label: 'colecionadores' },
+      ]),
+    )
+  }, [])
 
   // Carrossel dos clubes no mobile — mesmo esquema de setas + bolinhas de
   // posição já usado nos trilhos de produto por categoria, em vez de um
@@ -611,7 +709,7 @@ export function Badges() {
           transition={{ delay: 0.2 }}
           className="relative z-10 mx-auto mt-10 grid max-w-sm grid-cols-3 items-start justify-center gap-x-2 sm:mt-12 sm:flex sm:max-w-none sm:items-center sm:gap-x-20"
         >
-          {stats.map((stat, i) => (
+          {publicStats.map((stat, i) => (
             <div key={stat.label} className="flex items-center justify-center sm:gap-x-20">
               {i > 0 && <span className="hidden h-10 w-px sm:block" style={{ background: 'var(--hairline)' }} />}
               <div className="text-center">
@@ -652,13 +750,13 @@ export function Badges() {
           viewport={{ once: true, margin: '-80px' }}
           className="relative z-10 mx-auto max-w-2xl text-center"
         >
-          <p className="eyebrow mb-4">Studio 18 × BOB</p>
+          <p className="eyebrow mb-4">Studio 18</p>
           <h2 className="mb-6 text-3xl font-medium sm:text-4xl">O que é um Selo Digital Colecionável?</h2>
           <BlurRevealParagraph
             className="mb-6 text-base leading-relaxed sm:text-lg"
             style={{ color: 'var(--ink-secondary)' }}
-            goldPhrase="BOB"
-            text="É um certificado digital exclusivo que comprova a montagem do seu set — à prova de falsificação, com todos os detalhes de quando e como você conquistou. Seus selos ficam guardados num portal 100% Studio 18, em parceria com a BOB, a maior plataforma do Brasil nesse formato."
+            goldPhrase="sua conta Studio 18"
+            text="É um certificado digital exclusivo que comprova a compra do seu set — com todos os detalhes de quando você conquistou. Seus selos ficam guardados direto na sua conta Studio 18, sem precisar de outro login ou outro portal."
           />
           <BlurRevealParagraph
             className="mb-8 text-lg font-medium sm:text-xl"
@@ -666,15 +764,13 @@ export function Badges() {
             goldPhrase="uma conquista que merece ser reconhecida"
             text="Porque cada set montado é uma conquista que merece ser reconhecida."
           />
-          <a
-            href={BOB_URL}
-            target="_blank"
-            rel="noreferrer"
+          <Link
+            to="/conta"
             className="inline-block rounded-full px-8 py-3 text-sm font-medium tracking-wide transition hover:scale-[1.03]"
             style={{ background: 'var(--gold)', color: '#0a0a0a' }}
           >
-            Acessar o portal de selos
-          </a>
+            Entrar e ver meus selos
+          </Link>
         </motion.div>
 
         <div className="mt-20 sm:mt-28">
@@ -840,6 +936,8 @@ export function Badges() {
         </div>
       </section>
 
+      <RankingSection />
+
       {/* CTA FINAL — banner de fundo (arte pronta, já traz a vitrine de
           selos dos modelos "impressa" na parte de baixo), fixado pela
           base pra essa vitrine ficar sempre visível. Degradê pro preto só
@@ -867,15 +965,13 @@ export function Badges() {
           className="relative z-10"
         >
           <h2 className="mx-auto mb-8 max-w-xl text-3xl font-medium sm:text-4xl">Faça parte da nossa comunidade!</h2>
-          <a
-            href={BOB_URL}
-            target="_blank"
-            rel="noreferrer"
+          <Link
+            to="/conta"
             className="inline-block rounded-full px-10 py-4 text-sm font-medium tracking-wide transition hover:scale-[1.03]"
             style={{ background: 'var(--gold)', color: '#0a0a0a' }}
           >
-            Acessar o portal de selos →
-          </a>
+            Entrar e ver meus selos →
+          </Link>
         </motion.div>
       </section>
     </div>

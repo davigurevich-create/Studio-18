@@ -711,10 +711,11 @@ export async function updateTestimonialMessage(id: string, message: string): Pro
 }
 
 // ---------------------------------------------------------------------------
-// Pontos — o portal BOB (selos digitais) não tem API, então a emissão do
-// selo com os pontos é sempre manual, lá no painel do BOB. Isso aqui é só a
-// lista de créditos de pontos pendentes de emissão, pra equipe não
-// esquecer nem duplicar.
+// Pontos — hoje essa tabela só guarda bônus avulsos (o de depoimento é
+// creditado sozinho no envio, ver submit-testimonial) e ajustes manuais;
+// pontos de COMPRA nunca passam por aqui, são sempre calculados ao vivo a
+// partir do histórico de vendas pagas (ver get_my_points/get_my_badges no
+// site). Isso aqui é só a lista pra equipe acompanhar o extrato.
 // ---------------------------------------------------------------------------
 export async function getPointsLedger(): Promise<PointsLedgerEntry[]> {
   if (supabase) {
@@ -726,17 +727,6 @@ export async function getPointsLedger(): Promise<PointsLedgerEntry[]> {
     return data as PointsLedgerEntry[]
   }
   return [...pointsLedgerTable.all()].sort((a, b) => b.created_at.localeCompare(a.created_at))
-}
-
-export async function markPointsIssued(id: string): Promise<void> {
-  const issued_at = new Date().toISOString()
-  if (supabase) {
-    const { error } = await supabase.from('customer_points_ledger').update({ issued_at }).eq('id', id)
-    if (error) throw error
-  } else {
-    pointsLedgerTable.update(id, { issued_at })
-  }
-  await logAudit('editar', 'pontos', id, 'Marcou selo de pontos como emitido no BOB')
 }
 
 // ---------------------------------------------------------------------------

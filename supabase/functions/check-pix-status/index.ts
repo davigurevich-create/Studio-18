@@ -132,6 +132,20 @@ async function deductStockForSale(supabase: ReturnType<typeof createClient>, sal
   if (error) console.error(`Falha ao dar baixa de estoque da venda ${saleId}:`, error)
 }
 
+// Mesma função duplicada em rede-create-payment e rede-pix-webhook — consome
+// o cupom de benefício de clube só na confirmação real do pagamento.
+async function redeemClubCouponOnPayment(supabase: ReturnType<typeof createClient>, couponCode: string | null): Promise<void> {
+  if (!couponCode) return
+  const { data: coupon } = await supabase
+    .from('coupons')
+    .select('id, uses_count, max_uses, kind')
+    .ilike('code', couponCode)
+    .maybeSingle()
+  if (!coupon || coupon.kind !== 'club_reward') return
+  if (coupon.max_uses !== null && coupon.uses_count >= coupon.max_uses) return
+  await supabase.from('coupons').update({ uses_count: coupon.uses_count + 1 }).eq('id', coupon.id)
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -144,7 +158,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     const { data: sale, error: saleError } = await supabase
       .from('sales')
-      .select('id, status, payment_method, provider_payment_id, customer_name, customer_contact')
+      .select('id, status, payment_method, provider_payment_id, customer_name, customer_contact, coupon_code')
       .eq('id', orderId)
       .maybeSingle()
 
@@ -187,6 +201,7 @@ Deno.serve(async (req) => {
 
     if (updated) {
       await deductStockForSale(supabase, sale.id)
+      await redeemClubCouponOnPayment(supabase, sale.coupon_code)
       await sendConfirmationEmail(sale.customer_contact, sale.customer_name, sale.id)
     }
 

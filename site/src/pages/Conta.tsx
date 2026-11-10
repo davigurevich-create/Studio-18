@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Award, Bell, ExternalLink, Gift, Heart, IdCard, LogOut, MessageSquareQuote, Package, PackageX, Wrench } from 'lucide-react'
+import { Award, Bell, Gift, Heart, IdCard, LogOut, MessageSquareQuote, Package, PackageX, Trophy, Wrench } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { useFavorites } from '@/lib/favorites'
 import {
@@ -19,6 +19,10 @@ import {
   setDefaultAddress,
   getMyNotificationPrefs,
   saveMyNotificationPrefs,
+  getMyPoints,
+  getMyBadges,
+  getMyActiveClubCoupon,
+  activateClubBenefit,
   type MyOrder,
   type MyPartRequest,
   type MyWaitlistEntry,
@@ -26,6 +30,8 @@ import {
   type MyRewardCoupon,
   type MyAddress,
   type NotificationPrefs,
+  type MyPoints,
+  type MyBadge,
 } from '@/lib/api'
 import { PartRequestForm, formatOrderTotal } from '@/components/PartRequestForm'
 import { OrderTrackingSteps } from '@/components/OrderTrackingSteps'
@@ -55,9 +61,7 @@ const partStatusLabel: Record<string, string> = {
   concluido: 'Concluída',
 }
 
-type Tab = 'pedidos' | 'pecas' | 'espera' | 'favoritos' | 'indicacao' | 'dados' | 'notificacoes'
-
-const BADGES_PORTAL_URL = 'https://brasilopenbadge.com.br/partner/studio-18'
+type Tab = 'pedidos' | 'pecas' | 'espera' | 'favoritos' | 'selos' | 'indicacao' | 'dados' | 'notificacoes'
 
 export function Conta() {
   const { session, loading, demo, requestCode, verifyCode, signOut } = useAuth()
@@ -222,6 +226,7 @@ function AccountDashboard({ onSignOut }: { onSignOut: () => void }) {
     { id: 'pecas', label: 'Peças faltantes', icon: Wrench },
     { id: 'espera', label: 'Lista de espera', icon: PackageX },
     { id: 'favoritos', label: 'Favoritos', icon: Heart },
+    { id: 'selos', label: 'Meus Selos', icon: Award },
     { id: 'indicacao', label: 'Indicação de amigos', icon: Gift },
     { id: 'dados', label: 'Meus dados', icon: IdCard },
     { id: 'notificacoes', label: 'Notificações', icon: Bell },
@@ -241,33 +246,6 @@ function AccountDashboard({ onSignOut }: { onSignOut: () => void }) {
           Sair
         </button>
       </div>
-
-      <a
-        href={BADGES_PORTAL_URL}
-        target="_blank"
-        rel="noreferrer"
-        className="mb-8 flex items-center justify-between gap-4 rounded-xl border p-5 transition hover:opacity-90"
-        style={{ borderColor: 'var(--gold-dim)', background: 'var(--gold-wash)' }}
-      >
-        <div className="flex items-center gap-3">
-          <Award size={22} style={{ color: 'var(--gold-bright)' }} />
-          <div>
-            <div className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
-              Meus selos e pontos Studio 18
-            </div>
-            <div className="text-xs" style={{ color: 'var(--ink-secondary)' }}>
-              Acesse o portal de selos digitais pra ativar e acompanhar seus pontos
-            </div>
-          </div>
-        </div>
-        <span
-          className="flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium"
-          style={{ background: 'var(--gold)', color: '#0a0a0a' }}
-        >
-          Acessar portal
-          <ExternalLink size={13} />
-        </span>
-      </a>
 
       <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:gap-10">
         {/* Mobile: grade de 2 colunas — compacta, sem barra de rolagem
@@ -331,6 +309,7 @@ function AccountDashboard({ onSignOut }: { onSignOut: () => void }) {
               {tab === 'pecas' && <PartRequestsTab orders={orders} requests={partRequests} onSubmitted={reload} />}
               {tab === 'espera' && <WaitlistTab entries={waitlist} onChange={reload} />}
               {tab === 'favoritos' && <FavoritesTab />}
+              {tab === 'selos' && <BadgesTab />}
               {tab === 'indicacao' && <ReferralTab />}
               {tab === 'dados' && <ProfileTab />}
               {tab === 'notificacoes' && <NotificationsTab />}
@@ -603,6 +582,196 @@ function FavoritesTab() {
           </button>
         </div>
       ))}
+    </div>
+  )
+}
+
+// Marcos de gamificação — não são selos, só títulos exibidos quando o
+// cliente atinge a pontuação (o cálculo de verdade, incluindo o % de
+// desconto de cada um, é sempre feito no banco por activate_club_benefit();
+// esta lista é só pra exibir o progresso/próximo clube na tela).
+const CLUBS = [
+  { threshold: 10000, name: 'Clube 10K', title: 'Mecânico de Elite', discountPct: 5 },
+  { threshold: 25000, name: 'Clube 25K', title: 'Engenheiro de Pista', discountPct: 10 },
+  { threshold: 50000, name: 'Clube 50K', title: 'Projetista Chefe', discountPct: 20 },
+  { threshold: 75000, name: 'Clube 75K', title: 'Estrategista Supremo', discountPct: 35 },
+  { threshold: 100000, name: 'Clube 100K', title: 'Chefe de Equipe', discountPct: 50 },
+]
+
+// Selo de cada set — 1 imagem por SKU, mesmo nome do SKU (ex: S18-016.png).
+// Enquanto o arquivo não existir em site/public/selos/, cai sozinho pro
+// ícone genérico (mesmo esquema já usado em EliteClubCard/WelcomePopup).
+function BadgeImage({ sku, name }: { sku: string; name: string }) {
+  const [failed, setFailed] = useState(false)
+  if (failed) {
+    return (
+      <div
+        className="flex h-14 w-14 items-center justify-center rounded-full"
+        style={{ background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))' }}
+      >
+        <Award size={26} strokeWidth={2} style={{ color: '#1a1206' }} />
+      </div>
+    )
+  }
+  return (
+    <img
+      src={`/selos/${sku}.png`}
+      alt={`Selo — ${name}`}
+      className="h-14 w-14 rounded-full object-cover"
+      onError={() => setFailed(true)}
+    />
+  )
+}
+
+function BadgesTab() {
+  const [points, setPoints] = useState<MyPoints | null>(null)
+  const [badges, setBadges] = useState<MyBadge[]>([])
+  const [activeCoupon, setActiveCoupon] = useState<{ code: string; discountPct: number } | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [activating, setActivating] = useState(false)
+  const [activateError, setActivateError] = useState<string | null>(null)
+
+  const reload = () => {
+    Promise.all([getMyPoints(), getMyBadges(), getMyActiveClubCoupon()]).then(([p, b, c]) => {
+      setPoints(p)
+      setBadges(b)
+      setActiveCoupon(c)
+      setLoading(false)
+    })
+  }
+
+  useEffect(reload, [])
+
+  if (loading || !points) {
+    return (
+      <p className="text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
+        Carregando...
+      </p>
+    )
+  }
+
+  const totalPoints = points.totalPoints
+  const currentClub = [...CLUBS].reverse().find((c) => totalPoints >= c.threshold) ?? null
+  const nextClub = CLUBS.find((c) => c.threshold > totalPoints) ?? null
+  const progressPct = nextClub ? Math.min(100, (totalPoints / nextClub.threshold) * 100) : 100
+
+  const handleActivate = async () => {
+    setActivating(true)
+    setActivateError(null)
+    try {
+      const result = await activateClubBenefit()
+      setActiveCoupon({ code: result.code, discountPct: result.discountPct })
+    } catch (err) {
+      setActivateError(err instanceof Error ? err.message : 'Não foi possível ativar o benefício agora.')
+    } finally {
+      setActivating(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-8">
+      {/* Pontuação em destaque + posição no ranking */}
+      <div
+        className="rounded-2xl border p-6"
+        style={{ borderColor: 'var(--gold-dim)', background: 'linear-gradient(160deg, var(--carbon-2), var(--carbon-3))' }}
+      >
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="eyebrow mb-1">Pontuação acumulada</p>
+            <p className="tabular text-4xl font-bold" style={{ color: 'var(--gold-bright)' }}>
+              {totalPoints.toLocaleString('pt-BR')} <span className="text-lg font-normal" style={{ color: 'var(--ink-muted)' }}>pontos</span>
+            </p>
+          </div>
+          {points.rankPosition != null && (
+            <div
+              className="flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium"
+              style={{ borderColor: 'var(--gold-dim)', color: 'var(--gold-bright)' }}
+            >
+              <Trophy size={16} strokeWidth={2} />#{points.rankPosition} no ranking Studio 18
+            </div>
+          )}
+        </div>
+
+        {currentClub && (
+          <p className="mt-4 text-sm" style={{ color: 'var(--ink)' }}>
+            Você pertence ao <strong style={{ color: 'var(--gold-bright)' }}>{currentClub.name} — {currentClub.title}</strong>
+          </p>
+        )}
+
+        {nextClub && (
+          <div className="mt-4">
+            <div className="mb-1.5 flex items-center justify-between text-[11px]" style={{ color: 'var(--ink-muted)' }}>
+              <span>Faltam {(nextClub.threshold - totalPoints).toLocaleString('pt-BR')} pontos pro {nextClub.name}</span>
+              <span>{Math.round(progressPct)}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--carbon-1)' }}>
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${progressPct}%`, background: 'linear-gradient(90deg, var(--gold), var(--gold-bright))' }}
+              />
+            </div>
+          </div>
+        )}
+
+        {currentClub &&
+          (activeCoupon ? (
+            <div
+              className="mt-5 rounded-lg border px-4 py-3 text-xs"
+              style={{ borderColor: 'var(--gold-dim)', background: 'var(--gold-wash)', color: 'var(--gold-bright)' }}
+            >
+              ✓ Benefício ativo: cupom <code className="font-mono">{activeCoupon.code}</code> ({activeCoupon.discountPct}% OFF) — aplicado
+              automaticamente no seu próximo checkout.
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleActivate}
+              disabled={activating}
+              className="mt-5 w-full rounded-full px-6 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+            >
+              {activating ? 'Ativando...' : `Ativar benefício do ${currentClub.name} (${currentClub.discountPct}% OFF na próxima compra)`}
+            </button>
+          ))}
+        {activateError && (
+          <p className="mt-2 text-xs" style={{ color: '#e88b8b' }}>
+            {activateError}
+          </p>
+        )}
+        <p className="mt-2 text-[11px]" style={{ color: 'var(--ink-muted)' }}>
+          Vale pra 1 compra com pagamento confirmado. Não acumula com outros cupons.
+        </p>
+      </div>
+
+      {/* Vitrine de selos conquistados */}
+      <div>
+        <h3 className="mb-3 text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+          Selos conquistados
+        </h3>
+        {badges.length === 0 ? (
+          <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>
+            Ainda nenhum selo — toda compra confirmada já garante o selo do set automaticamente.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {badges.map((b) => (
+              <div
+                key={b.sku}
+                className="flex flex-col items-center gap-2 rounded-xl border p-4 text-center"
+                style={{ borderColor: 'var(--gold-dim)', background: 'var(--carbon-2)' }}
+              >
+                <BadgeImage sku={b.sku} name={b.name} />
+                <p className="text-xs font-medium leading-snug" style={{ color: 'var(--ink)' }}>
+                  {b.name}
+                </p>
+                <p className="tabular text-[11px]" style={{ color: 'var(--gold-bright)' }}>
+                  +{b.points.toLocaleString('pt-BR')} pontos
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

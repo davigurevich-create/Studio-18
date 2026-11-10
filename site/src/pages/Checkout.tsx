@@ -1,13 +1,14 @@
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Gift, Lock, Truck } from 'lucide-react'
+import { Award, Gift, Lock, Truck } from 'lucide-react'
 import { SpotifySection } from '@/components/SpotifySection'
 import { TrustBadges } from '@/components/TrustBadges'
 import {
   checkPixStatus,
   createPayment,
   getCatalog,
+  getMyActiveClubCoupon,
   getMyAddresses,
   getMyOrders,
   getMyProfile,
@@ -74,7 +75,18 @@ export function Checkout() {
   const { containerRef: turnstileRef, getToken: getTurnstileToken } = useTurnstile()
   const initiateCheckoutFiredRef = useRef(false)
   const purchaseFiredRef = useRef(false)
-  const orderSnapshotRef = useRef<{ contentIds: string[]; value: number; numItems: number } | null>(null)
+  const orderSnapshotRef = useRef<{
+    contentIds: string[]
+    value: number
+    numItems: number
+    // "Ganhou X pontos + selo do set Y" na tela de confirmação — mesma
+    // fórmula (1 peça = 1 ponto, +500 por motor) usada no banco pra
+    // calcular de verdade (get_my_points/get_my_badges), só que aqui já
+    // sabemos de antemão o que essa compra específica rendeu, sem precisar
+    // esperar o próximo carregamento da conta.
+    pointsEarned: number
+    badges: { sku: string; name: string }[]
+  } | null>(null)
 
   const copyToClipboard = useCallback((field: 'order' | 'pix', text: string) => {
     navigator.clipboard.writeText(text)
@@ -244,9 +256,16 @@ export function Checkout() {
   // boas-vindas, sem precisar digitar o código de novo — a marca no
   // localStorage já foi consumida (removida) por consumePendingCoupon, então
   // isso só acontece uma vez, no primeiro checkout depois do pop-up.
+  // Se já existe um cupom pendente do pop-up de boas-vindas, ele tem
+  // prioridade sobre o benefício de clube (ver efeito abaixo) — foi
+  // consumido do localStorage agora mesmo, então essa é a única chance de
+  // aplicar, enquanto o cupom de clube continua disponível pra uma próxima
+  // compra se não for usado aqui.
+  const welcomeCouponClaimedRef = useRef(false)
   useEffect(() => {
     const pending = consumePendingCoupon()
     if (!pending) return
+    welcomeCouponClaimedRef.current = true
     setCouponInput(pending)
     ;(async () => {
       setCouponStatus('checking')
@@ -264,6 +283,22 @@ export function Checkout() {
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Aplica sozinho o benefício de clube ativado em Minha Conta — o cliente
+  // não precisa lembrar/copiar o código. Fica no banco até ser usado, então
+  // só busca pra quem está logado (anônimo nunca tem um).
+  useEffect(() => {
+    if (!session) return
+    getMyActiveClubCoupon()
+      .then((pending) => {
+        if (!pending || welcomeCouponClaimedRef.current) return
+        setCouponInput(pending.code)
+        setCouponStatus('checking')
+        setAppliedCoupon({ code: pending.code, discountPct: pending.discountPct, freeShipping: false, additiveWithPix: false })
+        setCouponStatus('valid')
+      })
+      .catch(() => {})
+  }, [session])
 
   const checkoutItems = useMemo(
     () => items.map((i) => ({ productId: i.product.id, quantity: i.line.quantity, withMotor: Boolean(i.line.withMotor) })),
@@ -411,10 +446,24 @@ export function Checkout() {
       // 350ms é o tempo que a barra leva pra terminar de preencher (ver
       // transition abaixo) + 1000ms parada no 100% antes de trocar de tela.
       await new Promise((resolve) => setTimeout(resolve, 350 + 1000))
+      // MOTOR_BONUS_POINTS e o cálculo abaixo (1 peça = 1 ponto) precisam
+      // bater exatamente com o que o backend vai creditar de verdade no
+      // ledger — por ora, antes da implementação completa, é só pra exibir
+      // na tela de confirmação (ver banner "você ganhou X pontos" abaixo).
+      const MOTOR_BONUS_POINTS = 500
+      const pointsEarned = items.reduce((t, i) => {
+        const piecePoints = (i.product.piece_count ?? 0) * i.line.quantity
+        const motorBonus = i.line.withMotor ? MOTOR_BONUS_POINTS * i.line.quantity : 0
+        return t + piecePoints + motorBonus
+      }, 0)
+      const badges = items.map((i) => ({ sku: i.product.sku, name: i.product.name }))
+
       orderSnapshotRef.current = {
         contentIds: checkoutItems.map((i) => i.productId),
         value: method === 'cartao' ? cardTotal : total,
         numItems: checkoutItems.reduce((t, i) => t + i.quantity, 0),
+        pointsEarned,
+        badges,
       }
       setResult(res)
       setStep('done')
@@ -551,6 +600,61 @@ export function Checkout() {
             Recebemos seu pedido via{' '}
             <strong style={{ color: 'var(--ink)' }}>{methods.find((m) => m.id === method)?.label}</strong>.
           </p>
+
+          {/* Bônus de pontos/selo na confirmação de compra — como incentivo
+              extra pro login, pra conferir em Minha Conta > Meus Selos. */}
+          {orderSnapshotRef.current && orderSnapshotRef.current.pointsEarned > 0 && (
+            <div
+              className="mb-6 rounded-2xl border p-5 text-left"
+              style={{ borderColor: 'var(--gold-dim)', background: 'var(--gold-wash)' }}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))' }}
+                >
+                  <Award size={20} strokeWidth={2} style={{ color: '#1a1206' }} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--gold-bright)' }}>
+                    Você ganhou {orderSnapshotRef.current.pointsEarned.toLocaleString('pt-BR')} pontos!
+                  </p>
+                  <p className="mt-0.5 text-xs" style={{ color: 'var(--ink-secondary)' }}>
+                    {orderSnapshotRef.current.badges.length === 1
+                      ? `E já desbloqueou o selo digital do ${orderSnapshotRef.current.badges[0].name}.`
+                      : `E já desbloqueou os selos digitais de ${orderSnapshotRef.current.badges.length} sets.`}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {orderSnapshotRef.current.badges.map((b) => (
+                  <div
+                    key={b.sku}
+                    className="flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-xs"
+                    style={{ borderColor: 'var(--gold-dim)', background: 'rgba(6,6,6,0.35)', color: 'var(--ink)' }}
+                  >
+                    <span
+                      className="flex h-6 w-6 items-center justify-center rounded-full"
+                      style={{ background: 'var(--carbon-2)' }}
+                    >
+                      <Award size={12} strokeWidth={2} style={{ color: 'var(--gold-bright)' }} />
+                    </span>
+                    {b.name}
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => navigate('/conta')}
+                className="mt-4 w-full rounded-full px-6 py-2.5 text-sm font-medium"
+                style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+              >
+                Entrar e ver meus pontos e ranking →
+              </button>
+            </div>
+          )}
 
           <div
             className="mb-6 flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-xs lg:justify-start"

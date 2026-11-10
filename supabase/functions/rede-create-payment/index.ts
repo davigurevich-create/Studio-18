@@ -274,6 +274,23 @@ async function deductStockForSale(supabase: ReturnType<typeof createClient>, sal
   if (error) console.error(`Falha ao dar baixa de estoque da venda ${saleId}:`, error)
 }
 
+// Consome o cupom de benefício de clube só na confirmação do pagamento (ver
+// comentário acima, onde o incremento normal é pulado pra esse tipo) —
+// busca de novo pelo código em vez de reusar o objeto em memória porque
+// também é chamada a partir do webhook do Pix (venda que nasceu "pendente"
+// e confirma depois, sem ter o cupom já carregado no escopo).
+async function redeemClubCouponOnPayment(supabase: ReturnType<typeof createClient>, couponCode: string | null): Promise<void> {
+  if (!couponCode) return
+  const { data: coupon } = await supabase
+    .from('coupons')
+    .select('id, uses_count, max_uses, kind')
+    .ilike('code', couponCode)
+    .maybeSingle()
+  if (!coupon || coupon.kind !== 'club_reward') return
+  if (coupon.max_uses !== null && coupon.uses_count >= coupon.max_uses) return
+  await supabase.from('coupons').update({ uses_count: coupon.uses_count + 1 }).eq('id', coupon.id)
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -494,7 +511,14 @@ Deno.serve(async (req) => {
     }
 
     if (appliedCoupon) {
-      await supabase.from('coupons').update({ uses_count: appliedCoupon.uses_count + 1 }).eq('id', appliedCoupon.id)
+      // Cupom de benefício de clube só pode valer pra 1 compra com
+      // PAGAMENTO CONFIRMADO (pedido explícito do usuário) — diferente dos
+      // outros tipos de cupom (consumidos aqui, na criação do pedido), o
+      // consumo dele é adiado pro momento em que finalStatus vira "pago"
+      // mais abaixo (ou pro webhook do Pix, se não aprovar na hora).
+      if (appliedCoupon.kind !== 'club_reward') {
+        await supabase.from('coupons').update({ uses_count: appliedCoupon.uses_count + 1 }).eq('id', appliedCoupon.id)
+      }
 
       if (appliedCoupon.kind === 'referral_code' && appliedCoupon.ownerUserId) {
         const REFERRAL_REWARD_PCT = 5
@@ -698,7 +722,10 @@ Deno.serve(async (req) => {
     // Cartão aprova na hora — se já nasceu "pago", desconta o estoque já.
     // PIX nasce sempre "pendente" aqui; a baixa dele acontece no webhook ou
     // no polling, quando o pagamento é confirmado de verdade.
-    if (finalStatus === 'pago') await deductStockForSale(supabase, sale.id)
+    if (finalStatus === 'pago') {
+      await deductStockForSale(supabase, sale.id)
+      await redeemClubCouponOnPayment(supabase, sale.coupon_code)
+    }
 
     const itemsListHtml = lineItems
       .map(

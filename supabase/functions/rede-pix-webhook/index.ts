@@ -151,6 +151,22 @@ async function deductStockForSale(supabase: ReturnType<typeof createClient>, sal
   if (error) console.error(`Falha ao dar baixa de estoque da venda ${saleId}:`, error)
 }
 
+// Mesma função do rede-create-payment (duplicada aqui de propósito — Deno
+// não compartilha módulos entre functions nesse projeto): consome o cupom
+// de benefício de clube só quando o Pix confirma de verdade, nunca na
+// criação pendente do pedido.
+async function redeemClubCouponOnPayment(supabase: ReturnType<typeof createClient>, couponCode: string | null): Promise<void> {
+  if (!couponCode) return
+  const { data: coupon } = await supabase
+    .from('coupons')
+    .select('id, uses_count, max_uses, kind')
+    .ilike('code', couponCode)
+    .maybeSingle()
+  if (!coupon || coupon.kind !== 'club_reward') return
+  if (coupon.max_uses !== null && coupon.uses_count >= coupon.max_uses) return
+  await supabase.from('coupons').update({ uses_count: coupon.uses_count + 1 }).eq('id', coupon.id)
+}
+
 Deno.serve(async (req) => {
   try {
     const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {}
@@ -176,7 +192,7 @@ Deno.serve(async (req) => {
 
     const { data: existingSale } = await supabase
       .from('sales')
-      .select('id, status, customer_name, customer_contact')
+      .select('id, status, customer_name, customer_contact, coupon_code')
       .eq('provider_payment_id', String(tid))
       .maybeSingle()
 
@@ -197,6 +213,7 @@ Deno.serve(async (req) => {
     // mesmo pagamento).
     if (existingSale.status !== 'pago' && newStatus === 'pago') {
       await deductStockForSale(supabase, existingSale.id)
+      await redeemClubCouponOnPayment(supabase, existingSale.coupon_code)
     }
     if (existingSale.status !== 'pago' && newStatus === 'pago' && existingSale.customer_contact) {
       await sendEmail(

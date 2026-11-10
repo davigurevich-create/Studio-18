@@ -560,6 +560,108 @@ export async function getMyRewardCoupons(): Promise<MyRewardCoupon[]> {
 }
 
 // ---------------------------------------------------------------------------
+// Selos Digitais — pontos, clubes e ranking (direto na conta do site, sem
+// depender do portal externo da BOB). Pontos de compra nunca são
+// "creditados" manualmente em lugar nenhum: são sempre calculados ao vivo a
+// partir do histórico de vendas pagas (ver migration 111), então todo mundo
+// já aparece com a pontuação correta desde o primeiro dia, sem backfill.
+// ---------------------------------------------------------------------------
+export interface MyPoints {
+  totalPoints: number
+  rankPosition: number | null
+  totalCollectors: number
+}
+
+export async function getMyPoints(): Promise<MyPoints> {
+  if (!supabase) return { totalPoints: 12840, rankPosition: 7, totalCollectors: 80 }
+  const { data, error } = await supabase.rpc('get_my_points')
+  if (error) throw error
+  const row = (data ?? [])[0] as { total_points: number; rank_position: number | null; total_collectors: number } | undefined
+  return {
+    totalPoints: row ? Number(row.total_points) : 0,
+    rankPosition: row?.rank_position != null ? Number(row.rank_position) : null,
+    totalCollectors: row ? Number(row.total_collectors) : 0,
+  }
+}
+
+export interface MyBadge {
+  sku: string
+  name: string
+  points: number
+}
+
+export async function getMyBadges(): Promise<MyBadge[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('get_my_badges')
+  if (error) throw error
+  return ((data ?? []) as { sku: string; name: string; points: number }[]).map((r) => ({
+    sku: r.sku,
+    name: r.name,
+    points: Number(r.points),
+  }))
+}
+
+export interface LeaderboardEntry {
+  rankPosition: number
+  displayName: string
+  totalPoints: number
+  isYou: boolean
+}
+
+export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('get_leaderboard', { p_limit: limit })
+  if (error) throw error
+  return ((data ?? []) as { rank_position: number; display_name: string; total_points: number; is_you: boolean }[]).map((r) => ({
+    rankPosition: Number(r.rank_position),
+    displayName: r.display_name,
+    totalPoints: Number(r.total_points),
+    isYou: r.is_you,
+  }))
+}
+
+export interface BadgesPublicStats {
+  totalPieces: number
+  totalBadges: number
+  totalCollectors: number
+}
+
+export async function getBadgesPublicStats(): Promise<BadgesPublicStats> {
+  if (!supabase) return { totalPieces: 52000, totalBadges: 18, totalCollectors: 80 }
+  const { data, error } = await supabase.rpc('get_badges_public_stats')
+  if (error) throw error
+  const row = (data ?? [])[0] as { total_pieces: number; total_badges: number; total_collectors: number } | undefined
+  return {
+    totalPieces: row ? Number(row.total_pieces) : 0,
+    totalBadges: row ? Number(row.total_badges) : 0,
+    totalCollectors: row ? Number(row.total_collectors) : 0,
+  }
+}
+
+export interface ClubBenefit {
+  code: string
+  discountPct: number
+  clubName: string
+}
+
+export async function activateClubBenefit(): Promise<ClubBenefit> {
+  if (!supabase) throw new Error('Modo demonstração: conecte o Supabase pra ativar o benefício de verdade.')
+  const { data, error } = await supabase.rpc('activate_club_benefit')
+  if (error) throw error
+  const row = (data ?? [])[0] as { code: string; discount_pct: number; club_name: string } | undefined
+  if (!row) throw new Error('Não foi possível ativar o benefício agora.')
+  return { code: row.code, discountPct: Number(row.discount_pct), clubName: row.club_name }
+}
+
+export async function getMyActiveClubCoupon(): Promise<{ code: string; discountPct: number } | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('get_my_active_club_coupon')
+  if (error) throw error
+  const row = (data ?? [])[0] as { code: string; discount_pct: number } | undefined
+  return row ? { code: row.code, discountPct: Number(row.discount_pct) } : null
+}
+
+// ---------------------------------------------------------------------------
 // Meus dados — perfil e endereços salvos
 // ---------------------------------------------------------------------------
 export interface MyProfile {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getPointsLedger, getTestimonials, markPointsIssued, updateTestimonialMessage, updateTestimonialStatus } from '@/lib/api'
+import { getPointsLedger, getTestimonials, updateTestimonialMessage, updateTestimonialStatus } from '@/lib/api'
 import { Badge, Card, PageHeader } from '@/components/ui'
 import type { PointsLedgerEntry, Testimonial, TestimonialStatus } from '@/types/domain'
 
@@ -89,7 +89,6 @@ export function Depoimentos() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'todos' | TestimonialStatus>('todos')
-  const [markingId, setMarkingId] = useState<string | null>(null)
 
   const reload = () => {
     Promise.all([getTestimonials(), getPointsLedger()]).then(([t, points]) => {
@@ -103,13 +102,6 @@ export function Depoimentos() {
 
   const changeStatus = async (id: string, status: TestimonialStatus, previousStatus: TestimonialStatus) => {
     await updateTestimonialStatus(id, status, previousStatus)
-    reload()
-  }
-
-  const markBadgeIssued = async (pointsId: string) => {
-    setMarkingId(pointsId)
-    await markPointsIssued(pointsId)
-    setMarkingId(null)
     reload()
   }
 
@@ -175,7 +167,7 @@ export function Depoimentos() {
               <th className="pb-2 font-medium">Depoimento</th>
               <th className="pb-2 font-medium">Foto</th>
               <th className="pb-2 font-medium">Status</th>
-              <th className="pb-2 font-medium">Selo (BOB)</th>
+              <th className="pb-2 font-medium">Bônus de pontos</th>
             </tr>
           </thead>
           <tbody>
@@ -241,18 +233,7 @@ export function Depoimentos() {
                     {(() => {
                       const entry = pointsBySale.get(t.sale_id)
                       if (!entry) return <span style={{ color: 'var(--text-muted)' }}>—</span>
-                      if (entry.issued_at) return <Badge tone="good">Emitido</Badge>
-                      return (
-                        <button
-                          type="button"
-                          onClick={() => markBadgeIssued(entry.id)}
-                          disabled={markingId === entry.id}
-                          className="rounded-md border px-2.5 py-1 text-xs font-medium disabled:opacity-50"
-                          style={{ borderColor: 'var(--border-hairline)', color: 'var(--text-primary)' }}
-                        >
-                          {markingId === entry.id ? 'Salvando...' : `Marcar emitido (${entry.points} pts)`}
-                        </button>
-                      )
+                      return <Badge tone="good">+{entry.points} pts (automático)</Badge>
                     })()}
                   </td>
                 </tr>
