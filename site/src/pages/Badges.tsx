@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from 'framer-motion'
 import { ChevronDown, ChevronLeft, ChevronRight, Crown, Lock, Trophy } from 'lucide-react'
@@ -44,39 +44,6 @@ function BannerBackground({
       <div
         className="pointer-events-none absolute inset-0 sm:hidden"
         style={{ backgroundImage: `url(${mobile})`, backgroundSize: mobileSize, backgroundPosition: position, backgroundRepeat: 'no-repeat' }}
-      />
-    </>
-  )
-}
-
-// Banner de cada passo do "como funciona" (número + título, arte pronta
-// feita no Canva) — a imagem é inline-block, então o text-align já
-// aplicado no container (alterna esquerda/direita por passo) posiciona
-// ela sozinho. Se o arquivo não existir, cai num título de texto simples.
-function StepBanner({ index, title, desktop, mobile }: { index: number; title: string; desktop: string; mobile: string }) {
-  const [failed, setFailed] = useState(false)
-
-  if (failed) {
-    return (
-      <h3 className="mb-3 text-xl font-semibold sm:text-2xl" style={{ color: 'var(--ink)' }}>
-        {String(index + 1).padStart(2, '0')} — {title}
-      </h3>
-    )
-  }
-
-  return (
-    <>
-      <img
-        src={desktop}
-        alt={`Passo ${index + 1} — ${title}`}
-        className="mb-3 hidden h-auto w-full max-w-[340px] sm:inline-block"
-        onError={() => setFailed(true)}
-      />
-      <img
-        src={mobile}
-        alt={`Passo ${index + 1} — ${title}`}
-        className="mb-3 inline-block h-auto w-full max-w-[280px] sm:hidden"
-        onError={() => setFailed(true)}
       />
     </>
   )
@@ -448,33 +415,6 @@ function CountUp({ value, prefix = '' }: { value: number; prefix?: string }) {
 // Reescrito pra refletir o novo mecanismo (selo automático na compra,
 // direto na área logada do site — sem passo manual de postar no Instagram
 // nem emissão pela BOB).
-const steps: { title: string; text: ReactNode; bannerDesktop: string; bannerMobile: string }[] = [
-  {
-    title: 'Compre seu set',
-    text: 'Finalize a compra de qualquer set Studio 18 — do primeiro carro à moto mais complexa do catálogo.',
-    bannerDesktop: '/badges-step-01-desktop.png',
-    bannerMobile: '/badges-step-01-mobile.png',
-  },
-  {
-    title: 'Ganhe seu selo na hora',
-    text: 'Assim que o pagamento é confirmado, o selo digital daquele set já aparece na sua conta — automático, sem precisar fazer nada.',
-    bannerDesktop: '/badges-step-02-desktop.png',
-    bannerMobile: '/badges-step-02-mobile.png',
-  },
-  {
-    title: 'Acumule pontos',
-    text: 'Cada selo vale pontos — o mesmo número de peças do set (+500 de bônus se o set tiver motor funcional).',
-    bannerDesktop: '/badges-step-03-desktop.png',
-    bannerMobile: '/badges-step-03-mobile.png',
-  },
-  {
-    title: 'Suba de clube',
-    text: 'Acumule pontos, suba no ranking e desbloqueie títulos e descontos exclusivos, do Clube 10K ao Clube 100K.',
-    bannerDesktop: '/badges-step-04-desktop.png',
-    bannerMobile: '/badges-step-04-mobile.png',
-  },
-]
-
 // Vitrine de Elite — escada de recompensa por pontos acumulados (1 peça
 // montada = 1 ponto). Cada clube fica visualmente mais "premiado" que o
 // anterior (borda, brilho, tamanho do selo), culminando no Clube 100K.
@@ -648,10 +588,6 @@ function RankingSection() {
 }
 
 export function Badges() {
-  const stepsListRef = useRef<HTMLDivElement>(null)
-  const { scrollYProgress: lineProgress } = useScroll({ target: stepsListRef, offset: ['start 0.75', 'end 0.4'] })
-  const lineScale = useTransform(lineProgress, [0, 1], [0, 1])
-
   // Luzes douradas da seção "o que é um selo digital" — derivam
   // (drift) verticalmente em direções opostas e respiram em brilho
   // conforme a rolagem passa pela seção, só enquanto ela está em cena.
@@ -811,69 +747,6 @@ export function Badges() {
 
         <div className="mt-20 sm:mt-28">
           <ScrollCue label="Ver como funciona" />
-        </div>
-      </section>
-
-      {/* COMO FUNCIONA — timeline vertical em zigue-zague: os passos
-          revelam normalmente conforme a rolagem (1 e 2 já visíveis ao
-          entrar na seção, 3 e 4 aparecem rolando mais), com uma linha
-          dourada que "desenha" pra baixo acompanhando o progresso. */}
-      <section className="px-6 py-24 sm:py-32" style={{ background: '#000' }}>
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-80px' }}
-          className="mx-auto mb-20 max-w-2xl text-center sm:mb-28"
-        >
-          <p className="eyebrow mb-2">Como funciona</p>
-          <h2 className="text-3xl font-medium sm:text-4xl">Da montagem ao selo</h2>
-        </motion.div>
-
-        <div ref={stepsListRef} className="relative mx-auto max-w-3xl">
-          {/* trilho da linha (fraco, sempre visível até o fim) */}
-          <div className="absolute inset-y-0 left-6 w-px sm:left-1/2" style={{ background: 'var(--hairline)' }} />
-          {/* preenchimento dourado, "desenhado" conforme a rolagem */}
-          <motion.div
-            className="absolute left-6 top-0 w-px sm:left-1/2"
-            style={{ height: '100%', background: 'var(--gold-bright)', scaleY: lineScale, transformOrigin: 'top' }}
-          />
-
-          <div className="flex flex-col gap-16 sm:gap-24">
-            {steps.map((step, i) => {
-              const alignRight = i % 2 === 0
-              return (
-                <motion.div
-                  key={step.title}
-                  variants={fadeUp}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, margin: '-100px' }}
-                  className={`relative flex pl-14 sm:pl-0 ${alignRight ? 'sm:justify-start' : 'sm:justify-end'}`}
-                >
-                  <span
-                    className="absolute left-6 top-1.5 h-3 w-3 -translate-x-1/2 rounded-full border-2 sm:left-1/2"
-                    style={{ background: 'var(--carbon-0)', borderColor: 'var(--gold-bright)' }}
-                  />
-                  <div className={`w-full sm:max-w-[46%] ${alignRight ? 'sm:pr-12 sm:text-right' : 'sm:pl-12 sm:text-left'}`}>
-                    <StepBanner
-                      index={i}
-                      title={step.title}
-                      desktop={step.bannerDesktop}
-                      mobile={step.bannerMobile}
-                    />
-                    <p className="text-sm sm:text-base" style={{ color: 'var(--ink-secondary)' }}>
-                      {step.text}
-                    </p>
-                  </div>
-                </motion.div>
-              )
-            })}
-          </div>
-        </div>
-
-        <div className="mt-20 sm:mt-28">
-          <ScrollCue label="Continuar explorando" />
         </div>
       </section>
 
