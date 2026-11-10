@@ -618,6 +618,7 @@ function BadgeImage({ sku, name }: { sku: string; name: string }) {
 }
 
 function BadgesTab() {
+  const { session } = useAuth()
   const [points, setPoints] = useState<MyPoints | null>(null)
   const [badges, setBadges] = useState<MyBadge[]>([])
   const [activeCoupon, setActiveCoupon] = useState<{ code: string; discountPct: number } | null>(null)
@@ -780,6 +781,15 @@ function BadgesTab() {
           <p className="mt-0.5 text-xs" style={{ color: 'var(--ink-muted)' }}>
             Outros colecionadores logados podem ver seus selos e fotos pelo link "Ver sets" no ranking.
           </p>
+          {publicProfile && session?.user?.id && (
+            <Link
+              to={`/colecionador/${session.user.id}`}
+              className="mt-1.5 inline-block text-xs underline"
+              style={{ color: 'var(--gold-bright)' }}
+            >
+              Ver minha página pública →
+            </Link>
+          )}
         </div>
         <button
           type="button"
