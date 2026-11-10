@@ -208,7 +208,7 @@ grant execute on function get_badges_public_stats() to anon, authenticated;
 -- Idempotente: pode rodar de novo sem duplicar.
 -- ---------------------------------------------------------------------------
 insert into customer_badge_grants (customer_email, product_id, reason)
-select 'rubens@peexbrasl.com.br', p.id,
+select 'rubens@peexbrasil.com.br', p.id,
   'Emissão extraordinária — fundador do Studio 18, set montado sem compra pelo site'
 from products p
 where p.sku in (
@@ -220,7 +220,7 @@ on conflict (customer_email, product_id) do nothing;
 -- Conferência — deve listar 11 linhas e o total de pontos:
 select p.sku, p.name, p.piece_count
 from customer_badge_grants g join products p on p.id = g.product_id
-where g.customer_email = 'rubens@peexbrasl.com.br'
+where g.customer_email = 'rubens@peexbrasil.com.br'
 order by p.sku;
 
-select * from customer_total_points where customer_email = 'rubens@peexbrasl.com.br';
+select * from customer_total_points where customer_email = 'rubens@peexbrasil.com.br';
