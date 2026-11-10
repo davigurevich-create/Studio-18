@@ -62,17 +62,22 @@ export function Colecionador() {
   const [badges, setBadges] = useState<PublicBadge[]>([])
   const [photos, setPhotos] = useState<PublicSetPhoto[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
   useEffect(() => {
     if (!userId) return
-    Promise.all([getPublicProfile(userId), getPublicProfileBadges(userId), getPublicProfilePhotos(userId)]).then(
-      ([p, b, ph]) => {
+    Promise.all([getPublicProfile(userId), getPublicProfileBadges(userId), getPublicProfilePhotos(userId)])
+      .then(([p, b, ph]) => {
         setProfile(p)
         setBadges(b)
         setPhotos(ph)
         setLoading(false)
-      },
-    )
+      })
+      .catch((err) => {
+        console.error('Falha ao carregar perfil público', err)
+        setLoadError(true)
+        setLoading(false)
+      })
   }, [userId])
 
   const handleToggleLike = async (photoId: string) => {
@@ -95,6 +100,20 @@ export function Colecionador() {
         <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>
           Carregando...
         </p>
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-md px-6 pb-24 pt-32 text-center">
+        <h1 className="mb-2 text-xl font-medium">Não foi possível carregar esse perfil</h1>
+        <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>
+          Tente novamente em instantes.
+        </p>
+        <Link to="/badges#ranking" className="mt-6 inline-block text-sm underline" style={{ color: 'var(--gold-bright)' }}>
+          Voltar pro ranking
+        </Link>
       </div>
     )
   }
