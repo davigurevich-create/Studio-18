@@ -570,17 +570,23 @@ export interface MyPoints {
   totalPoints: number
   rankPosition: number | null
   totalCollectors: number
+  setsPoints: number
+  testimonialPoints: number
 }
 
 export async function getMyPoints(): Promise<MyPoints> {
-  if (!supabase) return { totalPoints: 12840, rankPosition: 7, totalCollectors: 80 }
+  if (!supabase) return { totalPoints: 12840, rankPosition: 7, totalCollectors: 80, setsPoints: 11840, testimonialPoints: 1000 }
   const { data, error } = await supabase.rpc('get_my_points')
   if (error) throw error
-  const row = (data ?? [])[0] as { total_points: number; rank_position: number | null; total_collectors: number } | undefined
+  const row = (data ?? [])[0] as
+    | { total_points: number; rank_position: number | null; total_collectors: number; sets_points: number; testimonial_points: number }
+    | undefined
   return {
     totalPoints: row ? Number(row.total_points) : 0,
     rankPosition: row?.rank_position != null ? Number(row.rank_position) : null,
     totalCollectors: row ? Number(row.total_collectors) : 0,
+    setsPoints: row ? Number(row.sets_points) : 0,
+    testimonialPoints: row ? Number(row.testimonial_points) : 0,
   }
 }
 
