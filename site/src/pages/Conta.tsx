@@ -663,6 +663,10 @@ function BadgesTab() {
   }
 
   const totalPoints = points.totalPoints
+  // Pontos de sets = soma dos selos (peças + bônus de motor); o restante do
+  // total são os pontos de depoimentos (única origem avulsa hoje).
+  const setsPoints = badges.reduce((sum, b) => sum + b.points, 0)
+  const testimonialPoints = Math.max(0, totalPoints - setsPoints)
   const currentClub = [...CLUBS].reverse().find((c) => totalPoints >= c.threshold) ?? null
   const nextClub = CLUBS.find((c) => c.threshold > totalPoints) ?? null
   const progressPct = nextClub ? Math.min(100, (totalPoints / nextClub.threshold) * 100) : 100
@@ -708,6 +712,24 @@ function BadgesTab() {
               <Trophy size={16} strokeWidth={2} />#{points.rankPosition} no ranking Studio 18
             </div>
           )}
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {[
+            { label: 'Pontos de sets montados', value: setsPoints },
+            { label: 'Pontos de depoimentos', value: testimonialPoints },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-sm"
+              style={{ borderColor: 'var(--carbon-3, rgba(255,255,255,0.1))', color: 'var(--ink-muted)' }}
+            >
+              <span>{item.label}</span>
+              <span className="tabular font-semibold" style={{ color: 'var(--ink)' }}>
+                {item.value.toLocaleString('pt-BR')}
+              </span>
+            </div>
+          ))}
         </div>
 
         {currentClub && (
