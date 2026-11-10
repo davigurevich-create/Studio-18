@@ -64,7 +64,22 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 <div className="flex flex-col gap-4">
                   {items.map(({ line, product }) => {
                     const hasMotorOption = Boolean(product!.motor_product_id && product!.motor_price_brl)
-                    const motorInStock = (product!.motor_quantity_available ?? 0) > 0
+                    // Motor "disponível" aqui já precisa levar em conta a
+                    // quantidade da linha, não só se existe pelo menos 1 em
+                    // estoque — senão dava pra marcar o motor com 1 unidade
+                    // no carrinho e depois ir incrementando a quantidade à
+                    // vontade sem o motor acompanhar (foi exatamente assim
+                    // que uma venda saiu com motor sem estoque suficiente).
+                    const motorStock = product!.motor_quantity_available ?? 0
+                    // Só bloqueia LIGAR o motor se não cobrir a quantidade já
+                    // escolhida — desligar precisa continuar sempre possível,
+                    // mesmo que a linha tenha ficado num estado inconsistente
+                    // (ex: quantidade subiu depois que o motor foi marcado).
+                    const canEnableMotor = motorStock >= line.quantity
+                    const motorCoversQuantity = !line.withMotor || motorStock >= line.quantity
+                    const stock = product!.quantity_available ?? Infinity
+                    const atStockLimit = line.quantity >= stock
+                    const canIncrement = atStockLimit ? false : !line.withMotor || line.quantity + 1 <= motorStock
                     return (
                     <div key={line.productId} className="flex gap-3">
                       <div
@@ -85,14 +100,23 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                         {hasMotorOption && (
                           <button
                             type="button"
-                            onClick={() => motorInStock && setMotor(line.productId, !line.withMotor)}
-                            disabled={!motorInStock}
+                            onClick={() => {
+                              if (line.withMotor) setMotor(line.productId, false)
+                              else if (canEnableMotor) setMotor(line.productId, true)
+                            }}
+                            disabled={!line.withMotor && !canEnableMotor}
                             className="mt-1.5 flex items-center gap-1 text-[11px] disabled:cursor-not-allowed disabled:opacity-50"
                             style={{ color: line.withMotor ? 'var(--gold-bright)' : 'var(--ink-muted)' }}
                           >
                             <Cog size={11} strokeWidth={2} />
-                            {line.withMotor ? 'Com motor funcional' : motorInStock ? `+ motor funcional (+${formatBRL(product!.motor_price_brl!)})` : 'Motor indisponível'}
+                            {line.withMotor ? 'Com motor funcional' : canEnableMotor ? `+ motor funcional (+${formatBRL(product!.motor_price_brl!)})` : 'Motor indisponível'}
                           </button>
+                        )}
+                        {!motorCoversQuantity && (
+                          <p className="mt-1 text-[10px]" style={{ color: '#e2a33f' }}>
+                            Só há motor funcional pra {motorStock} {motorStock === 1 ? 'unidade' : 'unidades'} — reduza a
+                            quantidade ou tire o motor.
+                          </p>
                         )}
                         <div className="mt-2 flex items-center gap-2">
                           <button
@@ -108,8 +132,9 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                           </span>
                           <button
                             type="button"
-                            onClick={() => setQuantity(line.productId, line.quantity + 1)}
-                            className="flex h-6 w-6 items-center justify-center rounded-full border text-xs"
+                            onClick={() => canIncrement && setQuantity(line.productId, line.quantity + 1)}
+                            disabled={!canIncrement}
+                            className="flex h-6 w-6 items-center justify-center rounded-full border text-xs disabled:cursor-not-allowed disabled:opacity-40"
                             style={{ borderColor: 'var(--hairline)', color: 'var(--ink)' }}
                           >
                             +

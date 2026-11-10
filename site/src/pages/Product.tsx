@@ -56,8 +56,13 @@ export function Product() {
   }
 
   const hasMotorOption = Boolean(product.motor_product_id && product.motor_price_brl)
-  const motorInStock = (product.motor_quantity_available ?? 0) > 0
-  const withMotor = hasMotorOption && motorInStock && wantMotor
+  const motorStock = product.motor_quantity_available ?? 0
+  // Precisa cobrir a quantidade escolhida, não só ter pelo menos 1 motor —
+  // senão dava pra marcar o motor com 1 unidade e depois subir a
+  // quantidade à vontade sem o motor acompanhar (foi assim que uma venda
+  // real saiu com motor sem estoque suficiente).
+  const canEnableMotor = motorStock >= quantity
+  const withMotor = hasMotorOption && canEnableMotor && wantMotor
   const effectivePrice = unitPriceWithMotor(product, withMotor)
   const priceUnknown = product.sale_price_brl <= 0
 
@@ -152,8 +157,11 @@ export function Product() {
             {hasMotorOption && (
               <button
                 type="button"
-                onClick={() => motorInStock && setWantMotor((v) => !v)}
-                disabled={!motorInStock}
+                onClick={() => {
+                  if (withMotor) setWantMotor(false)
+                  else if (canEnableMotor) setWantMotor(true)
+                }}
+                disabled={!withMotor && !canEnableMotor}
                 className="mb-4 flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 style={{
                   borderColor: withMotor ? 'var(--gold-dim)' : 'var(--hairline)',
@@ -167,7 +175,11 @@ export function Product() {
                       Adicionar motor funcional
                     </span>
                     <span className="block text-xs" style={{ color: 'var(--ink-muted)' }}>
-                      {motorInStock ? 'Réplica funcional do motor, peça a peça' : 'Sem estoque no momento'}
+                      {canEnableMotor
+                        ? 'Réplica funcional do motor, peça a peça'
+                        : motorStock > 0
+                          ? `Só há motor pra ${motorStock} ${motorStock === 1 ? 'unidade' : 'unidades'} — reduza a quantidade`
+                          : 'Sem estoque no momento'}
                     </span>
                   </span>
                 </span>
@@ -229,8 +241,9 @@ export function Product() {
                   </span>
                   <button
                     type="button"
-                    onClick={() => setQuantity((q) => q + 1)}
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-sm"
+                    onClick={() => setQuantity((q) => Math.min(product.quantity_available, q + 1))}
+                    disabled={quantity >= product.quantity_available}
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-sm disabled:cursor-not-allowed disabled:opacity-40"
                     style={{ color: 'var(--ink)' }}
                   >
                     +

@@ -331,6 +331,42 @@ Deno.serve(async (req) => {
       ? await supabase.from('products').select('id, name, sale_price_brl').in('id', motorProductIds)
       : { data: [] as { id: string; name: string; sale_price_brl: number }[] }
 
+    // Confere estoque ANTES de aceitar o pagamento — sem isso, nada impedia
+    // vender mais unidades (do carro ou do motor) do que existe fisicamente.
+    // É o caso real que descobriu esse buraco: cliente colocou 1 Land Rover
+    // com motor funcional (tinha 1 no estoque) e depois clicou em "+1" pra
+    // virar 2 unidades — o motor continuou marcado, mas nada recalculava se
+    // ainda havia motor suficiente pras 2. Confiar só na checagem do
+    // carrinho (que o navegador do cliente controla) não é suficiente; o
+    // estoque real só pode ser validado aqui, contra o banco.
+    const stockCheckIds = [...new Set([...items.map((i) => i.productId), ...motorProductIds])]
+    const { data: stockRows } = await supabase
+      .from('product_stock')
+      .select('product_id, quantity_in_stock')
+      .in('product_id', stockCheckIds)
+    const stockById = new Map((stockRows ?? []).map((r) => [r.product_id, Number(r.quantity_in_stock)]))
+
+    for (const i of items) {
+      const product = products.find((p) => p.id === i.productId)!
+      const available = stockById.get(product.id) ?? 0
+      if (i.quantity > available) {
+        return json(
+          { error: `Estoque insuficiente para "${product.name}" (disponível: ${Math.max(0, available)}).` },
+          409,
+        )
+      }
+      if (i.withMotor && product.motor_product_id) {
+        const motor = motorProducts?.find((m) => m.id === product.motor_product_id)
+        const motorAvailable = stockById.get(product.motor_product_id) ?? 0
+        if (motor && i.quantity > motorAvailable) {
+          return json(
+            { error: `Estoque insuficiente do motor funcional de "${product.name}" (disponível: ${Math.max(0, motorAvailable)}).` },
+            409,
+          )
+        }
+      }
+    }
+
     const lineItems = items.map((i) => {
       const product = products.find((p) => p.id === i.productId)!
       const fullUnitPrice = Number(product.sale_price_brl)
