@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from 'framer-motion'
-import { ChevronDown, ChevronLeft, ChevronRight, Lock, Trophy } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Crown, Lock, Trophy } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { getBadgesPublicStats, getLeaderboard, type LeaderboardEntry } from '@/lib/api'
 
@@ -527,6 +527,7 @@ const PLACEHOLDER_ROWS: LeaderboardEntry[] = Array.from({ length: 8 }, (_, i) =>
 }))
 
 const MEDAL_COLOR = ['#e6c778', '#c7c7c7', '#b5742f']
+const MEDAL_GLOW = ['rgba(230,199,120,0.55)', 'rgba(199,199,199,0.35)', 'rgba(181,116,47,0.3)']
 
 function RankingSection() {
   const { session } = useAuth()
@@ -557,32 +558,67 @@ function RankingSection() {
 
       <div className="relative mx-auto max-w-xl">
         <div className={`flex flex-col gap-2 ${!session ? 'pointer-events-none select-none blur-sm' : ''}`}>
-          {rows.map((c, i) => (
-            <div
-              key={`${c.rankPosition}-${c.displayName}`}
-              className="flex items-center gap-4 rounded-xl border px-4 py-3"
-              style={{
-                borderColor: c.isYou ? 'var(--gold-bright)' : 'var(--hairline)',
-                background: c.isYou ? 'var(--gold-wash)' : 'var(--carbon-2)',
-              }}
-            >
-              <div
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular"
-                style={{
-                  background: i < 3 ? MEDAL_COLOR[i] : 'var(--carbon-1)',
-                  color: i < 3 ? '#1a1206' : 'var(--ink-muted)',
-                }}
+          {rows.map((c, i) => {
+            const isPodium = i < 3 && session
+            return (
+              <motion.div
+                key={`${c.rankPosition}-${c.displayName}`}
+                className="relative"
+                initial={isPodium ? { opacity: 0, y: 14, scale: 0.97 } : undefined}
+                whileInView={isPodium ? { opacity: 1, y: 0, scale: 1 } : undefined}
+                viewport={isPodium ? { once: true, margin: '-40px' } : undefined}
+                transition={isPodium ? { delay: i * 0.1, duration: 0.5, ease: 'easeOut' } : undefined}
               >
-                {c.rankPosition}
-              </div>
-              <span className="flex-1 text-sm font-medium" style={{ color: c.isYou ? 'var(--gold-bright)' : 'var(--ink)' }}>
-                {c.isYou ? `${c.displayName} (você)` : c.displayName}
-              </span>
-              <span className="tabular text-sm" style={{ color: 'var(--ink-muted)' }}>
-                {c.totalPoints.toLocaleString('pt-BR')} pts
-              </span>
-            </div>
-          ))}
+                {/* Brilho por trás do pódio — pulsa contínuo só no 1º lugar,
+                    pra chamar atenção sem virar uma distração nos outros. */}
+                {isPodium && (
+                  <motion.div
+                    className="pointer-events-none absolute -inset-2 rounded-2xl blur-xl"
+                    style={{ background: `radial-gradient(ellipse, ${MEDAL_GLOW[i]}, transparent 72%)` }}
+                    animate={i === 0 ? { opacity: [0.55, 1, 0.55] } : undefined}
+                    transition={i === 0 ? { duration: 2.2, repeat: Infinity, ease: 'easeInOut' } : undefined}
+                  />
+                )}
+                <div
+                  className="relative flex items-center gap-4 rounded-xl border px-4 py-3"
+                  style={{
+                    borderColor: isPodium ? MEDAL_COLOR[i] : c.isYou ? 'var(--gold-bright)' : 'var(--hairline)',
+                    borderWidth: i === 0 ? 1.5 : 1,
+                    background: c.isYou ? 'var(--gold-wash)' : 'var(--carbon-2)',
+                  }}
+                >
+                  <div
+                    className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular"
+                    style={{
+                      background: i < 3 ? MEDAL_COLOR[i] : 'var(--carbon-1)',
+                      color: i < 3 ? '#1a1206' : 'var(--ink-muted)',
+                      boxShadow: isPodium ? `0 0 0 3px ${MEDAL_GLOW[i]}` : undefined,
+                    }}
+                  >
+                    {i === 0 && (
+                      <motion.div
+                        className="absolute -top-[22px] left-1/2 -translate-x-1/2"
+                        animate={{ y: [0, -3, 0] }}
+                        transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                      >
+                        <Crown size={16} strokeWidth={2} fill="var(--gold-bright)" style={{ color: 'var(--gold-bright)' }} />
+                      </motion.div>
+                    )}
+                    {c.rankPosition}
+                  </div>
+                  <span
+                    className="flex-1 text-sm font-medium"
+                    style={{ color: c.isYou ? 'var(--gold-bright)' : isPodium ? MEDAL_COLOR[i] : 'var(--ink)' }}
+                  >
+                    {c.isYou ? `${c.displayName} (você)` : c.displayName}
+                  </span>
+                  <span className="tabular text-sm" style={{ color: 'var(--ink-muted)' }}>
+                    {c.totalPoints.toLocaleString('pt-BR')} pts
+                  </span>
+                </div>
+              </motion.div>
+            )
+          })}
         </div>
 
         {!session && (
