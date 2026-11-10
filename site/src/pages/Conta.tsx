@@ -229,10 +229,10 @@ function AccountDashboard({ onSignOut }: { onSignOut: () => void }) {
 
   const tabs: { id: Tab; label: string; icon: typeof Package }[] = [
     { id: 'pedidos', label: 'Meus pedidos', icon: Package },
+    { id: 'selos', label: 'Meus Selos', icon: Award },
     { id: 'pecas', label: 'Peças faltantes', icon: Wrench },
     { id: 'espera', label: 'Lista de espera', icon: PackageX },
     { id: 'favoritos', label: 'Favoritos', icon: Heart },
-    { id: 'selos', label: 'Meus Selos', icon: Award },
     { id: 'indicacao', label: 'Indicação de amigos', icon: Gift },
     { id: 'dados', label: 'Meus dados', icon: IdCard },
     { id: 'notificacoes', label: 'Notificações', icon: Bell },
@@ -600,10 +600,10 @@ function BadgeImage({ sku, name }: { sku: string; name: string }) {
   if (failed) {
     return (
       <div
-        className="flex h-14 w-14 items-center justify-center rounded-full"
+        className="flex h-32 w-32 items-center justify-center rounded-full"
         style={{ background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))' }}
       >
-        <Award size={26} strokeWidth={2} style={{ color: '#1a1206' }} />
+        <Award size={52} strokeWidth={2} style={{ color: '#1a1206' }} />
       </div>
     )
   }
@@ -611,7 +611,7 @@ function BadgeImage({ sku, name }: { sku: string; name: string }) {
     <img
       src={`/selos/${sku}.png`}
       alt={`Selo — ${name}`}
-      className="h-14 w-14 rounded-full object-cover"
+      className="h-32 w-32 object-contain"
       onError={() => setFailed(true)}
     />
   )
@@ -684,7 +684,13 @@ function BadgesTab() {
       {/* Pontuação em destaque + posição no ranking */}
       <div
         className="rounded-2xl border p-6"
-        style={{ borderColor: 'var(--gold-dim)', background: 'linear-gradient(160deg, var(--carbon-2), var(--carbon-3))' }}
+        style={{
+          borderColor: 'var(--gold-dim)',
+          background: 'linear-gradient(160deg, rgba(255,255,255,0.075), rgba(255,255,255,0.03))',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+        }}
       >
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -759,7 +765,13 @@ function BadgesTab() {
           ranking (o link "Ver sets" só aparece pra quem deixou público). */}
       <div
         className="flex items-center justify-between gap-4 rounded-xl border p-4"
-        style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}
+        style={{
+          borderColor: 'var(--hairline)',
+          background: 'rgba(255,255,255,0.045)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+        }}
       >
         <div>
           <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
@@ -794,12 +806,18 @@ function BadgesTab() {
             Ainda nenhum selo — toda compra confirmada já garante o selo do set automaticamente.
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             {badges.map((b) => (
               <div
                 key={b.sku}
-                className="flex flex-col items-center gap-2 rounded-xl border p-4 text-center"
-                style={{ borderColor: 'var(--gold-dim)', background: 'var(--carbon-2)' }}
+                className="flex flex-col items-center gap-2 rounded-xl border p-5 text-center"
+                style={{
+                  borderColor: 'var(--gold-dim)',
+                  background: 'rgba(255,255,255,0.045)',
+                  backdropFilter: 'blur(20px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+                }}
               >
                 <BadgeImage sku={b.sku} name={b.name} />
                 <p className="text-xs font-medium leading-snug" style={{ color: 'var(--ink)' }}>
