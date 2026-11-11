@@ -4,7 +4,17 @@ import { ChevronLeft, ChevronRight, Move } from 'lucide-react'
 import { ProductCard } from '@/components/ProductCard'
 import type { CatalogProduct } from '@/types/catalog'
 
-function RailCard({ product, index, active }: { product: CatalogProduct; index: number; active: boolean }) {
+function RailCard({
+  product,
+  index,
+  active,
+  cycleAngles,
+}: {
+  product: CatalogProduct
+  index: number
+  active: boolean
+  cycleAngles: boolean
+}) {
   return (
     <div
       data-rail-card
@@ -16,7 +26,12 @@ function RailCard({ product, index, active }: { product: CatalogProduct; index: 
         transition: 'transform 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.45s ease, filter 0.45s ease',
       }}
     >
-      <ProductCard product={product} index={index} />
+      {/* inclinação 3D contínua conforme o card atravessa o trilho — numa
+          camada própria (sem transition) pra acompanhar o dedo na hora; a
+          camada de fora continua cuidando do destaque do card ativo */}
+      <div className="rail-tilt">
+        <ProductCard product={product} index={index} inRail railActive={cycleAngles} />
+      </div>
     </div>
   )
 }
@@ -111,6 +126,17 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
       setCanScroll(scrollable)
       const cards = el.querySelectorAll<HTMLElement>('[data-rail-card]')
       setActiveIndex(scrollable ? resolveIndex(cards, el.scrollLeft) : 0)
+
+      // inclinação dos cards (.rail-tilt no index.css): distância de cada um
+      // até o centro do trilho. Só no mobile, onde o card ativo fica de fato
+      // no centro — no desktop o trilho é bem mais largo que um card e o
+      // primeiro/último ficariam tortos mesmo parados.
+      const tilt = scrollable && window.innerWidth < 640
+      const center = el.scrollLeft + el.clientWidth / 2
+      cards.forEach((card) => {
+        const d = tilt ? (card.offsetLeft + card.offsetWidth / 2 - center) / card.offsetWidth : 0
+        card.style.setProperty('--rail-d', Math.max(-1.2, Math.min(1.2, d)).toFixed(3))
+      })
     }
 
     // ajuste fino: só roda depois que a rolagem (touch, wheel, drag ou o
@@ -359,7 +385,13 @@ export function ProductRail({ products }: { products: CatalogProduct[] }) {
           }`}
         >
           {products.map((p, i) => (
-            <RailCard key={p.id} product={p} index={i} active={!canScroll || i === activeIndex} />
+            <RailCard
+              key={p.id}
+              product={p}
+              index={i}
+              active={!canScroll || i === activeIndex}
+              cycleAngles={canScroll && i === activeIndex}
+            />
           ))}
         </div>
       </div>

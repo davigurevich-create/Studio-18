@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Cog, Heart, Truck } from 'lucide-react'
 import { ProductGallery } from '@/components/ProductGallery'
 import { RestockWaitlistForm } from '@/components/RestockWaitlistForm'
-import { getProduct, getShippingOptions } from '@/lib/api'
+import { getProduct, getShippingOptions, peekProduct } from '@/lib/api'
+import { BLACK_FRIDAY_BANNER_HEIGHT } from '@/components/BlackFridayBanner'
+import { isBlackFridayActive } from '@/lib/blackFriday'
+import { navigateWithCoverTransition } from '@/lib/coverTransition'
 import { formatBRL } from '@/lib/format'
 import { installmentValue, INTEREST_FREE_INSTALLMENTS, LOW_STOCK_THRESHOLD, pixPrice, unitPriceWithMotor } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
@@ -19,7 +22,11 @@ export function Product() {
   const { addItem } = useCart()
   const { session } = useAuth()
   const { isFavorite, toggleFavorite } = useFavorites()
-  const [product, setProduct] = useState<CatalogProduct | null | undefined>(undefined)
+  // vindo de um card da vitrine o catálogo já está em memória: a página
+  // monta direto com o produto (sem "Carregando..."), que é o que permite a
+  // foto do card virar a capa daqui. A busca abaixo só atualiza os dados.
+  const [product, setProduct] = useState<CatalogProduct | null | undefined>(() => (id ? peekProduct(id) : undefined))
+  const openedFromCache = useRef(product !== undefined).current
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
   const [wantMotor, setWantMotor] = useState(false)
@@ -66,19 +73,55 @@ export function Product() {
   const effectivePrice = unitPriceWithMotor(product, withMotor)
   const priceUnknown = product.sale_price_brl <= 0
 
+  // volta pra vitrine com a capa "voando" de volta pro card de onde saiu
+  // (Home.tsx rola até ele). O `source` é a capa visível no momento — a do
+  // layout mobile ou a do mosaico desktop; a outra está com display:none.
+  const goBack = () => {
+    const covers = Array.from(document.querySelectorAll<HTMLElement>('[data-product-cover]'))
+    const source = covers.find((el) => el.offsetParent !== null) ?? null
+    navigateWithCoverTransition(
+      source,
+      () => navigate(-1),
+      () => document.querySelector<HTMLElement>(`[data-card-cover="${product.id}"]`),
+    )
+  }
+
+  // No mobile a capa encosta no topo da tela (logo abaixo da faixa da Black
+  // Friday, quando ativa) e o cabeçalho do site passa por cima dela; no
+  // desktop a página mantém o respiro de sempre.
+  const mobileTop = isBlackFridayActive() ? BLACK_FRIDAY_BANNER_HEIGHT : 0
+
   return (
-    <div className="mx-auto max-w-6xl px-6 pb-24 pt-32">
+    <div className="mx-auto max-w-6xl px-6 pb-24 pt-[var(--mobile-top)] sm:pt-32" style={{ '--mobile-top': `${mobileTop}px` } as CSSProperties}>
       <button
-        onClick={() => navigate(-1)}
-        className="mb-8 text-sm"
+        onClick={goBack}
+        className="mb-8 hidden text-sm sm:block"
         style={{ color: 'var(--ink-muted)' }}
       >
         ← Voltar para a coleção
       </button>
 
-      <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
-        <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-          <ProductGallery key={product.id} product={product} className="w-full" />
+      <div className="grid grid-cols-1 gap-8 sm:gap-12 lg:grid-cols-2">
+        <motion.div
+          initial={openedFromCache ? false : { opacity: 0, x: -16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <ProductGallery
+            key={product.id}
+            product={product}
+            className="w-full"
+            mobileOverlay={
+              <button
+                type="button"
+                onClick={goBack}
+                className="absolute bottom-3 left-3 rounded-full px-3 py-1.5 text-xs font-medium backdrop-blur-sm"
+                style={{ background: 'rgba(6,6,6,0.6)', color: 'var(--ink)', border: '1px solid var(--hairline)' }}
+              >
+                ← Voltar para a coleção
+              </button>
+            }
+          />
         </motion.div>
 
         <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.1 }}>

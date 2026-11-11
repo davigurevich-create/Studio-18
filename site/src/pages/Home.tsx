@@ -12,7 +12,7 @@ import { BrazilDeliveryMap } from '@/components/BrazilDeliveryMap'
 import { SpotifySection } from '@/components/SpotifySection'
 import { TestimonialsSection } from '@/components/TestimonialsSection'
 import { categories } from '@/lib/categories'
-import { getCatalog } from '@/lib/api'
+import { getCatalog, peekCatalog } from '@/lib/api'
 import type { CatalogProduct } from '@/types/catalog'
 
 const fadeUp = {
@@ -31,8 +31,10 @@ const sortOptions: { value: SortKey; label: string }[] = [
 ]
 
 export function Home() {
-  const [products, setProducts] = useState<CatalogProduct[]>([])
-  const [loading, setLoading] = useState(true)
+  // já começa com o catálogo da última busca (se houver) — voltar de um
+  // produto mostra a vitrine na hora, e a busca abaixo só atualiza os dados
+  const [products, setProducts] = useState<CatalogProduct[]>(() => peekCatalog() ?? [])
+  const [loading, setLoading] = useState(() => peekCatalog() === null)
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<SortKey>('nome')
 
@@ -56,7 +58,6 @@ export function Home() {
     if (loading) return
     const lastViewedId = sessionStorage.getItem('lastViewedProduct')
     if (!lastViewedId) return
-    sessionStorage.removeItem('lastViewedProduct')
 
     const scrollToCard = () => {
       const el = document.getElementById(`product-${lastViewedId}`)
@@ -64,8 +65,15 @@ export function Home() {
     }
     // o layout ainda pode mudar de altura enquanto imagens/trilhos terminam
     // de montar, então repetimos a rolagem algumas vezes logo em seguida
+    scrollToCard()
     const timers = [0, 150, 400].map((delay) => window.setTimeout(scrollToCard, delay))
-    return () => timers.forEach((timer) => window.clearTimeout(timer))
+    // a chave só é apagada no fim: o Layout consulta ela (num efeito que
+    // roda DEPOIS deste) pra saber que não deve forçar a rolagem pro topo
+    const clearKey = window.setTimeout(() => sessionStorage.removeItem('lastViewedProduct'), 450)
+    return () => {
+      timers.forEach((timer) => window.clearTimeout(timer))
+      window.clearTimeout(clearKey)
+    }
   }, [loading])
 
   // com busca/ordenação ativas não dá pra manter os trilhos por categoria

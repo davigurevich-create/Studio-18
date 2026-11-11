@@ -23,12 +23,28 @@ async function invokeEdgeFunction<T>(name: string, body: unknown): Promise<T> {
   return data as T
 }
 
+// Última resposta do catálogo, guardada só em memória. Não substitui a busca
+// (estoque e preço sempre são recarregados): serve pra Home e a página de
+// produto já montarem com conteúdo no primeiro render ao navegar entre elas —
+// sem isso a transição card → produto não teria a foto de destino na tela.
+let catalogCache: CatalogProduct[] | null = null
+
+export function peekCatalog(): CatalogProduct[] | null {
+  return catalogCache
+}
+
+export function peekProduct(id: string): CatalogProduct | undefined {
+  return catalogCache?.find((p) => p.id === id)
+}
+
 export async function getCatalog(): Promise<CatalogProduct[]> {
   if (supabase) {
     const { data, error } = await supabase.from('public_catalog').select('*').order('name')
     if (error) throw error
-    return (data as CatalogProduct[]).map((p) => ({ ...p, image_urls: p.image_urls ?? [] }))
+    catalogCache = (data as CatalogProduct[]).map((p) => ({ ...p, image_urls: p.image_urls ?? [] }))
+    return catalogCache
   }
+  catalogCache = mockCatalog
   return mockCatalog
 }
 

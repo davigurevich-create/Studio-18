@@ -189,3 +189,52 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Transição card → página do produto (View Transitions API) ──────────
+   A foto do card e a capa da página do produto compartilham o nome
+   "product-cover" só durante a navegação (ver lib/coverTransition.ts): o
+   navegador anima uma virando a outra. Navegador sem suporte simplesmente
+   troca de página como antes. */
+::view-transition-group(product-cover) {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 2;
+}
+
+/* as duas fotos têm proporções diferentes (card baixo, capa 4:3) — sem
+   isso o navegador estica a imagem em vez de recortar durante a animação */
+::view-transition-old(product-cover),
+::view-transition-new(product-cover) {
+  height: 100%;
+  object-fit: cover;
+  overflow: clip;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.32s;
+}
+
+/* ── Cards do trilho ─────────────────────────────────────────────────────
+   --rail-d = distância do card até o centro do trilho, em "larguras de
+   card" (0 = centralizado, ±1 = um card pro lado). É escrita direto no DOM
+   a cada frame de rolagem (ProductRail.tsx), sem passar pelo React. */
+.rail-tilt {
+  transform: perspective(900px) rotateY(calc(var(--rail-d, 0) * -14deg));
+  will-change: transform;
+}
+
+.rail-sheen {
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 244, 214, 0.2) 50%, transparent 70%);
+  mix-blend-mode: screen;
+  transform: translateX(calc(var(--rail-d, 0) * 120%));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail-tilt {
+    transform: none;
+  }
+  .rail-sheen {
+    display: none;
+  }
+}

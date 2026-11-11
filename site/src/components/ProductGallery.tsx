@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Maximize2, Play, X } from 'lucide-react'
 import { ProductArt } from '@/components/ProductArt'
 import { ProductLightbox } from '@/components/ProductLightbox'
+import { COVER_TRANSITION_NAME } from '@/lib/coverTransition'
 import type { CatalogProduct } from '@/types/catalog'
 
 /** Cycling span pattern for the mosaic tiles that follow the (larger) cover tile. */
@@ -13,9 +14,20 @@ function tileSpan(index: number) {
   return TILE_PATTERNS[(index - 1) % TILE_PATTERNS.length]
 }
 
-export function ProductGallery({ product, className = '' }: { product: CatalogProduct; className?: string }) {
+export function ProductGallery({
+  product,
+  className = '',
+  mobileOverlay,
+}: {
+  product: CatalogProduct
+  className?: string
+  /** conteúdo sobreposto à capa no layout mobile (ex: botão de voltar) */
+  mobileOverlay?: ReactNode
+}) {
   const gallery = [product.image_url, ...product.image_urls].filter((u): u is string => !!u)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  // foto em destaque na capa do layout mobile (escolhida nas miniaturas)
+  const [selected, setSelected] = useState(0)
   const [videoOpen, setVideoOpen] = useState(false)
 
   if (gallery.length === 0) {
@@ -24,8 +36,86 @@ export function ProductGallery({ product, className = '' }: { product: CatalogPr
 
   return (
     <div className={className}>
+      {/* MOBILE — capa grande de ponta a ponta no topo da tela e, embaixo,
+          miniaturas todas do mesmo tamanho pra escolher a foto. Tocar na
+          capa abre o lightbox (zoom / tela cheia) na foto atual. */}
+      <div className="sm:hidden">
+        <div
+          data-product-cover
+          className="relative -mx-6 aspect-[4/3] overflow-hidden"
+          style={{ background: 'var(--carbon-2)', viewTransitionName: COVER_TRANSITION_NAME }}
+        >
+          <AnimatePresence initial={false}>
+            <motion.img
+              key={gallery[selected]}
+              src={gallery[selected]}
+              alt={product.name}
+              className="absolute inset-0 h-full w-full object-cover"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            />
+          </AnimatePresence>
+          <button
+            type="button"
+            aria-label="Ampliar foto"
+            onClick={() => setLightboxIndex(selected)}
+            className="absolute inset-0"
+          />
+          {/* escurece só o topo, onde o cabeçalho do site passa por cima da foto */}
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 h-24"
+            style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)' }}
+          />
+          <div
+            className="pointer-events-none absolute bottom-3 right-3 rounded-full p-1.5"
+            style={{ background: 'rgba(6,6,6,0.55)', color: 'var(--ink)' }}
+          >
+            <Maximize2 size={14} />
+          </div>
+          {mobileOverlay}
+        </div>
+
+        {(gallery.length > 1 || product.video_url) && (
+          <div className="mt-3 grid grid-cols-4 gap-2">
+            {gallery.map((url, i) => (
+              <button
+                key={url}
+                type="button"
+                aria-label={`Ver foto ${i + 1} de ${gallery.length}`}
+                aria-pressed={i === selected}
+                onClick={() => setSelected(i)}
+                className="relative aspect-[4/3] overflow-hidden rounded-lg border transition-opacity"
+                style={{
+                  borderColor: i === selected ? 'var(--gold)' : 'var(--hairline)',
+                  opacity: i === selected ? 1 : 0.6,
+                }}
+              >
+                <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
+              </button>
+            ))}
+            {product.video_url && (
+              <button
+                type="button"
+                aria-label="Assistir ao vídeo"
+                onClick={() => setVideoOpen(true)}
+                className="relative aspect-[4/3] overflow-hidden rounded-lg border"
+                style={{ borderColor: 'var(--hairline)' }}
+              >
+                <img src={gallery[0]} alt="" className="h-full w-full object-cover opacity-50" loading="lazy" />
+                <span className="absolute inset-0 flex items-center justify-center" style={{ color: 'var(--ink)' }}>
+                  <Play size={18} fill="currentColor" />
+                </span>
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* DESKTOP — mosaico */}
       <div
-        className="grid grid-cols-2 auto-rows-[140px] gap-3 sm:grid-cols-3 sm:auto-rows-[170px]"
+        className="hidden auto-rows-[170px] grid-cols-3 gap-3 sm:grid"
         style={{ gridAutoFlow: 'dense' }}
       >
         {gallery.map((url, i) => (
@@ -33,7 +123,9 @@ export function ProductGallery({ product, className = '' }: { product: CatalogPr
             key={url}
             type="button"
             onClick={() => setLightboxIndex(i)}
+            data-product-cover={i === 0 ? '' : undefined}
             className={`group/tile relative overflow-hidden rounded-2xl ${tileSpan(i)}`}
+            style={i === 0 ? { viewTransitionName: COVER_TRANSITION_NAME } : undefined}
           >
             <img
               src={url}

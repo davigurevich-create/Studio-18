@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useInView, useReducedMotion } from 'framer-motion'
 import { ArrowUpRight, Cog, Heart, ShoppingBag } from 'lucide-react'
 import { ProductArt } from '@/components/ProductArt'
 import { formatBRL } from '@/lib/format'
@@ -8,9 +8,26 @@ import { installmentValue, INTEREST_FREE_INSTALLMENTS, LOW_STOCK_THRESHOLD, pixP
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { useFavorites } from '@/lib/favorites'
+import { navigateWithCoverTransition } from '@/lib/coverTransition'
+import { cardAngles } from '@/lib/productAngles'
 import type { CatalogProduct } from '@/types/catalog'
 
-export function ProductCard({ product, index = 0 }: { product: CatalogProduct; index?: number }) {
+// intervalo entre uma foto e a próxima quando o card está alternando ângulos
+const ANGLE_INTERVAL_MS = 2200
+
+export function ProductCard({
+  product,
+  index = 0,
+  inRail = false,
+  railActive = false,
+}: {
+  product: CatalogProduct
+  index?: number
+  /** card dentro de um trilho horizontal (ProductRail) — liga o brilho que acompanha a inclinação */
+  inRail?: boolean
+  /** card centralizado no trilho — alterna os ângulos da foto sozinho */
+  railActive?: boolean
+}) {
   const { addItem } = useCart()
   const { session } = useAuth()
   const { isFavorite, toggleFavorite } = useFavorites()
@@ -26,6 +43,29 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
   const withMotor = hasMotorOption && motorInStock && wantMotor
   const effectivePrice = unitPriceWithMotor(product, withMotor)
 
+  // Troca de ângulo: o card em destaque (centro do trilho no celular, ou sob
+  // o mouse no desktop) alterna sozinho entre a capa e mais dois ângulos do
+  // modelo. As fotos extras só entram no DOM na primeira vez que o card
+  // fica em destaque — senão cada card da vitrine baixaria 3 fotos de cara.
+  const imageRef = useRef<HTMLDivElement>(null)
+  const angles = useMemo(() => cardAngles(product), [product])
+  const reducedMotion = useReducedMotion()
+  const inView = useInView(imageRef, { amount: 0.6 })
+  const [hovered, setHovered] = useState(false)
+  const [angleIndex, setAngleIndex] = useState(0)
+  const [extrasMounted, setExtrasMounted] = useState(false)
+  const cycling = !reducedMotion && angles.length > 1 && inView && (railActive || hovered)
+
+  useEffect(() => {
+    if (!cycling) {
+      setAngleIndex(0)
+      return
+    }
+    setExtrasMounted(true)
+    const timer = window.setInterval(() => setAngleIndex((i) => (i + 1) % angles.length), ANGLE_INTERVAL_MS)
+    return () => window.clearInterval(timer)
+  }, [cycling, angles.length])
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -38,10 +78,50 @@ export function ProductCard({ product, index = 0 }: { product: CatalogProduct; i
         to={`/produto/${product.id}`}
         className="group block overflow-hidden rounded-xl border transition-all duration-300 ease-out hover:-translate-y-1 hover:border-[var(--gold-dim)] hover:shadow-[0_24px_44px_-18px_rgba(0,0,0,0.6)]"
         style={{ borderColor: 'var(--hairline)', background: 'var(--carbon-2)' }}
-        onClick={() => sessionStorage.setItem('lastViewedProduct', product.id)}
+        onClick={(e) => {
+          sessionStorage.setItem('lastViewedProduct', product.id)
+          // clique simples: a foto do card "voa" e vira a capa da página do
+          // produto. Ctrl/Cmd+clique, botão do meio etc. seguem o link normal.
+          if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+          e.preventDefault()
+          navigateWithCoverTransition(imageRef.current, () => navigate(`/produto/${product.id}`))
+        }}
+        onPointerEnter={(e) => e.pointerType === 'mouse' && setHovered(true)}
+        onPointerLeave={() => setHovered(false)}
       >
         <div className="relative">
-          <ProductArt product={product} className="h-52 w-full" />
+          <div ref={imageRef} data-card-cover={product.id} className="relative h-52 w-full overflow-hidden">
+            <ProductArt product={product} className="h-full w-full" />
+            {extrasMounted &&
+              angles.slice(1).map((angle, i) => (
+                <img
+                  key={angle.url}
+                  src={angle.url}
+                  alt=""
+                  aria-hidden
+                  className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
+                  style={{ opacity: angleIndex === i + 1 ? 1 : 0 }}
+                />
+              ))}
+            {inRail && <div className="rail-sheen pointer-events-none absolute inset-0" />}
+            {cycling && (
+              <span
+                className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider"
+                style={{ background: 'rgba(6,6,6,0.7)', color: 'var(--ink-secondary)', border: '1px solid var(--hairline)' }}
+              >
+                {angles[angleIndex]?.label}
+                <span className="flex gap-[3px]">
+                  {angles.map((angle, i) => (
+                    <span
+                      key={angle.url}
+                      className="h-1 w-1 rounded-full transition-colors duration-300"
+                      style={{ background: i === angleIndex ? 'var(--gold-bright)' : 'var(--ink-muted)' }}
+                    />
+                  ))}
+                </span>
+              </span>
+            )}
+          </div>
           <span
             className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide opacity-90 transition-opacity group-hover:opacity-100"
             style={{ background: 'rgba(6,6,6,0.7)', color: 'var(--ink-secondary)', border: '1px solid var(--hairline)' }}
