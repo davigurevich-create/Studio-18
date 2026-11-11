@@ -32,17 +32,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * senha). Se for a primeira vez desse e-mail, a conta é criada
    * automaticamente no momento em que o código for confirmado.
    */
+  // Supabase às vezes devolve um erro com .message vazio/ilegível (ex: "{}"
+  // quando o gateway/limite de envio de e-mail barra a requisição antes de
+  // chegar no serviço de Auth de verdade) — nunca mostra esse lixo cru pro
+  // cliente, cai no genérico em vez disso.
+  const friendlyAuthError = (message: string | undefined): string => {
+    const trimmed = (message ?? '').trim()
+    if (!trimmed || trimmed === '{}' || trimmed.length > 300) {
+      return 'Não foi possível enviar o código agora. Tente novamente em instantes.'
+    }
+    return trimmed
+  }
+
   const requestCode = async (email: string) => {
     if (!supabase) return 'Modo demonstração: conecte o Supabase para testar o login de verdade.'
     try {
       const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
       if (!error) return null
 
-      const msg = error.message.toLowerCase()
+      const msg = error.message?.toLowerCase() ?? ''
       if (msg.includes('too many requests') || msg.includes('rate limit')) {
         return 'Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo.'
       }
-      return error.message
+      return friendlyAuthError(error.message)
     } catch {
       return 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.'
     }
@@ -54,9 +66,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.verifyOtp({ email, token: code, type: 'email' })
       if (!error) return null
 
-      const msg = error.message.toLowerCase()
+      const msg = error.message?.toLowerCase() ?? ''
       if (msg.includes('expired') || msg.includes('invalid')) return 'Código inválido ou expirado. Peça um novo código.'
-      return error.message
+      return friendlyAuthError(error.message)
     } catch {
       return 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.'
     }
