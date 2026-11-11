@@ -7,6 +7,7 @@ import { isBlackFridayActive } from '@/lib/blackFriday'
 import { ChatWidget } from '@/components/ChatWidget'
 import { CartDrawer } from '@/components/CartDrawer'
 import { WelcomePopup } from '@/components/WelcomePopup'
+import { ClubCelebration } from '@/components/ClubCelebration'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
 import { trackPageView } from '@/lib/metaPixel'
@@ -493,6 +494,7 @@ export function Layout() {
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
       <ChatWidget />
       <WelcomePopup />
+      <ClubCelebration />
     </div>
   )
 }

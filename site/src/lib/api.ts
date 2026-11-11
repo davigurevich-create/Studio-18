@@ -670,6 +670,24 @@ export async function ensureClubBenefit(): Promise<ClubBenefit | null> {
   return row ? { code: row.code, discountPct: Number(row.discount_pct), clubName: row.club_name } : null
 }
 
+export interface NewClubMilestone {
+  isNewClub: boolean
+  clubName?: string
+  discountPct?: number
+}
+
+/**
+ * Confere (no banco, nunca no cliente) se essa é a primeira vez que a
+ * pessoa está logada depois de cruzar a pontuação de algum clube — se for,
+ * já dispara o e-mail de boas-vindas (ver Edge Function) e devolve os
+ * dados pra comemorar na tela (confete). Sem efeito nenhum se não for a
+ * primeira vez.
+ */
+export async function checkNewClubMilestone(): Promise<NewClubMilestone> {
+  if (!supabase) return { isNewClub: false }
+  return invokeEdgeFunction<NewClubMilestone>('send-club-welcome-email', {})
+}
+
 // ---------------------------------------------------------------------------
 // Comunidade — fotos dos sets montados (aprovação da equipe antes de
 // ficar público, mesmo padrão dos depoimentos), curtidas e perfil público
