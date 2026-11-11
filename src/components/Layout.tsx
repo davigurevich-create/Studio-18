@@ -3,7 +3,16 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { LayoutDashboard, Package, ShoppingCart, Wallet, Ship, Newspaper, Wrench, ScrollText, LogOut, Bell, Megaphone, Menu, X, Ticket, KeyRound, Mail, MessageSquareQuote, Globe, Images } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
-import { getBlogPosts, getLeads, getPartnerNews, getPartRequests, getRestockWaitlist, getSales, getTestimonials } from '@/lib/api'
+import {
+  getBlogPosts,
+  getLeads,
+  getPartnerNews,
+  getPartRequests,
+  getRestockWaitlist,
+  getSales,
+  getSetPhotosForModeration,
+  getTestimonials,
+} from '@/lib/api'
 
 // Vendas e leads não têm um estado "pendente" natural (toda venda e todo
 // lead ficam registrados pra sempre) — então o contador de novidades usa a
@@ -60,6 +69,7 @@ export function Layout() {
   const [pendingPartRequests, setPendingPartRequests] = useState(0)
   const [pendingWaitlist, setPendingWaitlist] = useState(0)
   const [pendingTestimonials, setPendingTestimonials] = useState(0)
+  const [pendingSetPhotos, setPendingSetPhotos] = useState(0)
   const [pendingNewSales, setPendingNewSales] = useState(0)
   const [pendingNewLeads, setPendingNewLeads] = useState(0)
   const [pendingCriticalNews, setPendingCriticalNews] = useState(0)
@@ -76,6 +86,9 @@ export function Layout() {
       .catch(() => {})
     getTestimonials()
       .then((testimonials) => setPendingTestimonials(testimonials.filter((t) => t.status === 'pendente').length))
+      .catch(() => {})
+    getSetPhotosForModeration()
+      .then((photos) => setPendingSetPhotos(photos.filter((p) => p.status === 'pendente').length))
       .catch(() => {})
     const seenSalesAt = getLastSeen(SEEN_SALES_KEY)
     getSales()
@@ -233,6 +246,14 @@ export function Layout() {
                   style={{ background: 'var(--status-warning)', color: '#3a2500' }}
                 >
                   {pendingTestimonials}
+                </span>
+              )}
+              {to === '/fotos-sets' && pendingSetPhotos > 0 && (
+                <span
+                  className="relative z-10 ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold"
+                  style={{ background: 'var(--status-warning)', color: '#3a2500' }}
+                >
+                  {pendingSetPhotos}
                 </span>
               )}
               {to === '/noticias' && pendingCriticalNews > 0 && (
