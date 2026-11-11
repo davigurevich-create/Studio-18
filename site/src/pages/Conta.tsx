@@ -626,9 +626,11 @@ function BadgesTab() {
   const [togglingPublic, setTogglingPublic] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
+  const [loadErrorDetail, setLoadErrorDetail] = useState<string | null>(null)
 
   const reload = () => {
     setLoadError(false)
+    setLoadErrorDetail(null)
     Promise.all([getMyPoints(), getMyBadges(), ensureClubBenefit(), getMySetPhotos(), getMyPublicProfileFlag()])
       .then(([p, b, c, photos, pub]) => {
         setPoints(p)
@@ -641,6 +643,7 @@ function BadgesTab() {
       .catch((err) => {
         console.error('Falha ao carregar Meus Selos', err)
         setLoadError(true)
+        setLoadErrorDetail(err instanceof Error ? err.message : String(err))
         setLoading(false)
       })
   }
@@ -660,9 +663,14 @@ function BadgesTab() {
   if (loadError) {
     return (
       <div className="text-center">
-        <p className="mb-3 text-sm" style={{ color: 'var(--ink-muted)' }}>
+        <p className="mb-1 text-sm" style={{ color: 'var(--ink-muted)' }}>
           Não foi possível carregar seus selos agora.
         </p>
+        {loadErrorDetail && (
+          <p className="mb-3 break-words text-[11px]" style={{ color: 'var(--ink-muted)', opacity: 0.7 }}>
+            {loadErrorDetail}
+          </p>
+        )}
         <button
           type="button"
           onClick={reload}
