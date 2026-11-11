@@ -93,10 +93,10 @@ export function ProductCard({
           <div ref={imageRef} data-card-cover={product.id} className="relative h-52 w-full overflow-hidden">
             <ProductArt product={product} className="h-full w-full" />
             {extrasMounted &&
-              angles.slice(1).map((angle, i) => (
+              angles.slice(1).map((url, i) => (
                 <img
-                  key={angle.url}
-                  src={angle.url}
+                  key={url}
+                  src={url}
                   alt=""
                   aria-hidden
                   className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
@@ -106,19 +106,16 @@ export function ProductCard({
             {inRail && <div className="rail-sheen pointer-events-none absolute inset-0" />}
             {cycling && (
               <span
-                className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider"
-                style={{ background: 'rgba(6,6,6,0.7)', color: 'var(--ink-secondary)', border: '1px solid var(--hairline)' }}
+                className="absolute bottom-3 left-3 flex gap-1 rounded-full px-2 py-1.5"
+                style={{ background: 'rgba(6,6,6,0.7)', border: '1px solid var(--hairline)' }}
               >
-                {angles[angleIndex]?.label}
-                <span className="flex gap-[3px]">
-                  {angles.map((angle, i) => (
-                    <span
-                      key={angle.url}
-                      className="h-1 w-1 rounded-full transition-colors duration-300"
-                      style={{ background: i === angleIndex ? 'var(--gold-bright)' : 'var(--ink-muted)' }}
-                    />
-                  ))}
-                </span>
+                {angles.map((url, i) => (
+                  <span
+                    key={url}
+                    className="h-1 w-1 rounded-full transition-colors duration-300"
+                    style={{ background: i === angleIndex ? 'var(--gold-bright)' : 'var(--ink-muted)' }}
+                  />
+                ))}
               </span>
             )}
           </div>

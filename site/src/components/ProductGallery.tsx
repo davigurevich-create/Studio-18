@@ -78,7 +78,9 @@ export function ProductGallery({
         </div>
 
         {(gallery.length > 1 || product.video_url) && (
-          <div className="mt-3 grid grid-cols-4 gap-2">
+          /* sempre uma linha só: com mais fotos do que cabem, rola de lado
+             (vai até a borda da tela pra deixar a próxima miniatura espiando) */
+          <div className="no-scrollbar -mx-6 mt-3 flex gap-2 overflow-x-auto px-6">
             {gallery.map((url, i) => (
               <button
                 key={url}
@@ -86,7 +88,7 @@ export function ProductGallery({
                 aria-label={`Ver foto ${i + 1} de ${gallery.length}`}
                 aria-pressed={i === selected}
                 onClick={() => setSelected(i)}
-                className="relative aspect-[4/3] overflow-hidden rounded-lg border transition-opacity"
+                className="relative aspect-[4/3] w-[21vw] shrink-0 overflow-hidden rounded-lg border transition-opacity"
                 style={{
                   borderColor: i === selected ? 'var(--gold)' : 'var(--hairline)',
                   opacity: i === selected ? 1 : 0.6,
@@ -100,7 +102,7 @@ export function ProductGallery({
                 type="button"
                 aria-label="Assistir ao vídeo"
                 onClick={() => setVideoOpen(true)}
-                className="relative aspect-[4/3] overflow-hidden rounded-lg border"
+                className="relative aspect-[4/3] w-[21vw] shrink-0 overflow-hidden rounded-lg border"
                 style={{ borderColor: 'var(--hairline)' }}
               >
                 <img src={gallery[0]} alt="" className="h-full w-full object-cover opacity-50" loading="lazy" />

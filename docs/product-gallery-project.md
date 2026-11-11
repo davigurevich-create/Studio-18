@@ -288,7 +288,7 @@ Este ambiente **bloqueia egress para os domínios de storage da Higgsfield**
   usuário — achou "não clean").
 - **Layout mobile da galeria** (só abaixo de 640px, no mesmo
   `ProductGallery.tsx`): capa grande de ponta a ponta encostada no topo da
-  tela, com o cabeçalho do site por cima, e embaixo uma grade de
+  tela, com o cabeçalho do site por cima, e embaixo uma linha única (rolagem lateral) de
   miniaturas todas do mesmo tamanho pra escolher a foto; tocar na capa
   abre o lightbox. No desktop continua o mosaico.
 - **Transição card → produto** (`site/src/lib/coverTransition.ts`): a foto
@@ -296,7 +296,7 @@ Este ambiente **bloqueia egress para os domínios de storage da Higgsfield**
   API. Depende de o catálogo estar em memória (`peekCatalog`/`peekProduct`
   em `lib/api.ts`) pra página de destino montar já com a foto.
 - **Cards do trilho** (`ProductCard.tsx` + `ProductRail.tsx`): o card do
-  centro alterna sozinho capa + 2 ângulos (`lib/productAngles.ts`, pula a
+  centro alterna sozinho capa + 2 ângulos, sem rótulo (`lib/productAngles.ts`, pula a
   foto da caixa) e, no mobile, os cards inclinam conforme atravessam o
   trilho (`.rail-tilt` no `index.css`).
 - **`site/src/components/ProductLightbox.tsx`**: modal fullscreen (usa
