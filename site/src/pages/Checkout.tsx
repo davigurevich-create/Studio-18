@@ -7,8 +7,8 @@ import { TrustBadges } from '@/components/TrustBadges'
 import {
   checkPixStatus,
   createPayment,
+  ensureClubBenefit,
   getCatalog,
-  getMyActiveClubCoupon,
   getMyAddresses,
   getMyOrders,
   getMyProfile,
@@ -62,6 +62,10 @@ export function Checkout() {
   const [couponStatus, setCouponStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle')
   const [couponMessage, setCouponMessage] = useState<string | null>(null)
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPct: number; freeShipping: boolean; additiveWithPix: boolean } | null>(null)
+  // cupom do benefício de clube — sempre ativo/aplicado sozinho (sem o
+  // cliente precisar digitar nada), num slot à parte do cupom acima, pra
+  // somar com ele em vez de competir pelo mesmo cupom.
+  const [clubCoupon, setClubCoupon] = useState<{ code: string; discountPct: number } | null>(null)
   const [shippingOptions, setShippingOptions] = useState<ShippingOption[] | null>(null)
   const [shippingLoading, setShippingLoading] = useState(false)
   const [shippingMessage, setShippingMessage] = useState<string | null>(null)
@@ -185,16 +189,20 @@ export function Checkout() {
 
   const subtotal = items.reduce((t, i) => t + unitPriceWithMotor(i.product, Boolean(i.line.withMotor)) * i.line.quantity, 0)
   const priceBeforeCoupon = method === 'pix' ? pixPrice(subtotal) : subtotal
-  // additiveWithPix é uma exceção pontual (hoje só a BLACKFRIDAY25): soma
-  // o % do cupom com o do Pix e aplica uma vez só sobre o preço cheio, em
-  // vez do empilhamento multiplicativo padrão (que resultaria em ~28,75%
-  // em vez dos 30% anunciados). Precisa bater com o mesmo cálculo em
-  // rede-create-payment, senão o valor mostrado aqui diverge do cobrado.
-  const productsTotal = appliedCoupon
-    ? appliedCoupon.additiveWithPix && method === 'pix'
-      ? Math.round(subtotal * (1 - (appliedCoupon.discountPct + PIX_DISCOUNT * 100) / 100) * 100) / 100
-      : Math.round(priceBeforeCoupon * (1 - appliedCoupon.discountPct / 100) * 100) / 100
-    : priceBeforeCoupon
+  // O benefício de clube soma com o cupom normal (cumulativo) em vez de
+  // competir pelo mesmo slot — os dois percentuais são somados antes de
+  // aplicar, igual à mesma regra "additive" já usada pro Pix (soma simples
+  // em vez de empilhamento multiplicativo). Precisa bater com o mesmo
+  // cálculo em rede-create-payment, senão o valor mostrado aqui diverge do
+  // cobrado.
+  const combinedDiscountPct = (appliedCoupon?.discountPct ?? 0) + (clubCoupon?.discountPct ?? 0)
+  const additiveWithPix = Boolean(appliedCoupon?.additiveWithPix)
+  const productsTotal =
+    combinedDiscountPct > 0
+      ? additiveWithPix && method === 'pix'
+        ? Math.round(subtotal * (1 - (combinedDiscountPct + PIX_DISCOUNT * 100) / 100) * 100) / 100
+        : Math.round(priceBeforeCoupon * (1 - combinedDiscountPct / 100) * 100) / 100
+      : priceBeforeCoupon
   const shippingCost = appliedCoupon?.freeShipping ? 0 : (selectedShipping?.price ?? 0)
   const total = Math.round((productsTotal + shippingCost) * 100) / 100
   const cardTotal = method === 'cartao' ? installmentTotal(total, cardInstallments) : total
@@ -255,17 +263,11 @@ export function Checkout() {
   // Aplica sozinho o cupom de quem acabou de deixar o e-mail no pop-up de
   // boas-vindas, sem precisar digitar o código de novo — a marca no
   // localStorage já foi consumida (removida) por consumePendingCoupon, então
-  // isso só acontece uma vez, no primeiro checkout depois do pop-up.
-  // Se já existe um cupom pendente do pop-up de boas-vindas, ele tem
-  // prioridade sobre o benefício de clube (ver efeito abaixo) — foi
-  // consumido do localStorage agora mesmo, então essa é a única chance de
-  // aplicar, enquanto o cupom de clube continua disponível pra uma próxima
-  // compra se não for usado aqui.
-  const welcomeCouponClaimedRef = useRef(false)
+  // isso só acontece uma vez, no primeiro checkout depois do pop-up. Fica no
+  // slot do cupom normal, que soma com o benefício de clube (efeito abaixo).
   useEffect(() => {
     const pending = consumePendingCoupon()
     if (!pending) return
-    welcomeCouponClaimedRef.current = true
     setCouponInput(pending)
     ;(async () => {
       setCouponStatus('checking')
@@ -284,18 +286,15 @@ export function Checkout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Aplica sozinho o benefício de clube ativado em Minha Conta — o cliente
-  // não precisa lembrar/copiar o código. Fica no banco até ser usado, então
-  // só busca pra quem está logado (anônimo nunca tem um).
+  // Ativa (se ainda não tiver) e aplica sozinho o benefício do clube atual —
+  // o cliente não precisa clicar em nada nem lembrar/copiar código nenhum.
+  // Fica num slot à parte do cupom normal acima, então os dois somam em vez
+  // de competir pelo mesmo cupom.
   useEffect(() => {
     if (!session) return
-    getMyActiveClubCoupon()
-      .then((pending) => {
-        if (!pending || welcomeCouponClaimedRef.current) return
-        setCouponInput(pending.code)
-        setCouponStatus('checking')
-        setAppliedCoupon({ code: pending.code, discountPct: pending.discountPct, freeShipping: false, additiveWithPix: false })
-        setCouponStatus('valid')
+    ensureClubBenefit()
+      .then((benefit) => {
+        setClubCoupon(benefit ? { code: benefit.code, discountPct: benefit.discountPct } : null)
       })
       .catch(() => {})
   }, [session])
@@ -436,6 +435,7 @@ export function Checkout() {
         installments: method === 'cartao' ? cardInstallments : undefined,
         address: { zipCode, streetName, streetNumber, complement, neighborhood, city, federalUnit },
         couponCode: appliedCoupon?.code,
+        clubCouponCode: clubCoupon?.code,
         shipping: selectedShipping,
         turnstileToken,
       })
@@ -1065,8 +1065,18 @@ export function Checkout() {
             </div>
           ))}
           <div className="border-t pt-3" style={{ borderColor: 'var(--hairline)' }}>
+            {clubCoupon && (
+              <div
+                className="mb-2 flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs"
+                style={{ background: 'var(--gold-wash)', border: '1px solid var(--gold-dim)', color: 'var(--gold-bright)' }}
+              >
+                <span>
+                  ✓ Benefício de clube <strong>{clubCoupon.code}</strong> aplicado — {clubCoupon.discountPct}% de desconto
+                </span>
+              </div>
+            )}
             <label className="mb-2 block text-xs tracking-widest" style={{ color: 'var(--ink-muted)' }}>
-              CUPOM DE DESCONTO
+              {clubCoupon ? 'TEM OUTRO CUPOM? ACUMULA COM O BENEFÍCIO ACIMA' : 'CUPOM DE DESCONTO'}
             </label>
             {appliedCoupon ? (
               <div

@@ -310,10 +310,14 @@ export function Vendas() {
                       </div>
                     )}
                   </td>
-                  <td className="py-2.5 pr-4 text-xs" style={{ color: s.coupon_code ? 'var(--text-primary)' : 'var(--text-muted)' }}>
-                    {s.coupon_code ? (
+                  <td
+                    className="py-2.5 pr-4 text-xs"
+                    style={{ color: s.coupon_code || s.club_coupon_code ? 'var(--text-primary)' : 'var(--text-muted)' }}
+                  >
+                    {s.coupon_code || s.club_coupon_code ? (
                       <>
-                        <div className="font-mono font-medium">{s.coupon_code}</div>
+                        {s.coupon_code && <div className="font-mono font-medium">{s.coupon_code}</div>}
+                        {s.club_coupon_code && <div className="font-mono font-medium">{s.club_coupon_code}</div>}
                         {s.discount_brl > 0 && (
                           <div style={{ color: 'var(--text-muted)' }}>−{formatBRL(s.discount_brl)}</div>
                         )}

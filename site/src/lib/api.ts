@@ -656,21 +656,18 @@ export interface ClubBenefit {
   clubName: string
 }
 
-export async function activateClubBenefit(): Promise<ClubBenefit> {
-  if (!supabase) throw new Error('Modo demonstração: conecte o Supabase pra ativar o benefício de verdade.')
-  const { data, error } = await supabase.rpc('activate_club_benefit')
+/**
+ * Ativa (se ainda não tiver) e devolve o cupom do clube atual, sem nunca dar
+ * erro — se o cliente ainda não tem clube, ou já usou o benefício desse
+ * nível, simplesmente devolve null. Feita pra ser chamada sozinha, sem
+ * nenhuma ação do cliente (ver Conta.tsx e Checkout.tsx).
+ */
+export async function ensureClubBenefit(): Promise<ClubBenefit | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('ensure_club_benefit')
   if (error) throw error
   const row = (data ?? [])[0] as { code: string; discount_pct: number; club_name: string } | undefined
-  if (!row) throw new Error('Não foi possível ativar o benefício agora.')
-  return { code: row.code, discountPct: Number(row.discount_pct), clubName: row.club_name }
-}
-
-export async function getMyActiveClubCoupon(): Promise<{ code: string; discountPct: number } | null> {
-  if (!supabase) return null
-  const { data, error } = await supabase.rpc('get_my_active_club_coupon')
-  if (error) throw error
-  const row = (data ?? [])[0] as { code: string; discount_pct: number } | undefined
-  return row ? { code: row.code, discountPct: Number(row.discount_pct) } : null
+  return row ? { code: row.code, discountPct: Number(row.discount_pct), clubName: row.club_name } : null
 }
 
 // ---------------------------------------------------------------------------

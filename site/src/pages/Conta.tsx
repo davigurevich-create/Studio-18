@@ -22,8 +22,7 @@ import {
   saveMyNotificationPrefs,
   getMyPoints,
   getMyBadges,
-  getMyActiveClubCoupon,
-  activateClubBenefit,
+  ensureClubBenefit,
   getMySetPhotos,
   submitSetPhoto,
   getMyPublicProfileFlag,
@@ -626,11 +625,9 @@ function BadgesTab() {
   const [publicProfile, setPublicProfile] = useState(false)
   const [togglingPublic, setTogglingPublic] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [activating, setActivating] = useState(false)
-  const [activateError, setActivateError] = useState<string | null>(null)
 
   const reload = () => {
-    Promise.all([getMyPoints(), getMyBadges(), getMyActiveClubCoupon(), getMySetPhotos(), getMyPublicProfileFlag()]).then(
+    Promise.all([getMyPoints(), getMyBadges(), ensureClubBenefit(), getMySetPhotos(), getMyPublicProfileFlag()]).then(
       ([p, b, c, photos, pub]) => {
         setPoints(p)
         setBadges(b)
@@ -666,19 +663,6 @@ function BadgesTab() {
   const currentClub = [...CLUBS].reverse().find((c) => totalPoints >= c.threshold) ?? null
   const nextClub = CLUBS.find((c) => c.threshold > totalPoints) ?? null
   const progressPct = nextClub ? Math.min(100, (totalPoints / nextClub.threshold) * 100) : 100
-
-  const handleActivate = async () => {
-    setActivating(true)
-    setActivateError(null)
-    try {
-      const result = await activateClubBenefit()
-      setActiveCoupon({ code: result.code, discountPct: result.discountPct })
-    } catch (err) {
-      setActivateError(err instanceof Error ? err.message : 'Não foi possível ativar o benefício agora.')
-    } finally {
-      setActivating(false)
-    }
-  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -734,33 +718,17 @@ function BadgesTab() {
           </div>
         )}
 
-        {currentClub &&
-          (activeCoupon ? (
-            <div
-              className="mt-5 rounded-lg border px-4 py-3 text-xs"
-              style={{ borderColor: 'var(--gold-dim)', background: 'var(--gold-wash)', color: 'var(--gold-bright)' }}
-            >
-              ✓ Benefício ativo: cupom <code className="font-mono">{activeCoupon.code}</code> ({activeCoupon.discountPct}% OFF) — aplicado
-              automaticamente no seu próximo checkout.
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={handleActivate}
-              disabled={activating}
-              className="mt-5 w-full rounded-full px-6 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-              style={{ background: 'var(--gold)', color: '#0a0a0a' }}
-            >
-              {activating ? 'Ativando...' : `Ativar benefício do ${currentClub.name} (${currentClub.discountPct}% OFF na próxima compra)`}
-            </button>
-          ))}
-        {activateError && (
-          <p className="mt-2 text-xs" style={{ color: '#e88b8b' }}>
-            {activateError}
-          </p>
+        {currentClub && activeCoupon && (
+          <div
+            className="mt-5 rounded-lg border px-4 py-3 text-xs"
+            style={{ borderColor: 'var(--gold-dim)', background: 'var(--gold-wash)', color: 'var(--gold-bright)' }}
+          >
+            ✓ Benefício ativo: cupom <code className="font-mono">{activeCoupon.code}</code> ({activeCoupon.discountPct}% OFF) — já
+            aplicado automaticamente no seu próximo checkout, e acumula com qualquer outro cupom que você adicionar lá.
+          </div>
         )}
         <p className="mt-2 text-[11px]" style={{ color: 'var(--ink-muted)' }}>
-          Vale pra 1 compra com pagamento confirmado. Não acumula com outros cupons.
+          Vale pra 1 compra com pagamento confirmado.
         </p>
       </div>
 

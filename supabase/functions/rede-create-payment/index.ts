@@ -184,6 +184,9 @@ interface RequestBody {
   installments?: number
   address: Address
   couponCode?: string
+  // cupom do benefício de clube — campo à parte do cupom acima, pra somar
+  // com ele em vez de competir pelo mesmo cupom (ver Checkout.tsx)
+  clubCouponCode?: string
   shipping?: { id: number; service: string; company: string; price: number; deliveryDays: string }
   turnstileToken?: string | null
 }
@@ -310,6 +313,7 @@ Deno.serve(async (req) => {
       installments,
       address,
       couponCode,
+      clubCouponCode,
       shipping,
       turnstileToken,
     } = body
@@ -414,6 +418,9 @@ Deno.serve(async (req) => {
         .maybeSingle()
       const isValid =
         coupon &&
+        // cupom de clube só entra pelo campo clubCouponCode (abaixo), com o
+        // vínculo de dono conferido — nunca pelo campo de cupom normal
+        coupon.kind !== 'club_reward' &&
         coupon.active &&
         (coupon.expires_at === null || new Date(coupon.expires_at) > new Date()) &&
         (coupon.max_uses === null || coupon.uses_count < coupon.max_uses)
@@ -431,6 +438,38 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Benefício de clube — num campo à parte do cupom normal acima, pra
+    // somar com ele em vez de ocupar o mesmo slot. Confere que o cupom
+    // pertence mesmo ao cliente que está comprando (pelo e-mail da conta
+    // dona do cupom), senão qualquer um que descobrisse o código de outra
+    // pessoa conseguiria usar o benefício dela.
+    let clubCoupon: { id: string; code: string; uses_count: number } | null = null
+    let clubDiscountPct = 0
+    if (clubCouponCode) {
+      const { data: coupon } = await supabase
+        .from('coupons')
+        .select('id, code, discount_pct, active, max_uses, uses_count, expires_at, kind, owner_user_id')
+        .ilike('code', clubCouponCode)
+        .maybeSingle()
+      let ownerEmailMatches = false
+      if (coupon?.owner_user_id) {
+        const { data: ownerUser } = await supabase.auth.admin.getUserById(coupon.owner_user_id)
+        ownerEmailMatches = (ownerUser?.user?.email ?? '').toLowerCase() === customerEmail.toLowerCase()
+      }
+      const isValid =
+        coupon &&
+        coupon.kind === 'club_reward' &&
+        ownerEmailMatches &&
+        coupon.active &&
+        (coupon.expires_at === null || new Date(coupon.expires_at) > new Date()) &&
+        (coupon.max_uses === null || coupon.uses_count < coupon.max_uses)
+      if (isValid) {
+        clubCoupon = { id: coupon.id, code: coupon.code, uses_count: coupon.uses_count }
+        clubDiscountPct = Number(coupon.discount_pct)
+      }
+    }
+    const couponAndClubDiscountPct = couponDiscountPct + clubDiscountPct
+
     const fullTotalAmount = lineItems.reduce((t, li) => t + li.fullUnitPrice * li.quantity, 0)
     const pixAdjustedTotal = lineItems.reduce((t, li) => t + li.unitPrice * li.quantity, 0)
     // additive_with_pix é uma exceção pontual (hoje só a BLACKFRIDAY25): em
@@ -440,10 +479,10 @@ Deno.serve(async (req) => {
     // exatamente nos 30% anunciados. Só vale pagando no Pix — no cartão/
     // outros não tem o desconto do Pix pra somar, então o cupom age normal.
     const productsTotal =
-      couponAdditiveWithPix && paymentMethod === 'pix' && couponDiscountPct > 0
-        ? Math.round(fullTotalAmount * (1 - (couponDiscountPct + PIX_DISCOUNT * 100) / 100) * 100) / 100
-        : couponDiscountPct > 0
-          ? Math.round(pixAdjustedTotal * (1 - couponDiscountPct / 100) * 100) / 100
+      couponAdditiveWithPix && paymentMethod === 'pix' && couponAndClubDiscountPct > 0
+        ? Math.round(fullTotalAmount * (1 - (couponAndClubDiscountPct + PIX_DISCOUNT * 100) / 100) * 100) / 100
+        : couponAndClubDiscountPct > 0
+          ? Math.round(pixAdjustedTotal * (1 - couponAndClubDiscountPct / 100) * 100) / 100
           : pixAdjustedTotal
     // Recalcula o frete no servidor em vez de confiar no preço que o
     // cliente mandou — o cupom de frete grátis (FUNDADORES40) zera o valor
@@ -502,6 +541,7 @@ Deno.serve(async (req) => {
         shipping_city: address.city,
         shipping_federal_unit: address.federalUnit,
         coupon_code: appliedCoupon?.code ?? null,
+        club_coupon_code: clubCoupon?.code ?? null,
       })
       .select()
       .single()
@@ -511,14 +551,11 @@ Deno.serve(async (req) => {
     }
 
     if (appliedCoupon) {
-      // Cupom de benefício de clube só pode valer pra 1 compra com
-      // PAGAMENTO CONFIRMADO (pedido explícito do usuário) — diferente dos
-      // outros tipos de cupom (consumidos aqui, na criação do pedido), o
-      // consumo dele é adiado pro momento em que finalStatus vira "pago"
-      // mais abaixo (ou pro webhook do Pix, se não aprovar na hora).
-      if (appliedCoupon.kind !== 'club_reward') {
-        await supabase.from('coupons').update({ uses_count: appliedCoupon.uses_count + 1 }).eq('id', appliedCoupon.id)
-      }
+      // Cupom normal: consumido aqui, na criação do pedido (diferente do
+      // benefício de clube, que só vale pra 1 compra com PAGAMENTO
+      // CONFIRMADO — consumo adiado pro momento em que finalStatus vira
+      // "pago" mais abaixo, ou pro webhook do Pix, se não aprovar na hora).
+      await supabase.from('coupons').update({ uses_count: appliedCoupon.uses_count + 1 }).eq('id', appliedCoupon.id)
 
       if (appliedCoupon.kind === 'referral_code' && appliedCoupon.ownerUserId) {
         const REFERRAL_REWARD_PCT = 5
@@ -724,7 +761,7 @@ Deno.serve(async (req) => {
     // no polling, quando o pagamento é confirmado de verdade.
     if (finalStatus === 'pago') {
       await deductStockForSale(supabase, sale.id)
-      await redeemClubCouponOnPayment(supabase, sale.coupon_code)
+      await redeemClubCouponOnPayment(supabase, sale.club_coupon_code)
     }
 
     const itemsListHtml = lineItems
@@ -743,6 +780,7 @@ Deno.serve(async (req) => {
       // e-mail), mas aproveitei que já estava mexendo aqui perto.
       paymentMethod === 'pix' ? `à vista no PIX (${PIX_DISCOUNT * 100}%)` : null,
       appliedCoupon ? `cupom ${appliedCoupon.code} (${couponDiscountPct}%)` : null,
+      clubCoupon ? `benefício de clube ${clubCoupon.code} (${clubDiscountPct}%)` : null,
     ]
       .filter(Boolean)
       .join(' + ')

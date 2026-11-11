@@ -192,7 +192,7 @@ Deno.serve(async (req) => {
 
     const { data: existingSale } = await supabase
       .from('sales')
-      .select('id, status, customer_name, customer_contact, coupon_code')
+      .select('id, status, customer_name, customer_contact, club_coupon_code')
       .eq('provider_payment_id', String(tid))
       .maybeSingle()
 
@@ -213,7 +213,7 @@ Deno.serve(async (req) => {
     // mesmo pagamento).
     if (existingSale.status !== 'pago' && newStatus === 'pago') {
       await deductStockForSale(supabase, existingSale.id)
-      await redeemClubCouponOnPayment(supabase, existingSale.coupon_code)
+      await redeemClubCouponOnPayment(supabase, existingSale.club_coupon_code)
     }
     if (existingSale.status !== 'pago' && newStatus === 'pago' && existingSale.customer_contact) {
       await sendEmail(

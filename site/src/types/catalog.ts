@@ -86,6 +86,9 @@ export interface CheckoutInput {
   installments?: number
   address: CheckoutAddress
   couponCode?: string
+  // cupom do benefício de clube — sempre num campo à parte do cupom normal
+  // acima, pra somar com ele em vez de ocupar o mesmo slot (ver Checkout.tsx)
+  clubCouponCode?: string
   shipping: ShippingOption
   turnstileToken?: string | null
 }

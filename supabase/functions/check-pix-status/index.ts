@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     const { data: sale, error: saleError } = await supabase
       .from('sales')
-      .select('id, status, payment_method, provider_payment_id, customer_name, customer_contact, coupon_code')
+      .select('id, status, payment_method, provider_payment_id, customer_name, customer_contact, club_coupon_code')
       .eq('id', orderId)
       .maybeSingle()
 
@@ -201,7 +201,7 @@ Deno.serve(async (req) => {
 
     if (updated) {
       await deductStockForSale(supabase, sale.id)
-      await redeemClubCouponOnPayment(supabase, sale.coupon_code)
+      await redeemClubCouponOnPayment(supabase, sale.club_coupon_code)
       await sendConfirmationEmail(sale.customer_contact, sale.customer_name, sale.id)
     }
 
