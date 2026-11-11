@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getLeads } from '@/lib/api'
+import { getLeads, sendBlackFridayCampaign } from '@/lib/api'
 import { Badge, Button, Card, PageHeader } from '@/components/ui'
 import type { Lead } from '@/types/domain'
 
@@ -18,6 +18,13 @@ export function Leads() {
   const [sourceFilter, setSourceFilter] = useState<'todas' | string>('todas')
   const [copiedAll, setCopiedAll] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [testEmail, setTestEmail] = useState('')
+  const [sendingTest, setSendingTest] = useState(false)
+  const [testResult, setTestResult] = useState<string | null>(null)
+  const [pendingCount, setPendingCount] = useState<number | null>(null)
+  const [checkingPending, setCheckingPending] = useState(false)
+  const [launching, setLaunching] = useState(false)
+  const [launchResult, setLaunchResult] = useState<string | null>(null)
 
   useEffect(() => {
     getLeads().then((l) => {
@@ -25,6 +32,47 @@ export function Leads() {
       setLoading(false)
     })
   }, [])
+
+  const refreshPendingCount = async () => {
+    setCheckingPending(true)
+    try {
+      const res = await sendBlackFridayCampaign()
+      setPendingCount(res.pending ?? 0)
+    } catch {
+      setPendingCount(null)
+    } finally {
+      setCheckingPending(false)
+    }
+  }
+
+  const sendTest = async () => {
+    if (!testEmail.trim()) return
+    setSendingTest(true)
+    setTestResult(null)
+    try {
+      const res = await sendBlackFridayCampaign({ testEmail: testEmail.trim() })
+      setTestResult(res.sentTest ? `✓ Teste enviado pra ${testEmail.trim()}` : 'Falha ao enviar o teste.')
+    } catch (err) {
+      setTestResult(err instanceof Error ? err.message : 'Falha ao enviar o teste.')
+    } finally {
+      setSendingTest(false)
+    }
+  }
+
+  const launchCampaign = async () => {
+    if (!window.confirm(`Confirma o disparo pra ${pendingCount ?? 'todos os'} e-mails pendentes? Essa ação não pode ser desfeita.`)) return
+    setLaunching(true)
+    setLaunchResult(null)
+    try {
+      const res = await sendBlackFridayCampaign({ confirm: true })
+      setLaunchResult(`✓ Enviado para ${res.sent ?? 0} e-mails${res.failed ? ` (${res.failed} falharam)` : ''}.`)
+      setPendingCount(0)
+    } catch (err) {
+      setLaunchResult(err instanceof Error ? err.message : 'Falha ao disparar a campanha.')
+    } finally {
+      setLaunching(false)
+    }
+  }
 
   const bySource = useMemo(() => {
     const counts = new Map<string, number>()
@@ -89,6 +137,53 @@ export function Leads() {
           </div>
         </Card>
       )}
+
+      <Card className="mt-4">
+        <h2 className="mb-1 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          Campanha de Black Friday
+        </h2>
+        <p className="mb-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+          Manda o e-mail de Black Friday (cupom BLACKFRIDAY25) pra quem ainda não recebeu. Idempotente — pode rodar
+          de novo com segurança, nunca reenvia pra quem já recebeu ou se descadastrou.
+        </p>
+
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <input
+            value={testEmail}
+            onChange={(e) => setTestEmail(e.target.value)}
+            placeholder="seu-email@exemplo.com"
+            className="w-full rounded-lg border px-3 py-2 text-sm sm:w-72"
+            style={{ borderColor: 'var(--border-hairline)', background: 'transparent', color: 'var(--text-primary)' }}
+          />
+          <Button variant="secondary" onClick={sendTest} disabled={sendingTest || !testEmail.trim()}>
+            {sendingTest ? 'Enviando...' : 'Enviar teste pra mim'}
+          </Button>
+          {testResult && (
+            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              {testResult}
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center" style={{ borderColor: 'var(--gridline)' }}>
+          <Button variant="secondary" onClick={refreshPendingCount} disabled={checkingPending}>
+            {checkingPending ? 'Consultando...' : 'Ver quantos faltam enviar'}
+          </Button>
+          {pendingCount !== null && (
+            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              {pendingCount} {pendingCount === 1 ? 'e-mail pendente' : 'e-mails pendentes'}
+            </span>
+          )}
+          <Button onClick={launchCampaign} disabled={launching || pendingCount === null || pendingCount === 0}>
+            {launching ? 'Disparando...' : `Disparar pra todos (${pendingCount ?? '?'})`}
+          </Button>
+          {launchResult && (
+            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              {launchResult}
+            </span>
+          )}
+        </div>
+      </Card>
 
       <div className="mb-4 mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <input

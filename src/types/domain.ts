@@ -194,6 +194,8 @@ export interface Lead {
   created_at: string
   email: string
   source: string
+  blackfriday_email_sent_at?: string | null
+  unsubscribed_at?: string | null
 }
 
 export interface PointsLedgerEntry {

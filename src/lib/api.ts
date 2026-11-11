@@ -678,6 +678,26 @@ export async function getLeads(): Promise<Lead[]> {
   return [...leadsTable.all()].sort((a, b) => b.created_at.localeCompare(a.created_at))
 }
 
+/**
+ * Dispara a campanha de Black Friday pros leads. Sem `testEmail` nem
+ * `confirm`, só devolve quantos leads ainda não receberam (pra confirmar
+ * antes de disparar de verdade). Com `confirm: true`, manda pra todo mundo
+ * pendente de verdade.
+ */
+export async function sendBlackFridayCampaign(
+  opts: { testEmail?: string; confirm?: boolean } = {},
+): Promise<{ pending?: number; sent?: number; failed?: number; sentTest?: boolean }> {
+  if (!supabase) throw new Error('Conecte o Supabase para disparar a campanha de verdade.')
+  const { data, error } = await supabase.functions.invoke('send-blackfriday-campaign', { body: opts })
+  if (error) {
+    const context = (error as { context?: Response }).context
+    const parsed = await context?.clone().json().catch(() => null)
+    throw new Error(parsed?.error || error.message)
+  }
+  if (data?.error) throw new Error(data.error)
+  return data
+}
+
 // ---------------------------------------------------------------------------
 // Depoimentos — coletados pelo site 5 dias após a entrega (ver
 // request-testimonials e submit-testimonial). Moderação aqui: só depois de
