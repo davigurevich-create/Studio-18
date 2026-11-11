@@ -99,8 +99,13 @@ function blackFridayEmailHtml(unsubscribeUrl: string): string {
                 <p style="margin:0 0 10px;font-size:12px;font-weight:bold;letter-spacing:2px;color:#e6c778;text-transform:uppercase;">
                   Black Friday Studio 18
                 </p>
+                <p style="margin:0 0 20px;font-size:14px;line-height:1.7;color:#b7b3a9;">
+                  Começamos a Studio 18 há pouco tempo, e saber que pessoas como você decidiram confiar na gente
+                  desde o início é algo que nos traz uma felicidade genuína. Pra agradecer essa confiança, preparamos
+                  a Black Friday mais generosa que já fizemos.
+                </p>
                 <h1 style="margin:0 0 16px;font-size:26px;line-height:1.25;color:#f3f1ec;">
-                  Até <span style="color:#e6c778;">30% OFF</span> na sua próxima réplica de colecionador
+                  Até <span style="color:#e6c778;">30% OFF</span> em todo o site. Inicie uma coleção ou aumente a sua!
                 </h1>
                 <p style="margin:0 0 20px;font-size:14px;line-height:1.7;color:#b7b3a9;">
                   25% OFF em até 6x no cartão, ou 30% OFF à vista no Pix — em qualquer carro, moto ou motor
