@@ -625,18 +625,24 @@ function BadgesTab() {
   const [publicProfile, setPublicProfile] = useState(false)
   const [togglingPublic, setTogglingPublic] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
   const reload = () => {
-    Promise.all([getMyPoints(), getMyBadges(), ensureClubBenefit(), getMySetPhotos(), getMyPublicProfileFlag()]).then(
-      ([p, b, c, photos, pub]) => {
+    setLoadError(false)
+    Promise.all([getMyPoints(), getMyBadges(), ensureClubBenefit(), getMySetPhotos(), getMyPublicProfileFlag()])
+      .then(([p, b, c, photos, pub]) => {
         setPoints(p)
         setBadges(b)
         setActiveCoupon(c)
         setMyPhotos(photos)
         setPublicProfile(pub)
         setLoading(false)
-      },
-    )
+      })
+      .catch((err) => {
+        console.error('Falha ao carregar Meus Selos', err)
+        setLoadError(true)
+        setLoading(false)
+      })
   }
 
   const handleTogglePublic = async () => {
@@ -650,6 +656,24 @@ function BadgesTab() {
   }
 
   useEffect(reload, [])
+
+  if (loadError) {
+    return (
+      <div className="text-center">
+        <p className="mb-3 text-sm" style={{ color: 'var(--ink-muted)' }}>
+          Não foi possível carregar seus selos agora.
+        </p>
+        <button
+          type="button"
+          onClick={reload}
+          className="rounded-full border px-4 py-1.5 text-xs font-medium"
+          style={{ borderColor: 'var(--gold-dim)', color: 'var(--gold-bright)' }}
+        >
+          Tentar de novo
+        </button>
+      </div>
+    )
+  }
 
   if (loading || !points) {
     return (
