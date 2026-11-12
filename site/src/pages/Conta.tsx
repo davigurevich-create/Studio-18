@@ -643,7 +643,16 @@ function BadgesTab() {
       .catch((err) => {
         console.error('Falha ao carregar Meus Selos', err)
         setLoadError(true)
-        setLoadErrorDetail(err instanceof Error ? err.message : String(err))
+        // Erros de supabase.rpc() (PostgrestError) são objeto simples, não
+        // instância de Error — err.message existe mas "instanceof Error"
+        // falha pra eles, daí o "[object Object]" de antes.
+        const message =
+          err instanceof Error
+            ? err.message
+            : typeof err === 'object' && err !== null && 'message' in err
+              ? String((err as { message: unknown }).message)
+              : String(err)
+        setLoadErrorDetail(message)
         setLoading(false)
       })
   }
