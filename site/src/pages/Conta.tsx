@@ -725,7 +725,14 @@ function BadgesTab() {
               {totalPoints.toLocaleString('pt-BR')} <span className="text-lg font-normal" style={{ color: 'var(--ink-muted)' }}>pontos</span>
             </p>
             <p className="mt-1 text-xs" style={{ color: 'var(--ink-muted)' }}>
-              {points.setsPoints.toLocaleString('pt-BR')} de sets · {points.testimonialPoints.toLocaleString('pt-BR')} de depoimento
+              <strong className="font-bold" style={{ color: 'var(--ink)' }}>
+                {points.setsPoints.toLocaleString('pt-BR')}
+              </strong>{' '}
+              de sets ·{' '}
+              <strong className="font-bold" style={{ color: 'var(--ink)' }}>
+                {points.testimonialPoints.toLocaleString('pt-BR')}
+              </strong>{' '}
+              de depoimento
             </p>
           </div>
           {points.rankPosition != null && (
