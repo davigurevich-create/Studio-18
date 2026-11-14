@@ -121,10 +121,13 @@ Deno.serve(async (req) => {
     // Express, Total Express, etc.) exigem agência própria, XML de nota ou
     // outra burocracia que trava o envio. Total Express removida de novo
     // (20/10/2026): exige um ID de agência de retirada que ainda não foi
-    // configurado (pendente resposta do suporte da Melhor Envio). Comparação
-    // por "contém" (não igualdade exata) pra tolerar variações de sufixo no
-    // nome que a Melhor Envio devolve (ex: "J&T Express" vs "JeT").
-    const ALLOWED_COMPANY_KEYWORDS = ['jadlog', 'correios', 'loggi', 'pegaki', 'j&t', 'jet']
+    // configurado (pendente resposta do suporte da Melhor Envio). Correios
+    // removida TEMPORARIAMENTE (14/11/2026): o Iwan (sócio responsável pelas
+    // entregas) viajou e ninguém mais posta nos Correios por enquanto —
+    // reativar assim que ele voltar, só devolvendo 'correios' pro array.
+    // Comparação por "contém" (não igualdade exata) pra tolerar variações de
+    // sufixo no nome que a Melhor Envio devolve (ex: "J&T Express" vs "JeT").
+    const ALLOWED_COMPANY_KEYWORDS = ['jadlog', 'loggi', 'pegaki', 'j&t', 'jet']
 
     const options = (raw as MelhorEnvioOption[])
       .filter((opt) => !opt.error && opt.price != null)
