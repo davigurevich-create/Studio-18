@@ -144,7 +144,9 @@ export async function updateProduct(id: string, patch: Partial<Product>, summary
 // ---------------------------------------------------------------------------
 export async function getStock(): Promise<ProductStock[]> {
   if (supabase) {
-    const { data, error } = await supabase.from('product_stock').select('*')
+    // get_product_stock() (não a view direto) — só devolve algo se
+    // is_staff(), ver migration 125.
+    const { data, error } = await supabase.rpc('get_product_stock')
     if (error) throw error
     return data as ProductStock[]
   }
