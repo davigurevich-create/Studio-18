@@ -7,6 +7,7 @@ import { TrustBadges } from '@/components/TrustBadges'
 import {
   checkPixStatus,
   createPayment,
+  PaymentError,
   ensureClubBenefit,
   getCatalog,
   getMyAddresses,
@@ -57,6 +58,7 @@ export function Checkout() {
   const [fillComplete, setFillComplete] = useState(false)
   const [result, setResult] = useState<CreatePaymentResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [needsBankConfirmation, setNeedsBankConfirmation] = useState(false)
   const [copiedField, setCopiedField] = useState<'order' | 'pix' | null>(null)
   const [couponInput, setCouponInput] = useState('')
   const [couponStatus, setCouponStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle')
@@ -406,6 +408,7 @@ export function Checkout() {
     }
 
     setError(null)
+    setNeedsBankConfirmation(false)
     setSubmitting(true)
     setFillComplete(false)
     try {
@@ -471,6 +474,7 @@ export function Checkout() {
       markHasPurchased()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível processar seu pedido agora. Tente novamente.')
+      setNeedsBankConfirmation(err instanceof PaymentError && err.needsBankConfirmation)
       setFillComplete(false)
     } finally {
       setSubmitting(false)
@@ -1166,7 +1170,21 @@ export function Checkout() {
 
           {error && (
             <div className="rounded-lg px-4 py-3 text-sm" style={{ background: 'rgba(208,59,59,0.12)', color: '#e88b8b' }}>
-              {error}
+              <p>{error}</p>
+              {needsBankConfirmation && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMethod('pix')
+                    setError(null)
+                    setNeedsBankConfirmation(false)
+                  }}
+                  className="mt-3 rounded-full px-5 py-2 text-xs font-medium"
+                  style={{ background: 'var(--gold)', color: '#0a0a0a' }}
+                >
+                  Pagar com Pix em vez disso
+                </button>
+              )}
             </div>
           )}
 

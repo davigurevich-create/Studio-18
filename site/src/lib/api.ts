@@ -61,6 +61,21 @@ export interface CreatePaymentResult {
 }
 
 /**
+ * Erro de pagamento recusado em que a causa provável foi o banco ter
+ * pedido uma confirmação de 3DS que a gente pulou (ver rede-create-payment)
+ * — carrega needsBankConfirmation pro checkout oferecer "pagar com Pix" em
+ * vez de só mostrar o texto do erro.
+ */
+export class PaymentError extends Error {
+  needsBankConfirmation: boolean
+  constructor(message: string, needsBankConfirmation: boolean) {
+    super(message)
+    this.name = 'PaymentError'
+    this.needsBankConfirmation = needsBankConfirmation
+  }
+}
+
+/**
  * Cria a cobranca real na Rede via Supabase Edge Function (PV e chave de
  * integracao ficam so no servidor) e registra o pedido em Vendas com
  * status "pendente" ate a confirmacao do pagamento chegar pelo webhook
@@ -68,7 +83,14 @@ export interface CreatePaymentResult {
  */
 export async function createPayment(input: CheckoutInput): Promise<CreatePaymentResult> {
   if (supabase) {
-    return invokeEdgeFunction<CreatePaymentResult>('rede-create-payment', input)
+    const { data, error } = await supabase.functions.invoke('rede-create-payment', { body: input as unknown as Record<string, unknown> })
+    if (error) {
+      const context = (error as { context?: Response }).context
+      const parsed = await context?.clone().json().catch(() => null)
+      throw new PaymentError(parsed?.error || error.message, Boolean(parsed?.needsBankConfirmation))
+    }
+    if (data?.error) throw new PaymentError(data.error, Boolean(data.needsBankConfirmation))
+    return data as CreatePaymentResult
   }
 
   // Modo demonstracao: nao ha backend para processar o pagamento.

@@ -605,6 +605,10 @@ Deno.serve(async (req) => {
     // corpo sem threeDSecure, usado como plano B se o banco pedir um
     // desafio de autenticação (returnCode 220) que ainda não sabemos tratar
     let cardFallbackBody: Record<string, unknown> | null = null
+    // true assim que o banco pedir o desafio 3DS (220) e a gente repetir
+    // sem ele — se essa segunda tentativa também for recusada, a causa
+    // provável é a confirmação que faltou, não o cartão/limite em si.
+    let needsBankConfirmation = false
     if (paymentMethod === 'pix') {
       const expiration = new Date(Date.now() + 30 * 60 * 1000) // QR Code válido por 30 minutos
       redeBody = {
@@ -717,6 +721,7 @@ Deno.serve(async (req) => {
     // (perde o repasse de responsabilidade por fraude só nessa transação)
     if (paymentMethod === 'cartao' && payment?.returnCode === '220' && cardFallbackBody) {
       console.error('3DS pediu challenge (220) — repetindo sem 3DS:', JSON.stringify(payment))
+      needsBankConfirmation = true
       redeResponse = await fetch(REDE_URLS.transactions, {
         method: 'POST',
         headers: {
@@ -728,10 +733,24 @@ Deno.serve(async (req) => {
       payment = await redeResponse.json().catch(() => null)
     }
 
+    // Mensagem amigável pra quando a recusa provavelmente foi só por causa
+    // da confirmação de 3DS que pulamos (needsBankConfirmation) — em vez do
+    // texto cru da operadora, que não ajuda o cliente a entender o que
+    // fazer. needsBankConfirmation vem junto na resposta pro front-end
+    // oferecer "pagar com Pix" (que não passa por 3DS) na hora.
+    const bankConfirmationMessage =
+      'Seu banco pediu uma confirmação extra pra aprovar essa compra (comum em valores mais altos) e não conseguimos continuar sem ela. Dá uma olhada no app do seu banco — pode ter uma aprovação pendente aí. Se preferir, o Pix não passa por essa confirmação e costuma aprovar na hora.'
+
     if (!redeResponse.ok || !payment) {
       console.error('Falha na chamada à Rede:', redeResponse.status, JSON.stringify(payment))
       await supabase.from('sales').update({ status: 'cancelado', provider_status: 'error' }).eq('id', sale.id)
-      return json({ error: payment?.returnMessage ?? 'Falha ao criar pagamento na Rede.' }, 502)
+      return json(
+        {
+          error: needsBankConfirmation ? bankConfirmationMessage : (payment?.returnMessage ?? 'Falha ao criar pagamento na Rede.'),
+          needsBankConfirmation,
+        },
+        502,
+      )
     }
 
     // resposta da Rede: cartão tem "returnCode" na raiz; pix tem
@@ -744,7 +763,13 @@ Deno.serve(async (req) => {
         .from('sales')
         .update({ status: 'cancelado', provider_status: payment.returnCode, provider_payment_id: payment.tid ? String(payment.tid) : null })
         .eq('id', sale.id)
-      return json({ error: payment.returnMessage ?? 'Pagamento recusado pela operadora do cartão.' }, 402)
+      return json(
+        {
+          error: needsBankConfirmation ? bankConfirmationMessage : (payment.returnMessage ?? 'Pagamento recusado pela operadora do cartão.'),
+          needsBankConfirmation,
+        },
+        402,
+      )
     }
 
     await supabase
