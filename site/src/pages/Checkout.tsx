@@ -18,7 +18,7 @@ import {
   validateCoupon,
   type CreatePaymentResult,
 } from '@/lib/api'
-import { formatBRL } from '@/lib/format'
+import { formatBRL, formatBRLRounded } from '@/lib/format'
 import { INSTALLMENT_SURCHARGE_FROM, installmentTotal, installmentValue, PIX_DISCOUNT, pixPrice, unitPriceWithMotor } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
@@ -206,7 +206,12 @@ export function Checkout() {
         : Math.round(priceBeforeCoupon * (1 - combinedDiscountPct / 100) * 100) / 100
       : priceBeforeCoupon
   const shippingCost = appliedCoupon?.freeShipping ? 0 : (selectedShipping?.price ?? 0)
-  const total = Math.round((productsTotal + shippingCost) * 100) / 100
+  // Preço de produto sem centavos (decisão de pricing) — o cliente paga de
+  // fato esse valor fechado no Pix/1x-6x; precisa bater exatamente com o
+  // mesmo floor em rede-create-payment, senão o botão mostra um valor e a
+  // cobrança real sai outro. De 7x-12x o total ainda pode ter centavos —
+  // é o juro de verdade sendo somado em cima do valor já fechado.
+  const total = Math.floor(productsTotal + shippingCost)
   const cardTotal = method === 'cartao' ? installmentTotal(total, cardInstallments) : total
 
   useEffect(() => {
@@ -1063,7 +1068,7 @@ export function Checkout() {
                   </div>
                 </div>
                 <div className="tabular shrink-0 text-sm font-medium" style={{ color: 'var(--gold-bright)' }}>
-                  {formatBRL(unitPriceWithMotor(product, Boolean(line.withMotor)) * line.quantity)}
+                  {formatBRLRounded(unitPriceWithMotor(product, Boolean(line.withMotor)) * line.quantity)}
                 </div>
               </div>
             </div>
@@ -1154,7 +1159,7 @@ export function Checkout() {
               ) : (
                 (method === 'pix' || appliedCoupon) && (
                   <span className="tabular text-xs line-through" style={{ color: 'var(--ink-muted)' }}>
-                    {formatBRL(subtotal)}
+                    {formatBRLRounded(subtotal)}
                   </span>
                 )
               )}

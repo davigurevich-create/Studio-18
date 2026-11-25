@@ -491,23 +491,35 @@ Deno.serve(async (req) => {
     // real pago à transportadora na hora de gerar a etiqueta não muda, só
     // o que o cliente paga.
     const shippingCost = couponFreeShipping ? 0 : Math.round(shipping.price * 100) / 100
-    const baseAmount = Math.round((productsTotal + shippingCost) * 100) / 100
+    const baseAmountRaw = Math.round((productsTotal + shippingCost) * 100) / 100
+    // Preço de produto sem centavos (decisão de pricing): o cliente paga de
+    // fato um valor fechado no Pix/1x-6x — precisa bater exatamente com o
+    // mesmo floor em Checkout.tsx, senão o botão mostra um valor e a
+    // cobrança real sai outro. De 7x-12x o total ainda pode ter centavos —
+    // é o juro de verdade sendo somado em cima do valor já fechado.
+    // roundingAdjustment guarda os centavos cortados aqui pra entrarem como
+    // desconto (ver discountAmount/couponOnlyDiscount abaixo) — sem isso o
+    // painel de Vendas (que reconstrói o total a partir dos itens) ficava
+    // uns centavos acima do que foi realmente cobrado.
+    const baseAmount = Math.floor(baseAmountRaw)
+    const roundingAdjustment = Math.round((baseAmountRaw - baseAmount) * 100) / 100
     // parcelas só existem no cartão — no PIX/outros o valor fica sem acréscimo
     const clampedInstallments = paymentMethod === 'cartao' ? Math.min(12, Math.max(1, Math.round(installments ?? 1))) : null
     const installmentFee = clampedInstallments
       ? Math.round((installmentTotal(baseAmount, clampedInstallments) - baseAmount) * 100) / 100
       : 0
     const totalAmount = Math.round((baseAmount + installmentFee) * 100) / 100
-    const discountAmount = Math.round((fullTotalAmount - productsTotal) * 100) / 100
+    const discountAmount = Math.round((fullTotalAmount - productsTotal) * 100) / 100 + roundingAdjustment
     // sale_items.unit_price_brl já sai com o desconto do PIX embutido (é o
     // preço de fato usado pra montar o item da venda) — sales.discount_brl
-    // precisa guardar só a parte do CUPOM, senão o painel de Vendas (que
-    // calcula total = soma dos itens - discount_brl) subtrai o desconto do
-    // PIX duas vezes: uma já embutida no preço do item, outra aqui. Isso
-    // fazia o total mostrado no painel vir sempre uns 5% abaixo do valor
-    // realmente cobrado do cliente (confirmado com um pedido de teste real:
-    // cobrança certa de R$0,95, painel mostrando R$0,90).
-    const couponOnlyDiscount = Math.round((pixAdjustedTotal - productsTotal) * 100) / 100
+    // precisa guardar só a parte do CUPOM (+ o arredondamento do preço
+    // fechado), senão o painel de Vendas (que calcula total = soma dos itens
+    // - discount_brl) subtrai o desconto do PIX duas vezes: uma já embutida
+    // no preço do item, outra aqui. Isso fazia o total mostrado no painel
+    // vir sempre uns 5% abaixo do valor realmente cobrado do cliente
+    // (confirmado com um pedido de teste real: cobrança certa de R$0,95,
+    // painel mostrando R$0,90).
+    const couponOnlyDiscount = Math.round((pixAdjustedTotal - productsTotal) * 100) / 100 + roundingAdjustment
     const description =
       lineItems.length === 1
         ? lineItems[0].product.name

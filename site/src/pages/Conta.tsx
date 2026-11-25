@@ -41,7 +41,7 @@ import {
 import { PartRequestForm, formatOrderTotal } from '@/components/PartRequestForm'
 import { OrderTrackingSteps } from '@/components/OrderTrackingSteps'
 import { TrackingCode } from '@/components/TrackingCode'
-import { formatBRL } from '@/lib/format'
+import { formatBRL, formatBRLRounded } from '@/lib/format'
 
 const statusLabel: Record<string, string> = {
   pendente: 'Pedido registrado',
@@ -572,7 +572,7 @@ function FavoritesTab() {
               </div>
               {f.product && (
                 <div className="text-xs" style={{ color: 'var(--gold-bright)' }}>
-                  {formatBRL(f.product.sale_price_brl)}
+                  {formatBRLRounded(f.product.sale_price_brl)}
                 </div>
               )}
             </div>

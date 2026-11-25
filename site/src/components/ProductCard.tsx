@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion, useInView, useReducedMotion } from 'framer-motion'
 import { ArrowUpRight, Cog, Heart, ShoppingBag } from 'lucide-react'
 import { ProductArt } from '@/components/ProductArt'
-import { formatBRL } from '@/lib/format'
+import { formatBRL, formatBRLRounded, formatBRLRoundedParts } from '@/lib/format'
 import { installmentValue, INTEREST_FREE_INSTALLMENTS, LOW_STOCK_THRESHOLD, pixPrice, unitPriceWithMotor } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
@@ -197,7 +197,7 @@ export function ProductCard({
               </span>
               <span className="flex shrink-0 items-center gap-1.5">
                 <span className="tabular" style={{ color: withMotor ? 'var(--gold-bright)' : 'var(--ink-muted)' }}>
-                  {motorInStock ? `+${formatBRL(product.motor_price_brl!)}` : 'indisponível'}
+                  {motorInStock ? `+${formatBRLRounded(product.motor_price_brl!)}` : 'indisponível'}
                 </span>
                 {motorInStock && (
                   <span
@@ -232,10 +232,11 @@ export function ProductCard({
                     À VISTA NO PIX
                   </div>
                   <div className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                    {formatBRL(pixPrice(effectivePrice))}
+                    <span className="mr-0.5 text-xs font-medium align-top">{formatBRLRoundedParts(pixPrice(effectivePrice)).symbol}</span>
+                    {formatBRLRoundedParts(pixPrice(effectivePrice)).amount}
                   </div>
                   <div className="tabular text-[11px]" style={{ color: 'var(--ink-muted)' }}>
-                    ou {formatBRL(effectivePrice)} em {INTEREST_FREE_INSTALLMENTS}x de{' '}
+                    ou {formatBRLRounded(effectivePrice)} em {INTEREST_FREE_INSTALLMENTS}x de{' '}
                     {formatBRL(installmentValue(effectivePrice, INTEREST_FREE_INSTALLMENTS))} sem juros
                   </div>
                 </>

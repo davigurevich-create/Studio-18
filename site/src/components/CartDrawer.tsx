@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Cog } from 'lucide-react'
 import { useCart } from '@/lib/cart'
 import { getCatalog } from '@/lib/api'
-import { formatBRL } from '@/lib/format'
+import { formatBRLRounded } from '@/lib/format'
 import { unitPriceWithMotor } from '@/lib/pricing'
 import type { CatalogProduct } from '@/types/catalog'
 
@@ -95,7 +95,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                           {product!.name}
                         </div>
                         <div className="mt-0.5 text-xs" style={{ color: 'var(--ink-muted)' }}>
-                          {formatBRL(unitPriceWithMotor(product!, Boolean(line.withMotor)))}
+                          {formatBRLRounded(unitPriceWithMotor(product!, Boolean(line.withMotor)))}
                         </div>
                         {hasMotorOption && (
                           <button
@@ -109,7 +109,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                             style={{ color: line.withMotor ? 'var(--gold-bright)' : 'var(--ink-muted)' }}
                           >
                             <Cog size={11} strokeWidth={2} />
-                            {line.withMotor ? 'Com motor funcional' : canEnableMotor ? `+ motor funcional (+${formatBRL(product!.motor_price_brl!)})` : 'Motor indisponível'}
+                            {line.withMotor ? 'Com motor funcional' : canEnableMotor ? `+ motor funcional (+${formatBRLRounded(product!.motor_price_brl!)})` : 'Motor indisponível'}
                           </button>
                         )}
                         {!motorCoversQuantity && (
@@ -161,7 +161,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 <div className="mb-1 flex items-center justify-between text-sm">
                   <span style={{ color: 'var(--ink-muted)' }}>Total</span>
                   <span className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                    {formatBRL(total)}
+                    {formatBRLRounded(total)}
                   </span>
                 </div>
                 <p className="mb-4 text-[11px]" style={{ color: 'var(--gold-bright)' }}>

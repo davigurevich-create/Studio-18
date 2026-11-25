@@ -8,7 +8,7 @@ import { getProduct, getShippingOptions, peekProduct } from '@/lib/api'
 import { BLACK_FRIDAY_BANNER_HEIGHT } from '@/components/BlackFridayBanner'
 import { isBlackFridayActive } from '@/lib/blackFriday'
 import { navigateWithCoverTransition } from '@/lib/coverTransition'
-import { formatBRL } from '@/lib/format'
+import { formatBRL, formatBRLRounded, formatBRLRoundedParts } from '@/lib/format'
 import { installmentValue, INTEREST_FREE_INSTALLMENTS, LOW_STOCK_THRESHOLD, pixPrice, unitPriceWithMotor } from '@/lib/pricing'
 import { useCart } from '@/lib/cart'
 import { useAuth } from '@/lib/auth'
@@ -228,7 +228,7 @@ export function Product() {
                 </span>
                 <span className="flex items-center gap-2 shrink-0">
                   <span className="tabular text-sm font-medium" style={{ color: withMotor ? 'var(--gold-bright)' : 'var(--ink-secondary)' }}>
-                    +{formatBRL(product.motor_price_brl!)}
+                    +{formatBRLRounded(product.motor_price_brl!)}
                   </span>
                   <span
                     className="relative h-5 w-9 shrink-0 rounded-full transition-colors"
@@ -256,10 +256,11 @@ export function Product() {
                     </div>
                     <div className="flex items-baseline gap-3">
                       <span className="tabular text-3xl font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                        {formatBRL(pixPrice(effectivePrice))}
+                        <span className="mr-0.5 text-base font-medium align-top">{formatBRLRoundedParts(pixPrice(effectivePrice)).symbol}</span>
+                        {formatBRLRoundedParts(pixPrice(effectivePrice)).amount}
                       </span>
                       <span className="tabular text-sm line-through" style={{ color: 'var(--ink-muted)' }}>
-                        {formatBRL(effectivePrice)}
+                        {formatBRLRounded(effectivePrice)}
                       </span>
                     </div>
                     <div className="mt-1 text-xs" style={{ color: 'var(--ink-muted)' }}>
