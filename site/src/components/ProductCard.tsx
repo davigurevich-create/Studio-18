@@ -231,9 +231,9 @@ export function ProductCard({
                   <div className="text-[10px] tracking-widest" style={{ color: 'var(--ink-muted)' }}>
                     À VISTA NO PIX
                   </div>
-                  <div className="tabular text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                    <span className="mr-0.5 text-xs font-medium align-top">{formatBRLRoundedParts(pixPrice(effectivePrice)).symbol}</span>
-                    {formatBRLRoundedParts(pixPrice(effectivePrice)).amount}
+                  <div className="tabular flex items-baseline gap-1 text-lg font-semibold" style={{ color: 'var(--gold-bright)' }}>
+                    <span className="text-xs font-medium">{formatBRLRoundedParts(pixPrice(effectivePrice)).symbol}</span>
+                    <span>{formatBRLRoundedParts(pixPrice(effectivePrice)).amount}</span>
                   </div>
                   <div className="tabular text-[11px]" style={{ color: 'var(--ink-muted)' }}>
                     ou {formatBRLRounded(effectivePrice)} em {INTEREST_FREE_INSTALLMENTS}x de{' '}

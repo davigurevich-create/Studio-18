@@ -255,9 +255,9 @@ export function Product() {
                       À VISTA NO PIX
                     </div>
                     <div className="flex items-baseline gap-3">
-                      <span className="tabular text-3xl font-semibold" style={{ color: 'var(--gold-bright)' }}>
-                        <span className="mr-0.5 text-base font-medium align-top">{formatBRLRoundedParts(pixPrice(effectivePrice)).symbol}</span>
-                        {formatBRLRoundedParts(pixPrice(effectivePrice)).amount}
+                      <span className="tabular inline-flex items-baseline gap-1 text-3xl font-semibold" style={{ color: 'var(--gold-bright)' }}>
+                        <span className="text-base font-medium">{formatBRLRoundedParts(pixPrice(effectivePrice)).symbol}</span>
+                        <span>{formatBRLRoundedParts(pixPrice(effectivePrice)).amount}</span>
                       </span>
                       <span className="tabular text-sm line-through" style={{ color: 'var(--ink-muted)' }}>
                         {formatBRLRounded(effectivePrice)}
