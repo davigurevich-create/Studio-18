@@ -687,7 +687,7 @@ export async function getLeads(): Promise<Lead[]> {
  * pendente de verdade.
  */
 export async function sendBlackFridayCampaign(
-  opts: { testEmail?: string; confirm?: boolean } = {},
+  opts: { testEmail?: string; confirm?: boolean; variant?: 'first' | 'lastdays' } = {},
 ): Promise<{ pending?: number; sent?: number; failed?: number; sentTest?: boolean }> {
   if (!supabase) throw new Error('Conecte o Supabase para disparar a campanha de verdade.')
   const { data, error } = await supabase.functions.invoke('send-blackfriday-campaign', { body: opts })

@@ -1,11 +1,15 @@
-// Dispara a campanha de Black Friday pra base de leads do pop-up de
-// boas-vindas. Só a equipe pode chamar (is_staff()). Dois modos:
+// Dispara campanhas de Black Friday pra base de leads do pop-up de
+// boas-vindas. Duas campanhas independentes (cada uma com sua própria
+// coluna de controle, pra poder mandar as duas pra mesma pessoa sem
+// duplicar nenhuma): "first" (anúncio inicial) e "lastdays" (lembrete de
+// reta final). Três modos, iguais pras duas:
 // - { testEmail: "..." }: manda só 1 cópia pro e-mail informado, não mexe
 //   em nada no banco — pra revisar o template antes do disparo de verdade.
-// - { confirm: true }: dispara de verdade pra todo mundo em `leads` que
-//   ainda não recebeu (blackfriday_email_sent_at is null) e não se
-//   descadastrou (unsubscribed_at is null), marcando cada um enviado. Pode
-//   rodar de novo com segurança — nunca manda 2x pro mesmo lead.
+// - {}: só devolve quantos leads ainda não receberam essa campanha.
+// - { confirm: true }: dispara de verdade pra todo mundo que ainda não
+//   recebeu ESSA campanha (campo próprio por variante) e não se
+//   descadastrou, marcando cada um enviado. Pode rodar de novo com
+//   segurança — nunca manda 2x a mesma campanha pro mesmo lead.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -22,13 +26,43 @@ const EMAIL_FROM = Deno.env.get('EMAIL_FROM') ?? 'Studio 18 <onboarding@resend.d
 const SITE_URL = Deno.env.get('SITE_URL') ?? 'https://studio18.vercel.app'
 const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`
 // Banner que o Rubens produz à parte — ver dimensão/arquivo esperado no
-// comentário de blackFridayEmailHtml() mais abaixo.
+// comentário de blackFridayEmailHtml() mais abaixo. Reaproveitado nas duas
+// campanhas (o texto já muda sozinho a mensagem de urgência).
 const BANNER_URL = `${SITE_URL}/email-blackfriday-banner.jpg`
 
 // Resend aceita até 100 e-mails por chamada do endpoint de lote — manda em
 // blocos de 90 (margem de segurança) em vez de 1 request por lead, senão
 // 277 e-mails estourariam o tempo de execução da function.
 const BATCH_SIZE = 90
+
+type Variant = 'first' | 'lastdays'
+
+const VARIANTS: Record<
+  Variant,
+  { column: string; subject: string; testSubject: string; eyebrow: string; intro: string; headline: string }
+> = {
+  first: {
+    column: 'blackfriday_email_sent_at',
+    subject: '🖤 Black Friday Studio 18 — até 30% OFF (e some em breve)',
+    testSubject: '[TESTE] 🖤 Black Friday Studio 18 — até 30% OFF',
+    eyebrow: 'Black Friday Studio 18',
+    intro:
+      'Começamos a Studio 18 há pouco tempo, e saber que pessoas como você decidiram confiar na gente desde o ' +
+      'início é algo que nos traz uma felicidade genuína. Pra agradecer essa confiança, preparamos a Black ' +
+      'Friday mais generosa que já fizemos.',
+    headline: 'Até <span style="color:#e6c778;">30% OFF</span> em todo o site. Inicie uma coleção ou aumente a sua!',
+  },
+  lastdays: {
+    column: 'blackfriday_lastdays_email_sent_at',
+    subject: '⏳ Últimos dias de Black Friday — até 30% OFF (Studio 18)',
+    testSubject: '[TESTE] ⏳ Últimos dias de Black Friday — Studio 18',
+    eyebrow: 'Black Friday Studio 18 — últimos dias',
+    intro:
+      'A Black Friday da Studio 18 está entrando na reta final, e olhando a lista ainda tem gente que não ' +
+      'aproveitou — por isso resolvemos mandar mais um lembrete antes que acabe de vez.',
+    headline: 'Últimos dias. Até <span style="color:#e6c778;">30% OFF</span> antes que termine.',
+  },
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -65,14 +99,17 @@ async function sendBatch(emails: { from: string; to: string; subject: string; ht
 // Template impactante de Black Friday — cabeçalho é só o banner (imagem
 // cheia, sem padding/moldura), pra o Rubens produzir a peça gráfica dele
 // com total liberdade visual; o resto do e-mail (corpo escuro + dourado)
-// seque o mesmo padrão dos outros e-mails transacionais da marca.
+// segue o mesmo padrão dos outros e-mails transacionais da marca. Só
+// eyebrow/intro/headline mudam entre campanhas (ver VARIANTS acima) — o
+// resto (cupom, CTA, condições, rodapé) é igual nas duas.
 //
 // DIMENSÃO DO BANNER: 1200×600px (proporção 2:1), JPG ou PNG, até ~500KB.
 // 1200px de largura pra ficar nítido em tela retina (o e-mail mostra em
 // 600px de largura) — o arquivo final deve ir pra
 // site/public/email-blackfriday-banner.jpg (mesmo fluxo de sempre: sobe
 // pelo GitHub em site/public/, nada de upload manual no Resend).
-function blackFridayEmailHtml(unsubscribeUrl: string): string {
+function blackFridayEmailHtml(unsubscribeUrl: string, variant: Variant): string {
+  const v = VARIANTS[variant]
   return `<!doctype html>
 <html lang="pt-BR">
   <head>
@@ -89,7 +126,7 @@ function blackFridayEmailHtml(unsubscribeUrl: string): string {
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0c0c0c" style="max-width:600px;background:#0c0c0c;border:1px solid #262626;border-radius:14px;overflow:hidden;">
             <tr>
               <td style="line-height:0;">
-                <a href="${SITE_URL}/?utm_source=email&utm_medium=campaign&utm_campaign=blackfriday2026" style="display:block;">
+                <a href="${SITE_URL}/?utm_source=email&utm_medium=campaign&utm_campaign=blackfriday2026-${variant}" style="display:block;">
                   <img src="${BANNER_URL}" width="600" alt="Black Friday Studio 18" style="display:block;width:100%;max-width:600px;height:auto;" />
                 </a>
               </td>
@@ -97,15 +134,13 @@ function blackFridayEmailHtml(unsubscribeUrl: string): string {
             <tr>
               <td style="padding:32px 28px;background:#0c0c0c;font-family:Helvetica,Arial,sans-serif;">
                 <p style="margin:0 0 10px;font-size:12px;font-weight:bold;letter-spacing:2px;color:#e6c778;text-transform:uppercase;">
-                  Black Friday Studio 18
+                  ${v.eyebrow}
                 </p>
                 <p style="margin:0 0 20px;font-size:14px;line-height:1.7;color:#b7b3a9;">
-                  Começamos a Studio 18 há pouco tempo, e saber que pessoas como você decidiram confiar na gente
-                  desde o início é algo que nos traz uma felicidade genuína. Pra agradecer essa confiança, preparamos
-                  a Black Friday mais generosa que já fizemos.
+                  ${v.intro}
                 </p>
                 <h1 style="margin:0 0 16px;font-size:26px;line-height:1.25;color:#f3f1ec;">
-                  Até <span style="color:#e6c778;">30% OFF</span> em todo o site. Inicie uma coleção ou aumente a sua!
+                  ${v.headline}
                 </h1>
                 <p style="margin:0 0 20px;font-size:14px;line-height:1.7;color:#b7b3a9;">
                   25% OFF em até 6x no cartão, ou 30% OFF à vista no Pix — em qualquer carro, moto ou motor
@@ -121,7 +156,7 @@ function blackFridayEmailHtml(unsubscribeUrl: string): string {
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px;">
                   <tr>
                     <td style="border-radius:999px;background:#e6c778;">
-                      <a href="${SITE_URL}/?utm_source=email&utm_medium=campaign&utm_campaign=blackfriday2026"
+                      <a href="${SITE_URL}/?utm_source=email&utm_medium=campaign&utm_campaign=blackfriday2026-${variant}"
                          style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:bold;color:#0a0a0a;text-decoration:none;border-radius:999px;">
                         Garantir meu desconto →
                       </a>
@@ -164,14 +199,20 @@ Deno.serve(async (req) => {
     const { data: isStaff } = await callerClient.rpc('is_staff')
     if (!isStaff) return json({ error: 'Só a equipe pode disparar a campanha.' }, 403)
 
-    const { testEmail, confirm } = (await req.json().catch(() => ({}))) as { testEmail?: string; confirm?: boolean }
+    const { testEmail, confirm, variant: rawVariant } = (await req.json().catch(() => ({}))) as {
+      testEmail?: string
+      confirm?: boolean
+      variant?: string
+    }
+    const variant: Variant = rawVariant === 'lastdays' ? 'lastdays' : 'first'
+    const v = VARIANTS[variant]
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
     if (testEmail) {
       const unsubscribeUrl = `${FUNCTIONS_URL}/unsubscribe-lead?id=teste`
       const [ok] = await sendBatch([
-        { from: EMAIL_FROM, to: testEmail, subject: '[TESTE] 🖤 Black Friday Studio 18 — até 30% OFF', html: blackFridayEmailHtml(unsubscribeUrl) },
+        { from: EMAIL_FROM, to: testEmail, subject: v.testSubject, html: blackFridayEmailHtml(unsubscribeUrl, variant) },
       ])
       return json({ sentTest: ok })
     }
@@ -180,7 +221,7 @@ Deno.serve(async (req) => {
       const { count } = await supabase
         .from('leads')
         .select('id', { count: 'exact', head: true })
-        .is('blackfriday_email_sent_at', null)
+        .is(v.column, null)
         .is('unsubscribed_at', null)
       return json({ pending: count ?? 0 })
     }
@@ -188,7 +229,7 @@ Deno.serve(async (req) => {
     const { data: pendingLeads, error: leadsError } = await supabase
       .from('leads')
       .select('id, email')
-      .is('blackfriday_email_sent_at', null)
+      .is(v.column, null)
       .is('unsubscribed_at', null)
     if (leadsError) {
       console.error('Falha ao buscar leads:', leadsError)
@@ -202,15 +243,15 @@ Deno.serve(async (req) => {
       const emails = chunk.map((lead) => ({
         from: EMAIL_FROM,
         to: lead.email,
-        subject: '🖤 Black Friday Studio 18 — até 30% OFF (e some em breve)',
-        html: blackFridayEmailHtml(`${FUNCTIONS_URL}/unsubscribe-lead?id=${lead.id}`),
+        subject: v.subject,
+        html: blackFridayEmailHtml(`${FUNCTIONS_URL}/unsubscribe-lead?id=${lead.id}`, variant),
       }))
       const results = await sendBatch(emails)
       const sentIds = chunk.filter((_, idx) => results[idx]).map((lead) => lead.id)
       failedCount += chunk.length - sentIds.length
       sentCount += sentIds.length
       if (sentIds.length > 0) {
-        await supabase.from('leads').update({ blackfriday_email_sent_at: new Date().toISOString() }).in('id', sentIds)
+        await supabase.from('leads').update({ [v.column]: new Date().toISOString() }).in('id', sentIds)
       }
     }
 

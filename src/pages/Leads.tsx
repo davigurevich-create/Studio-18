@@ -25,6 +25,7 @@ export function Leads() {
   const [checkingPending, setCheckingPending] = useState(false)
   const [launching, setLaunching] = useState(false)
   const [launchResult, setLaunchResult] = useState<string | null>(null)
+  const [variant, setVariant] = useState<'first' | 'lastdays'>('first')
 
   useEffect(() => {
     getLeads().then((l) => {
@@ -36,7 +37,7 @@ export function Leads() {
   const refreshPendingCount = async () => {
     setCheckingPending(true)
     try {
-      const res = await sendBlackFridayCampaign()
+      const res = await sendBlackFridayCampaign({ variant })
       setPendingCount(res.pending ?? 0)
     } catch {
       setPendingCount(null)
@@ -50,7 +51,7 @@ export function Leads() {
     setSendingTest(true)
     setTestResult(null)
     try {
-      const res = await sendBlackFridayCampaign({ testEmail: testEmail.trim() })
+      const res = await sendBlackFridayCampaign({ testEmail: testEmail.trim(), variant })
       setTestResult(res.sentTest ? `✓ Teste enviado pra ${testEmail.trim()}` : 'Falha ao enviar o teste.')
     } catch (err) {
       setTestResult(err instanceof Error ? err.message : 'Falha ao enviar o teste.')
@@ -64,7 +65,7 @@ export function Leads() {
     setLaunching(true)
     setLaunchResult(null)
     try {
-      const res = await sendBlackFridayCampaign({ confirm: true })
+      const res = await sendBlackFridayCampaign({ confirm: true, variant })
       setLaunchResult(`✓ Enviado para ${res.sent ?? 0} e-mails${res.failed ? ` (${res.failed} falharam)` : ''}.`)
       setPendingCount(0)
     } catch (err) {
@@ -146,6 +147,26 @@ export function Leads() {
           Manda o e-mail de Black Friday (cupom BLACKFRIDAY25) pra quem ainda não recebeu. Idempotente — pode rodar
           de novo com segurança, nunca reenvia pra quem já recebeu ou se descadastrou.
         </p>
+
+        <div className="mb-4">
+          <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+            Qual campanha
+          </label>
+          <select
+            value={variant}
+            onChange={(e) => {
+              setVariant(e.target.value as 'first' | 'lastdays')
+              setPendingCount(null)
+              setTestResult(null)
+              setLaunchResult(null)
+            }}
+            className="rounded-lg border px-3 py-2 text-sm"
+            style={{ borderColor: 'var(--border-hairline)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
+          >
+            <option value="first">Anúncio inicial (já disparada)</option>
+            <option value="lastdays">Lembrete de últimos dias</option>
+          </select>
+        </div>
 
         <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
           <input
