@@ -14,10 +14,11 @@ import { isBlackFridayActive } from '@/lib/blackFriday'
 // campanha — volta pra imagem normal automaticamente depois do prazo
 // (ver isBlackFridayActive), sem precisar mexer aqui de novo.
 const IMAGE_URL = isBlackFridayActive() ? '/hero-black-friday.webp' : '/hero-car.jpg'
-// No mobile a Black Friday usa uma imagem própria (retrato, já composta pra
-// caber na tela toda sem sobra em cima/embaixo) — troca via <picture> abaixo,
-// olhando a largura da tela, não o dispositivo.
-const IMAGE_URL_MOBILE = isBlackFridayActive() ? '/hero-black-friday-mobile.webp' : IMAGE_URL
+// No mobile sempre tem uma imagem própria (retrato, já composta pra caber
+// na tela toda sem sobra em cima/embaixo) — troca via <picture> abaixo,
+// olhando a largura da tela, não o dispositivo. Fora da Black Friday usa a
+// versão normal da marca (hero-mobile.webp).
+const IMAGE_URL_MOBILE = isBlackFridayActive() ? '/hero-black-friday-mobile.webp' : '/hero-mobile.webp'
 const IMAGE_ALT = isBlackFridayActive()
   ? 'Black Friday Studio 18 — 25% OFF em supercarros de blocos de montar'
   : 'Supercarro dourado em blocos de montar da Studio 18 — Do nosso Studio ao seu'
@@ -84,7 +85,7 @@ export function HeroCar({ darken }: { darken: MotionValue<number> }) {
             <img>, então ela deixou de ser filha DIRETA e o tilt parou de
             novo — mesma causa do ajuste anterior. */}
         <picture className="block h-full w-full" style={{ perspective: 1400 }}>
-          {isBlackFridayActive() && <source media="(min-width: 640px)" srcSet={IMAGE_URL} />}
+          <source media="(min-width: 640px)" srcSet={IMAGE_URL} />
           <motion.img
             src={IMAGE_URL_MOBILE}
             alt={IMAGE_ALT}
