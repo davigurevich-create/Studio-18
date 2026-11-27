@@ -242,6 +242,27 @@ function mapStatus(returnCode: string | undefined): string {
   return returnCode === '00' ? 'pago' : 'pendente'
 }
 
+// Confere o dígito verificador de verdade (não só se tem 11 dígitos) —
+// mesmo algoritmo replicado no Checkout.tsx, mas aqui é quem de fato
+// decide se aceita o pedido (nunca confia só na validação do navegador,
+// que é só pra dar feedback mais rápido — alguém chamando a API direto
+// passaria por cima dela). Foi um CPF aleatório (sem bater com nada) que
+// motivou essa validação.
+function isValidCPF(value: string): boolean {
+  const d = value.replace(/\D/g, '')
+  if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false
+  const checkDigit = (base: string) => {
+    let total = 0
+    let factor = base.length + 1
+    for (const char of base) total += Number(char) * factor--
+    const rest = total % 11
+    return rest < 2 ? 0 : 11 - rest
+  }
+  const d1 = checkDigit(d.slice(0, 9))
+  const d2 = checkDigit(d.slice(0, 9) + d1)
+  return d === d.slice(0, 9) + d1 + d2
+}
+
 // Baixa automática de estoque no momento em que a venda vira "pago" — antes
 // disso, nenhum ponto do sistema descontava o estoque de uma venda feita
 // pelo site (só a venda manual cadastrada no painel dava baixa). Confere se
@@ -320,6 +341,9 @@ Deno.serve(async (req) => {
 
     if (!items?.length || !customerName || !customerEmail || !customerCpf || !customerPhone || !paymentMethod || !address) {
       return json({ error: 'Dados obrigatórios ausentes.' }, 400)
+    }
+    if (!isValidCPF(customerCpf)) {
+      return json({ error: 'CPF inválido.' }, 400)
     }
     if (!shipping || !(shipping.price >= 0)) {
       return json({ error: 'Selecione uma opção de frete.' }, 400)

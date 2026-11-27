@@ -383,8 +383,8 @@ export function Checkout() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (items.length === 0) return
-    if (cpf.replace(/\D/g, '').length !== 11) {
-      setError('Informe um CPF válido (11 dígitos).')
+    if (!isValidCPF(cpf)) {
+      setError('Informe um CPF válido.')
       return
     }
     if (phone.replace(/\D/g, '').length < 10) {
@@ -1243,6 +1243,24 @@ function PaymentNote({ text }: { text: string }) {
       {text}
     </p>
   )
+}
+
+// Confere o dígito verificador de verdade (não só se tem 11 dígitos) —
+// mesmo algoritmo replicado em rede-create-payment, que é quem de fato
+// decide se aceita o pedido (nunca confia só na validação do navegador).
+function isValidCPF(value: string): boolean {
+  const d = value.replace(/\D/g, '')
+  if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false
+  const checkDigit = (base: string) => {
+    let total = 0
+    let factor = base.length + 1
+    for (const char of base) total += Number(char) * factor--
+    const rest = total % 11
+    return rest < 2 ? 0 : 11 - rest
+  }
+  const d1 = checkDigit(d.slice(0, 9))
+  const d2 = checkDigit(d.slice(0, 9) + d1)
+  return d === d.slice(0, 9) + d1 + d2
 }
 
 function formatCPF(value: string): string {
